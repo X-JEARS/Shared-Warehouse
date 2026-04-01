@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Button, Card, Dialog, Toast, SpinLoading } from 'antd-mobile';
+import { NavBar, Button, Card, Toast, SpinLoading } from 'antd-mobile';
 import styled from 'styled-components';
 import ScannerComponent from '../components/Scanner';
 import { scanApi } from '../services/api';
@@ -35,8 +35,6 @@ const ItemMeta = styled.div`
 `;
 
 const ActionButtons = styled.div`
-  display: flex;
-  gap: 12px;
   margin-top: 16px;
 `;
 
@@ -60,39 +58,16 @@ export default function Scanner() {
     }
   };
 
-  const handleBorrow = async () => {
+  const handleTake = async () => {
     if (!scanResult?.item?.item_id) return;
 
     try {
       await scanApi.borrow(scanResult.item.item_id);
-      Toast.show({ icon: 'success', content: '借用成功' });
+      Toast.show({ icon: 'success', content: '取走成功' });
       setScanResult(null);
       setScanning(true);
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '借用失败' });
-    }
-  };
-
-  const handleReturn = async () => {
-    if (!scanResult?.item?.item_id) return;
-
-    // Show dialog to select return box
-    const result = await Dialog.confirm({
-      title: '归还物品',
-      content: '确定要归还这个物品吗？',
-    });
-
-    if (result) {
-      try {
-        // For simplicity, return to the item's belong box
-        const boxId = scanResult.item.item_belong_box_id;
-        await scanApi.returnItem(scanResult.item.item_id, boxId);
-        Toast.show({ icon: 'success', content: '归还成功' });
-        setScanResult(null);
-        setScanning(true);
-      } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '归还失败' });
-      }
+      Toast.show({ icon: 'fail', content: error.message || '取走失败' });
     }
   };
 
@@ -128,8 +103,7 @@ export default function Scanner() {
                 ) : (
                   <>
                     <ItemName>
-                      {scanResult.item?.item_image ? '📦' : '📦'}{' '}
-                      {scanResult.item?.item_name}
+                      📦 {scanResult.item?.item_name}
                     </ItemName>
                     <ItemMeta>
                       位置: {scanResult.item?.room_name}
@@ -140,9 +114,6 @@ export default function Scanner() {
                         当前持有者: {scanResult.item.currentHolder.user_nickname}
                       </ItemMeta>
                     )}
-                    <ItemMeta>
-                      是否所有者: {scanResult.item?.isOwner ? '是' : '否'}
-                    </ItemMeta>
                   </>
                 )}
               </ItemInfo>
@@ -153,18 +124,10 @@ export default function Scanner() {
                 <Button
                   block
                   color="primary"
-                  onClick={handleBorrow}
-                  disabled={scanResult.item?.currentHolder}
+                  onClick={handleTake}
+                  disabled={scanResult.item?.isInHand}
                 >
-                  借用
-                </Button>
-                <Button
-                  block
-                  color="success"
-                  onClick={handleReturn}
-                  disabled={!scanResult.item?.isOwner && !scanResult.item?.currentHolder}
-                >
-                  归还
+                  {scanResult.item?.isInHand ? '已在手中' : '取走'}
                 </Button>
               </ActionButtons>
             )}

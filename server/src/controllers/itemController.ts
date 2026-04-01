@@ -58,6 +58,39 @@ export const getItems = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getInHandItems = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    // Get user's personal box
+    const userResult = await query(
+      'SELECT user_box_id FROM users WHERE user_id = $1',
+      [userId]
+    );
+
+    if (!userResult.rows[0]?.user_box_id) {
+      return success(res, []);
+    }
+
+    const userBoxId = userResult.rows[0].user_box_id;
+
+    // Get items in user's personal box
+    const result = await query(
+      `SELECT i.*, u.user_nickname as owner_nickname
+       FROM items i
+       LEFT JOIN users u ON i.item_belong_user_id = u.user_id
+       WHERE i.item_current_box_id = $1
+       ORDER BY i.item_create_time DESC`,
+      [userBoxId]
+    );
+
+    return success(res, result.rows);
+  } catch (err) {
+    console.error('Get in-hand items error:', err);
+    return error(res, 'Failed to get in-hand items', 500);
+  }
+};
+
 export const getItemById = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;

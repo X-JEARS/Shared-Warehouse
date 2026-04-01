@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-固定资产管理系统 (Fixed Asset Management System) - A PWA web application for managing fixed assets across multiple warehouses with QR code scanning for borrowing/returning items.
+固定资产管理系统 (Fixed Asset Management System) - A PWA web application for managing fixed assets across multiple warehouses with QR code scanning. Items can flow freely between people and warehouses.
 
 ## Development Commands
 
@@ -53,8 +53,8 @@ Items → Reservations → Orders
 
 ### Key Domain Concepts
 - **Room (仓库)**: A warehouse/workspace that users can join
-- **Box (盒子)**: Storage container within a room, or user's personal box
-- **Item (物品)**: Physical asset with QR code, can be borrowed/returned
+- **Box (盒子)**: Storage container within a room, or user's personal box (user_box_id)
+- **Item (物品)**: Physical asset with QR code, can be taken by scanning its QR code
 - **Tags**: Room-specific, items have different tags in different rooms
 - **Cart**: Client-side only, persisted to localStorage via Zustand
 
@@ -66,11 +66,12 @@ Items → Reservations → Orders
 3. `request.ts` interceptor adds `Authorization: Bearer <token>` header
 4. Backend `auth` middleware validates token, injects `req.user`
 
-### Item Borrowing/Returning
-- Scan QR code → `POST /api/scan` identifies item/box
+### Item Taking Flow
+- Scan item QR code → `POST /api/scan` identifies item, returns `isInHand` flag
 - `POST /api/scan/borrow` moves item to user's personal box
-- `POST /api/scan/return` moves item to specified box
-- Each transfer creates a `histories` record
+- Items can flow freely between people (anyone can take an item)
+- "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
+- To return items, user scans a box QR code first (not implemented yet)
 
 ### Reservation Conflict Detection
 Backend checks time overlap in `reservationController.ts` before creating reservations.

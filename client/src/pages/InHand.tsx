@@ -43,7 +43,7 @@ export default function InHand() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const itemsRes: any = await itemApi.getAll();
+      const itemsRes: any = await itemApi.getInHand();
       setInHandItems(itemsRes.data || []);
     } catch (error) {
       console.error('Failed to load data:', error);

@@ -86,6 +86,14 @@ export const scanQrcode = async (req: AuthRequest, res: Response) => {
 
     item.isOwner = item.item_belong_user_id === userId;
 
+    // Check if item is in current user's personal box
+    const userResult = await query(
+      'SELECT user_box_id FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const userBoxId = userResult.rows[0]?.user_box_id;
+    item.isInHand = item.item_current_box_id === userBoxId;
+
     // Get current holder (if item is in a user's personal box)
     if (item.box_belong_room_id === null) {
       const holderResult = await query(
@@ -140,24 +148,6 @@ export const borrowItem = async (req: AuthRequest, res: Response) => {
     );
 
     const userBoxId = userResult.rows[0].user_box_id;
-
-    // Check if item is already borrowed by someone else
-    if (item.item_current_box_id === userBoxId) {
-      return error(res, 'You already have this item');
-    }
-
-    // Check if item is in a personal box (someone else has it)
-    if (item.box_belong_room_id === null) {
-      const holderResult = await query(
-        `SELECT u.user_id, u.user_nickname
-         FROM users u
-         WHERE u.user_box_id = $1 AND u.user_id != $2`,
-        [item.item_current_box_id, userId]
-      );
-      if (holderResult.rows.length > 0) {
-        return error(res, `Item is currently held by ${holderResult.rows[0].user_nickname}`);
-      }
-    }
 
     // Move item to user's personal box
     await query(
