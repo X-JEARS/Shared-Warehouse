@@ -73,6 +73,12 @@ Items → Reservations → Orders
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
 - To return items, user scans a box QR code first (not implemented yet)
 
+### UI Components
+- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Used in both Warehouse and InHand pages.
+- **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
+- **Warehouse page**: Items displayed in 2-column grid, grouped by box. Box name shown as section header.
+- **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed.
+
 ### Reservation Conflict Detection
 Backend checks time overlap in `reservationController.ts` before creating reservations.
 

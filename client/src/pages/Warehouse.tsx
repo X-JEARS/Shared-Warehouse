@@ -40,6 +40,26 @@ const Content = styled.div`
 const ItemList = styled.div`
   display: flex;
   flex-direction: column;
+  gap: 20px;
+`;
+
+const BoxGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const BoxTitle = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  padding: 4px 0;
+  border-bottom: 1px solid #f0f0f0;
+`;
+
+const ItemGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
 `;
 
@@ -275,13 +295,33 @@ export default function Warehouse() {
           </div>
         ) : (
           <ItemList>
-            {items.map((item) => (
-              <ItemCard
-                key={item.item_id}
-                item={item}
-                onClick={() => handleItemClick(item.item_id)}
-              />
-            ))}
+            {(() => {
+              // 按盒子分组
+              const groupedItems = items.reduce((acc, item) => {
+                const boxKey = item.item_current_box_id || 'no-box';
+                const boxName = item.box_name || '未分配盒子';
+                if (!acc[boxKey]) {
+                  acc[boxKey] = { name: boxName, items: [] };
+                }
+                acc[boxKey].items.push(item);
+                return acc;
+              }, {} as Record<string, { name: string; items: any[] }>);
+
+              return Object.entries(groupedItems).map(([boxKey, group]) => (
+                <BoxGroup key={boxKey}>
+                  <BoxTitle>{group.name}</BoxTitle>
+                  <ItemGrid>
+                    {group.items.map((item) => (
+                      <ItemCard
+                        key={item.item_id}
+                        item={item}
+                        onClick={() => handleItemClick(item.item_id)}
+                      />
+                    ))}
+                  </ItemGrid>
+                </BoxGroup>
+              ));
+            })()}
           </ItemList>
         )}
       </Content>
