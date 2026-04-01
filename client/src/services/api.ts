@@ -35,11 +35,12 @@ export const roomApi = {
 // Box API
 export const boxApi = {
   getByRoom: (roomId: number) => request.get(`/boxes/room/${roomId}`),
-  create: (roomId: number, data: { name?: string; notice?: string }) =>
+  create: (roomId: number, data: { name: string; qrcode: string; notice?: string }) =>
     request.post(`/boxes/room/${roomId}`, data),
   update: (id: number, data: { name?: string; notice?: string }) =>
     request.put(`/boxes/${id}`, data),
-  delete: (id: number) => request.delete(`/boxes/${id}`),
+  delete: (id: number, data?: { targetBoxId?: number; toUserHand?: boolean }) =>
+    request.delete(`/boxes/${id}`, { data }),
 };
 
 // Item API

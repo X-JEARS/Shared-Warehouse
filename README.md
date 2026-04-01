@@ -71,6 +71,7 @@ npm run dev
 - **多仓库管理**: 用户可以加入多个仓库，查看不同仓库中的物品
 - **二维码扫描**: 扫描物品二维码取走物品，物品可在人与人、人与仓库之间自由流动
 - **物品管理**: 添加物品时扫描物品二维码，支持设置标签和备注名，存放位置默认选择第一个盒子
+- **盒子管理**: 添加盒子需扫描或输入二维码（以 box. 开头）并填写名称；删除盒子时若有物品需选择移动目标
 - **仓库物品展示**: 物品以两列网格卡片形式展示，按盒子分组显示，支持按盒子/标签筛选
 - **我手中的**: 查看当前用户个人盒子中的所有物品，支持搜索功能
 - **购物车批量预约**: 将物品加入购物车，统一设置预约时间，批量提交预约
@@ -132,10 +133,10 @@ warehouse/
 - `POST /api/items/:id/comments` - 添加评论
 
 ### 盒子
-- `GET /api/boxes/room/:roomId` - 获取仓库的所有盒子
-- `POST /api/boxes/room/:roomId` - 创建盒子
+- `GET /api/boxes/room/:roomId` - 获取仓库的所有盒子（含物品数量）
+- `POST /api/boxes/room/:roomId` - 创建盒子（需提供 qrcode 和 name）
 - `PUT /api/boxes/:id` - 修改盒子信息
-- `DELETE /api/boxes/:id` - 删除盒子
+- `DELETE /api/boxes/:id` - 删除盒子（可选 targetBoxId 或 toUserHand 参数移动物品）
 
 ### 标签
 - `GET /api/reservations/rooms/:roomId/tags` - 获取仓库的所有标签

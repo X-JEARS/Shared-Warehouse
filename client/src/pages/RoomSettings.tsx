@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   NavBar,
   List,
@@ -8,6 +8,8 @@ import {
   Input,
   Toast,
   SpinLoading,
+  Selector,
+  Popup,
 } from 'antd-mobile';
 import { AddOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
@@ -56,10 +58,20 @@ const MemberMeta = styled.div`
   color: #999;
 `;
 
+const ItemCountBadge = styled.span`
+  background: #ff4d4f;
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  margin-left: 8px;
+`;
+
 interface Box {
   box_id: number;
   box_name: string;
   box_notice?: string;
+  item_count?: number;
 }
 
 interface Tag {
@@ -78,16 +90,22 @@ interface Member {
 export default function RoomSettings() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { updateRoom } = useRoomStore();
   const [room, setRoom] = useState<any>(null);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteBoxPopup, setDeleteBoxPopup] = useState<{
+    visible: boolean;
+    box: Box | null;
+    targetValue: string;
+  }>({ visible: false, box: null, targetValue: '' });
 
   useEffect(() => {
     loadRoom();
-  }, [id]);
+  }, [id, location.key]);
 
   const loadRoom = async () => {
     if (!id) return;
@@ -143,44 +161,62 @@ export default function RoomSettings() {
     }
   };
 
-  const handleAddBox = async () => {
-    const result = await Dialog.confirm({
-      title: '添加盒子',
-      content: (
-        <Input
-          id="boxName"
-          placeholder="盒子名称（可选）"
-          style={{ marginTop: 8 }}
-        />
-      ),
-    });
-
-    if (result) {
-      const name = (document.getElementById('boxName') as HTMLInputElement)?.value;
-
-      try {
-        const res: any = await boxApi.create(parseInt(id!), { name });
-        setBoxes([...boxes, res.data]);
-        Toast.show({ icon: 'success', content: '添加成功' });
-      } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '添加失败' });
-      }
-    }
+  const handleAddBox = () => {
+    navigate(`/add-box/${id}`);
   };
 
-  const handleDeleteBox = async (boxId: number) => {
-    const result = await Dialog.confirm({
-      content: '确定要删除这个盒子吗？',
-    });
+  const handleDeleteBox = async (box: Box) => {
+    const itemCount = box.item_count || 0;
+    const isLastBox = boxes.length <= 1;
 
-    if (result) {
-      try {
-        await boxApi.delete(boxId);
-        setBoxes(boxes.filter((b) => b.box_id !== boxId));
-        Toast.show({ icon: 'success', content: '删除成功' });
-      } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+    // 如果是最后一个盒子，不允许删除
+    if (isLastBox) {
+      Toast.show({ content: '无法删除最后一个盒子' });
+      return;
+    }
+
+    // 如果盒子中没有物品，直接删除
+    if (itemCount === 0) {
+      const result = await Dialog.confirm({
+        content: `确定要删除盒子「${box.box_name || `盒子 ${box.box_id}`}」吗？`,
+      });
+
+      if (result) {
+        try {
+          await boxApi.delete(box.box_id);
+          setBoxes(boxes.filter((b) => b.box_id !== box.box_id));
+          Toast.show({ icon: 'success', content: '删除成功' });
+        } catch (error: any) {
+          Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+        }
       }
+      return;
+    }
+
+    // 盒子中有物品，打开弹窗选择移动目标
+    setDeleteBoxPopup({ visible: true, box, targetValue: '' });
+  };
+
+  const confirmDeleteBox = async () => {
+    const { box, targetValue } = deleteBoxPopup;
+    if (!box || !targetValue) {
+      Toast.show({ content: '请选择移动目标' });
+      return;
+    }
+
+    try {
+      if (targetValue === 'user_hand') {
+        await boxApi.delete(box.box_id, { toUserHand: true });
+      } else {
+        const targetBoxId = parseInt(targetValue.replace('box_', ''));
+        await boxApi.delete(box.box_id, { targetBoxId });
+      }
+
+      setBoxes(boxes.filter((b) => b.box_id !== box.box_id));
+      setDeleteBoxPopup({ visible: false, box: null, targetValue: '' });
+      Toast.show({ icon: 'success', content: '删除成功' });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '删除失败' });
     }
   };
 
@@ -283,14 +319,19 @@ export default function RoomSettings() {
           boxes.map((box) => (
             <MemberItem key={box.box_id}>
               <MemberInfo>
-                <MemberName>{box.box_name || `盒子 ${box.box_id}`}</MemberName>
+                <MemberName>
+                  {box.box_name || `盒子 ${box.box_id}`}
+                  {(box.item_count || 0) > 0 && (
+                    <ItemCountBadge>{box.item_count}</ItemCountBadge>
+                  )}
+                </MemberName>
                 {box.box_notice && (
                   <MemberMeta>{box.box_notice}</MemberMeta>
                 )}
               </MemberInfo>
               <span
                 style={{ color: '#ff4d4f', fontSize: 18, cursor: 'pointer' }}
-                onClick={() => handleDeleteBox(box.box_id)}
+                onClick={() => handleDeleteBox(box)}
               >
                 🗑️
               </span>
@@ -354,6 +395,55 @@ export default function RoomSettings() {
           </MemberItem>
         ))}
       </Section>
+
+      {/* 删除盒子弹窗 */}
+      <Popup
+        visible={deleteBoxPopup.visible}
+        onMaskClick={() => setDeleteBoxPopup({ visible: false, box: null, targetValue: '' })}
+        bodyStyle={{ borderRadius: '16px 16px 0 0' }}
+      >
+        <div style={{ padding: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
+            删除盒子
+          </div>
+          <div style={{ marginBottom: 12, color: '#666' }}>
+            盒子「{deleteBoxPopup.box?.box_name || `盒子 ${deleteBoxPopup.box?.box_id}`}」中有{' '}
+            {deleteBoxPopup.box?.item_count || 0} 个物品，请选择移动目标：
+          </div>
+          <Selector
+            options={[
+              ...boxes
+                .filter((b) => b.box_id !== deleteBoxPopup.box?.box_id)
+                .map((b) => ({
+                  label: b.box_name || `盒子 ${b.box_id}`,
+                  value: `box_${b.box_id}`,
+                })),
+              { label: '用户手中', value: 'user_hand' },
+            ]}
+            value={deleteBoxPopup.targetValue ? [deleteBoxPopup.targetValue] : []}
+            onChange={(arr) =>
+              setDeleteBoxPopup({ ...deleteBoxPopup, targetValue: arr[0] || '' })
+            }
+            style={{ '--gap': '8px', marginBottom: 16 }}
+          />
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Button
+              block
+              onClick={() => setDeleteBoxPopup({ visible: false, box: null, targetValue: '' })}
+            >
+              取消
+            </Button>
+            <Button
+              block
+              color="danger"
+              onClick={confirmDeleteBox}
+              disabled={!deleteBoxPopup.targetValue}
+            >
+              确认删除
+            </Button>
+          </div>
+        </div>
+      </Popup>
     </Container>
   );
 }

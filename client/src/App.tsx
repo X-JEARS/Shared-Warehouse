@@ -8,6 +8,7 @@ import InHand from './pages/InHand';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import RoomSettings from './pages/RoomSettings';
+import AddBox from './pages/AddBox';
 import Cart from './pages/Cart';
 import Scanner from './pages/Scanner';
 import CreateItem from './pages/CreateItem';
@@ -47,6 +48,14 @@ function App() {
           element={
             <PrivateRoute>
               <RoomSettings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/add-box/:id"
+          element={
+            <PrivateRoute>
+              <AddBox />
             </PrivateRoute>
           }
         />

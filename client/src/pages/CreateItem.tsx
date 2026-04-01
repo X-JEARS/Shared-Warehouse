@@ -91,15 +91,16 @@ export default function CreateItem() {
     }
   }, [currentRoom]);
 
-  const handleScanQrcode = (qrcode: string) => {
+  const handleScanQrcode = (qrcode: string): boolean => {
     // 验证二维码不能是box.开头
     if (qrcode.startsWith('box.')) {
       Toast.show({ icon: 'fail', content: '物品二维码不能是盒子二维码' });
-      setShowScanner(false);
-      return;
+      // 返回 false 继续扫描
+      return false;
     }
     setFormData({ ...formData, qrcode });
     setShowScanner(false);
+    return true;
   };
 
   const handleSubmit = async () => {

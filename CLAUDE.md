@@ -73,6 +73,21 @@ Items → Reservations → Orders
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
 - To return items, user scans a box QR code first (not implemented yet)
 
+### Box Management Flow
+- **Adding Box**: Requires QR code (must start with `box.`) and name. QR code can be scanned or manually entered.
+- **Deleting Box**: 
+  - Cannot delete the last box in a room
+  - If box has items, must select a target (another box or "user's hand") to move items before deletion
+  - Moving items creates transfer history records automatically
+- Box item count is displayed as a badge in room settings
+
+### Scanner Component
+- Located at `client/src/components/Scanner.tsx`
+- `onScan` callback receives scanned text, returns `boolean`:
+  - Return `true` to stop scanning
+  - Return `false` to continue scanning (for validation failures)
+- Used for both box QR codes (`box.` prefix) and item QR codes
+
 ### UI Components
 - **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Used in both Warehouse and InHand pages.
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
