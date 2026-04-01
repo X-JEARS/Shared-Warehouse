@@ -89,7 +89,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
             <FilterItem>
               {selectedBox
                 ? boxes.find((b) => b.box_id === selectedBox)?.box_name || '盒子'
-                : '盒子'}
+                : '全部'}
             </FilterItem>
           }
         >
