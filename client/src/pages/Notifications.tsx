@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Empty, SpinLoading, Badge } from 'antd-mobile';
 import styled from 'styled-components';
 import { notificationApi } from '../services/api';
@@ -7,41 +6,6 @@ import { notificationApi } from '../services/api';
 const Container = styled.div`
   min-height: 100%;
   background: white;
-`;
-
-const ActionButton = styled.div`
-  background: white;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid #f0f0f0;
-  cursor: pointer;
-
-  &:active {
-    background: #f5f5f5;
-  }
-`;
-
-const ActionContent = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const ActionIcon = styled.div`
-  font-size: 24px;
-`;
-
-const ActionText = styled.div`
-  font-size: 15px;
-  font-weight: 500;
-`;
-
-const ActionDesc = styled.div`
-  font-size: 12px;
-  color: #999;
-  margin-top: 2px;
 `;
 
 const NotificationItem = styled.div<{ $isRead: boolean }>`
@@ -81,7 +45,6 @@ interface Notification {
 }
 
 export default function Notifications() {
-  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -177,19 +140,6 @@ export default function Notifications() {
 
   return (
     <Container>
-      {/* 预约订单入口 */}
-      <ActionButton onClick={() => navigate('/reservation-orders')}>
-        <ActionContent>
-          <ActionIcon>📅</ActionIcon>
-          <div>
-            <ActionText>预约订单</ActionText>
-            <ActionDesc>查看和管理您的预约</ActionDesc>
-          </div>
-        </ActionContent>
-        <span style={{ color: '#999' }}>›</span>
-      </ActionButton>
-
-      {/* 通知列表 */}
       {unreadCount > 0 && (
         <div
           style={{

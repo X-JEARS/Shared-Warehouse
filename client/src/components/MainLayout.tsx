@@ -31,6 +31,10 @@ const TabBarContainer = styled.div`
   z-index: 1000;
 `;
 
+const CalendarIcon = () => (
+  <span style={{ fontSize: 22, lineHeight: 1 }}>📅</span>
+);
+
 const tabs = [
   {
     key: '/warehouse',
@@ -41,6 +45,11 @@ const tabs = [
     key: '/in-hand',
     title: '我手中的',
     icon: <UnorderedListOutline />,
+  },
+  {
+    key: '/reservation-orders',
+    title: '预约',
+    icon: <CalendarIcon />,
   },
   {
     key: '/notifications',

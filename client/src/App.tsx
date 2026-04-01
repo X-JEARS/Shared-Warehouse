@@ -38,6 +38,7 @@ function App() {
           <Route index element={<Navigate to="/warehouse" replace />} />
           <Route path="warehouse" element={<Warehouse />} />
           <Route path="in-hand" element={<InHand />} />
+          <Route path="reservation-orders" element={<ReservationOrders />} />
           <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
         </Route>
@@ -86,14 +87,6 @@ function App() {
           element={
             <PrivateRoute>
               <JoinRoom />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/reservation-orders"
-          element={
-            <PrivateRoute>
-              <ReservationOrders />
             </PrivateRoute>
           }
         />
