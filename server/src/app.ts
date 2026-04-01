@@ -1,0 +1,53 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { errorHandler, notFound } from './middlewares/errorHandler';
+
+// Import routes
+import authRoutes from './routes/auth';
+import userRoutes from './routes/users';
+import roomRoutes from './routes/rooms';
+import boxRoutes from './routes/boxes';
+import itemRoutes from './routes/items';
+import scanRoutes from './routes/scan';
+import reservationRoutes from './routes/reservations';
+import cartRoutes from './routes/cart';
+import notificationRoutes from './routes/notifications';
+
+dotenv.config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/rooms', roomRoutes);
+app.use('/api/boxes', boxRoutes);
+app.use('/api/items', itemRoutes);
+app.use('/api/scan', scanRoutes);
+app.use('/api/reservations', reservationRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/notifications', notificationRoutes);
+
+// Error handling
+app.use(notFound);
+app.use(errorHandler);
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
+
+export default app;

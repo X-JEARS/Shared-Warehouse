@@ -1,0 +1,120 @@
+import request from '../utils/request';
+
+// Auth API
+export const authApi = {
+  login: (data: { loginName: string; password: string }) =>
+    request.post('/auth/login', data),
+  register: (data: { loginName: string; password: string; nickname?: string; tel?: string }) =>
+    request.post('/auth/register', data),
+  getMe: () => request.get('/auth/me'),
+};
+
+// User API
+export const userApi = {
+  updateProfile: (data: { nickname?: string; avatar?: string; tel?: string }) =>
+    request.put('/users/profile', data),
+  updatePassword: (data: { currentPassword: string; newPassword: string }) =>
+    request.put('/users/password', data),
+};
+
+// Room API
+export const roomApi = {
+  getAll: () => request.get('/rooms'),
+  getById: (id: number) => request.get(`/rooms/${id}`),
+  create: (data: { name: string; notice?: string }) =>
+    request.post('/rooms', data),
+  update: (id: number, data: { name?: string; notice?: string }) =>
+    request.put(`/rooms/${id}`, data),
+  join: (id: number, memberName?: string) =>
+    request.post(`/rooms/${id}/join`, { memberName }),
+  getMembers: (id: number) => request.get(`/rooms/${id}/members`),
+  removeMember: (roomId: number, memberId: number) =>
+    request.delete(`/rooms/${roomId}/members/${memberId}`),
+};
+
+// Box API
+export const boxApi = {
+  getByRoom: (roomId: number) => request.get(`/boxes/room/${roomId}`),
+  create: (roomId: number, data: { name?: string; notice?: string }) =>
+    request.post(`/boxes/room/${roomId}`, data),
+  update: (id: number, data: { name?: string; notice?: string }) =>
+    request.put(`/boxes/${id}`, data),
+  delete: (id: number) => request.delete(`/boxes/${id}`),
+};
+
+// Item API
+export const itemApi = {
+  getAll: (params?: { roomId?: number; boxId?: number; tagId?: number; search?: string }) =>
+    request.get('/items', { params }),
+  getById: (id: number) => request.get(`/items/${id}`),
+  getByQrcode: (code: string) => request.get(`/items/qrcode/${code}`),
+  create: (data: {
+    qrcode: string;
+    name: string;
+    boxId: number;
+    belongUserId?: number;
+    belongBoxId?: number;
+    notice?: string;
+    image?: string;
+  }) => request.post('/items', data),
+  update: (id: number, data: { name?: string; notice?: string; image?: string }) =>
+    request.put(`/items/${id}`, data),
+  getHistory: (id: number) => request.get(`/items/${id}/history`),
+  getComments: (id: number) => request.get(`/items/${id}/comments`),
+  addComment: (id: number, content: string) =>
+    request.post(`/items/${id}/comments`, { content }),
+  setTags: (itemId: number, roomId: number, tagIds: number[]) =>
+    request.put(`/items/${itemId}/tags`, { roomId, tagIds }),
+  setRemark: (itemId: number, roomId: number, remark: string) =>
+    request.put(`/items/${itemId}/remark`, { roomId, remark }),
+};
+
+// Scan API
+export const scanApi = {
+  scan: (qrcode: string) => request.post('/scan', { qrcode }),
+  borrow: (itemId: number) => request.post('/scan/borrow', { itemId }),
+  returnItem: (itemId: number, boxId: number) =>
+    request.post('/scan/return', { itemId, boxId }),
+};
+
+// Reservation API
+export const reservationApi = {
+  getAll: (status?: 'active' | 'past') =>
+    request.get('/reservations', { params: { status } }),
+  create: (data: { itemId: number; startTime: number; endTime: number; orderId?: number }) =>
+    request.post('/reservations', data),
+  cancel: (id: number) => request.delete(`/reservations/${id}`),
+  getByItem: (itemId: number) => request.get(`/reservations/items/${itemId}`),
+  createOrder: (data: { title?: string; items: Array<{ itemId: number; startTime: number; endTime: number }> }) =>
+    request.post('/reservations/orders', data),
+  getOrders: (status?: 'active' | 'past') =>
+    request.get('/reservations/orders', { params: { status } }),
+  getOrderDetail: (id: number) => request.get(`/reservations/orders/${id}`),
+  cancelOrder: (id: number) => request.delete(`/reservations/orders/${id}`),
+};
+
+// Tag API
+export const tagApi = {
+  getByRoom: (roomId: number) => request.get(`/reservations/rooms/${roomId}/tags`),
+  create: (roomId: number, name: string) =>
+    request.post(`/reservations/rooms/${roomId}/tags`, { name }),
+  delete: (id: number) => request.delete(`/reservations/tags/${id}`),
+};
+
+// Cart API
+export const cartApi = {
+  get: () => request.get('/cart'),
+  add: (data: { itemId: number; roomId?: number; startTime?: number; endTime?: number }) =>
+    request.post('/cart', data),
+  remove: (itemId: number) => request.delete(`/cart/${itemId}`),
+  checkout: (title?: string) => request.post('/cart/checkout', { title }),
+  clear: () => request.delete('/cart'),
+};
+
+// Notification API
+export const notificationApi = {
+  getAll: (page?: number, pageSize?: number) =>
+    request.get('/notifications', { params: { page, pageSize } }),
+  markAsRead: (id: number) => request.put(`/notifications/${id}/read`),
+  markAllAsRead: () => request.put('/notifications/read-all'),
+};
