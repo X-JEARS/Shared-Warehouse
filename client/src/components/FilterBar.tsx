@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Dropdown, Tag } from 'antd-mobile';
-import { DownOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { boxApi, tagApi } from '../services/api';
 
@@ -91,7 +90,6 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
               {selectedBox
                 ? boxes.find((b) => b.box_id === selectedBox)?.box_name || '盒子'
                 : '盒子'}
-              <DownOutline fontSize={10} style={{ marginLeft: 4 }} />
             </FilterItem>
           }
         >
@@ -127,7 +125,6 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
               {selectedTag
                 ? tags.find((t) => t.tag_id === selectedTag)?.tag_name || '标签'
                 : '标签'}
-              <DownOutline fontSize={10} style={{ marginLeft: 4 }} />
             </FilterItem>
           }
         >

@@ -30,3 +30,7 @@ coverage/
 # Temporary files
 tmp/
 temp/
+
+# Database exports
+database.numbers
+databases/

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, SearchBar, SpinLoading, Dropdown } from 'antd-mobile';
-import { AddOutline, ScanCodeOutline } from 'antd-mobile-icons';
+import { AddOutline, ScanCodeOutline, ShopbagOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useRoomStore } from '../stores/roomStore';
 import { useCartStore } from '../stores/cartStore';
@@ -296,7 +296,7 @@ export default function Warehouse() {
           <ScanCodeOutline />
         </FABButton>
         <FABButton onClick={() => navigate('/cart')}>
-          🛒
+          <ShopbagOutline />
           {cartItems.length > 0 && (
             <span
               style={{

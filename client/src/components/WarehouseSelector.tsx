@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dropdown, Button } from 'antd-mobile';
-import { DownOutline, AddOutline } from 'antd-mobile-icons';
+import { AddOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useRoomStore } from '../stores/roomStore';
 import { roomApi } from '../services/api';
@@ -103,7 +103,6 @@ export default function WarehouseSelector(_props: WarehouseSelectorProps) {
           title={
             <RoomName>
               {currentRoom?.room_name || '选择仓库'}
-              <DownOutline fontSize={12} />
             </RoomName>
           }
         >

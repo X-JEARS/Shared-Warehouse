@@ -5,6 +5,7 @@ import {
   UnorderedListOutline,
   MessageOutline,
   UserOutline,
+  CalendarOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
 
@@ -31,10 +32,6 @@ const TabBarContainer = styled.div`
   z-index: 1000;
 `;
 
-const CalendarIcon = () => (
-  <span style={{ fontSize: 22, lineHeight: 1 }}>📅</span>
-);
-
 const tabs = [
   {
     key: '/warehouse',
@@ -49,7 +46,7 @@ const tabs = [
   {
     key: '/reservation-orders',
     title: '预约',
-    icon: <CalendarIcon />,
+    icon: <CalendarOutline />,
   },
   {
     key: '/notifications',
