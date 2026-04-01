@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Form, Input, Button, TextArea, Toast, Selector } from 'antd-mobile';
+import { NavBar, Form, Input, Button, TextArea, Toast, Selector, Dialog } from 'antd-mobile';
 import styled from 'styled-components';
-import { itemApi, boxApi } from '../services/api';
+import { itemApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
+import Scanner from '../components/Scanner';
 
 const Container = styled.div`
   min-height: 100%;
@@ -36,29 +37,53 @@ const WarningText = styled.div`
   margin-bottom: 12px;
 `;
 
+const ScanModal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #f5f5f5;
+  z-index: 1000;
+`;
+
 export default function CreateItem() {
   const navigate = useNavigate();
   const { currentRoom } = useRoomStore();
   const [loading, setLoading] = useState(false);
   const [boxes, setBoxes] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
   const [loadingBoxes, setLoadingBoxes] = useState(true);
+  const [showScanner, setShowScanner] = useState(false);
   const [formData, setFormData] = useState({
     qrcode: '',
     name: '',
     boxId: '',
+    tagIds: [] as number[],
     notice: '',
   });
 
-  // 加载盒子列表
+  // 加载盒子和标签列表
   useEffect(() => {
     if (currentRoom) {
       setLoadingBoxes(true);
-      boxApi.getByRoom(currentRoom.room_id)
-        .then((res: any) => {
-          setBoxes(res.data || []);
+      Promise.all([
+        boxApi.getByRoom(currentRoom.room_id),
+        tagApi.getByRoom(currentRoom.room_id),
+      ])
+        .then(([boxesRes, tagsRes]: any[]) => {
+          setBoxes(boxesRes.data || []);
+          setTags(tagsRes.data || []);
+          // 默认选择第一个盒子
+          if (boxesRes.data?.length > 0) {
+            setFormData(prev => ({
+              ...prev,
+              boxId: boxesRes.data[0].box_id.toString(),
+            }));
+          }
         })
         .catch((err) => {
-          console.error('Failed to load boxes:', err);
+          console.error('Failed to load data:', err);
         })
         .finally(() => {
           setLoadingBoxes(false);
@@ -66,9 +91,15 @@ export default function CreateItem() {
     }
   }, [currentRoom]);
 
-  const generateQrcode = () => {
-    const code = `item.${Date.now()}.${Math.random().toString(36).substr(2, 9)}`;
-    setFormData({ ...formData, qrcode: code });
+  const handleScanQrcode = (qrcode: string) => {
+    // 验证二维码不能是box.开头
+    if (qrcode.startsWith('box.')) {
+      Toast.show({ icon: 'fail', content: '物品二维码不能是盒子二维码' });
+      setShowScanner(false);
+      return;
+    }
+    setFormData({ ...formData, qrcode });
+    setShowScanner(false);
   };
 
   const handleSubmit = async () => {
@@ -77,14 +108,32 @@ export default function CreateItem() {
       return;
     }
 
+    // 再次验证二维码
+    if (formData.qrcode.startsWith('box.')) {
+      Toast.show({ icon: 'fail', content: '物品二维码不能是盒子二维码' });
+      return;
+    }
+
     try {
       setLoading(true);
-      await itemApi.create({
+      // 创建物品
+      const res: any = await itemApi.create({
         qrcode: formData.qrcode,
         name: formData.name,
         boxId: parseInt(formData.boxId),
         notice: formData.notice || undefined,
       });
+
+      // 如果选择了标签，设置标签
+      if (formData.tagIds.length > 0 && currentRoom) {
+        try {
+          await itemApi.setTags(res.data.item_id, currentRoom.room_id, formData.tagIds);
+        } catch (tagError) {
+          console.error('Failed to set tags:', tagError);
+          // 标签设置失败不影响物品创建成功
+        }
+      }
+
       Toast.show({ icon: 'success', content: '创建成功' });
       navigate(-1);
     } catch (error: any) {
@@ -158,11 +207,15 @@ export default function CreateItem() {
               <Input
                 value={formData.qrcode}
                 onChange={(v) => setFormData({ ...formData, qrcode: v })}
-                placeholder="物品二维码"
+                placeholder="请扫描物品二维码"
                 style={{ flex: 1 }}
               />
-              <Button size="small" onClick={generateQrcode}>
-                自动生成
+              <Button
+                size="small"
+                color="primary"
+                onClick={() => setShowScanner(true)}
+              >
+                扫码
               </Button>
             </div>
           </Form.Item>
@@ -188,11 +241,31 @@ export default function CreateItem() {
             />
           </Form.Item>
 
-          <Form.Item label="备注">
+          {tags.length > 0 && (
+            <Form.Item label="标签">
+              <Selector
+                options={tags.map((t) => ({
+                  label: t.tag_name,
+                  value: t.tag_id.toString(),
+                }))}
+                value={formData.tagIds.map(String)}
+                onChange={(arr) =>
+                  setFormData({
+                    ...formData,
+                    tagIds: arr.map(Number),
+                  })
+                }
+                multiple
+                style={{ '--gap': '8px' }}
+              />
+            </Form.Item>
+          )}
+
+          <Form.Item label="备注名">
             <TextArea
               value={formData.notice}
               onChange={(v) => setFormData({ ...formData, notice: v })}
-              placeholder="物品备注（可选）"
+              placeholder="物品备注名（可选）"
               maxLength={120}
               rows={3}
             />
@@ -210,6 +283,22 @@ export default function CreateItem() {
           创建物品
         </Button>
       </Content>
+
+      {/* 扫码弹窗 */}
+      {showScanner && (
+        <ScanModal>
+          <NavBar onBack={() => setShowScanner(false)}>扫描物品二维码</NavBar>
+          <Content>
+            <Scanner
+              onScan={handleScanQrcode}
+              onError={(error) => {
+                console.error('Scanner error:', error);
+                Toast.show({ icon: 'fail', content: '扫描失败' });
+              }}
+            />
+          </Content>
+        </ScanModal>
+      )}
     </Container>
   );
 }

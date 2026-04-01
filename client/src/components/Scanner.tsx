@@ -51,6 +51,8 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
   useEffect(() => {
+    // 自动开始扫描
+    startScanning();
     return () => {
       stopScanning();
     };
@@ -103,13 +105,6 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
       <ScannerContainer>
         <Video ref={videoRef} />
         {isScanning && <Overlay />}
-        {!isScanning && (
-          <Hint>
-            <Button color="primary" onClick={startScanning}>
-              点击开始扫描
-            </Button>
-          </Hint>
-        )}
         {isScanning && <Hint>将二维码放入框内</Hint>}
       </ScannerContainer>
 
