@@ -49,17 +49,22 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const stoppedRef = useRef(false);
 
   useEffect(() => {
-    // 自动开始扫描
-    startScanning();
+    // 等待 DOM 准备好后再启动扫描
+    const timer = setTimeout(() => {
+      startScanning();
+    }, 100);
     return () => {
+      clearTimeout(timer);
       stopScanning();
     };
   }, []);
 
   const startScanning = async () => {
     try {
+      stoppedRef.current = false;
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
 
@@ -76,12 +81,14 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
         selectedDeviceId,
         videoRef.current!,
         (result, error) => {
+          if (stoppedRef.current) return;
           if (result) {
             const text = result.getText();
-            onScan(text);
             stopScanning();
+            onScan(text);
           }
-          if (error && onError) {
+          // 忽略 NotFoundException（正常扫描中未找到二维码）
+          if (error && error.name !== 'NotFoundException' && onError) {
             onError(error);
           }
         }
@@ -89,14 +96,30 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
     } catch (error: any) {
       console.error('Scanner error:', error);
       Dialog.alert({ content: `启动摄像头失败: ${error.message}` });
+      setIsScanning(false);
     }
   };
 
   const stopScanning = () => {
+    stoppedRef.current = true;
+
+    // 手动停止视频流（这是关键，因为 zxing 的 reset 可能不会立即停止）
+    if (videoRef.current?.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+
+    // 调用 zxing 的 reset
     if (readerRef.current) {
-      readerRef.current.reset();
+      try {
+        readerRef.current.reset();
+      } catch (e) {
+        // 忽略错误
+      }
       readerRef.current = null;
     }
+
     setIsScanning(false);
   };
 
