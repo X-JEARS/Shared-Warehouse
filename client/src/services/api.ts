@@ -49,7 +49,8 @@ export const itemApi = {
   getAll: (params?: { roomId?: number; boxId?: number; tagId?: number; search?: string }) =>
     request.get('/items', { params }),
   getInHand: () => request.get('/items/in-hand'),
-  getById: (id: number) => request.get(`/items/${id}`),
+  getById: (id: number, roomId?: number) =>
+    request.get(`/items/${id}`, { params: { roomId } }),
   getByQrcode: (code: string) => request.get(`/items/qrcode/${code}`),
   create: (data: {
     qrcode: string;

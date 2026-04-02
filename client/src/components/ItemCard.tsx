@@ -96,6 +96,7 @@ interface ItemCardProps {
     room_name?: string;
     tags?: { tag_name: string }[];
     is_in_stock?: boolean;
+    is_foreign?: boolean;
     holder_nickname?: string;
   };
   onClick?: () => void;
@@ -104,6 +105,7 @@ interface ItemCardProps {
 
 export default function ItemCard({ item, onClick, showStockStatus = true }: ItemCardProps) {
   const isInStock = item.is_in_stock !== false;
+  const isForeign = item.is_foreign === true;
 
   return (
     <CardContainer onClick={onClick}>
@@ -114,13 +116,13 @@ export default function ItemCard({ item, onClick, showStockStatus = true }: Item
         <ItemHeader>
           <ItemName>{item.item_name}</ItemName>
           {showStockStatus && (
-            <StockStatus $inStock={isInStock}>
-              {isInStock ? '在库' : '离库'}
+            <StockStatus $inStock={isInStock || isForeign}>
+              {isForeign ? '外来物品' : (isInStock ? '在库' : '离库')}
             </StockStatus>
           )}
         </ItemHeader>
         {item.item_notice && <ItemMeta>{item.item_notice}</ItemMeta>}
-        {showStockStatus && !isInStock && item.holder_nickname && (
+        {showStockStatus && !isInStock && !isForeign && item.holder_nickname && (
           <ItemMeta>正在: {item.holder_nickname}</ItemMeta>
         )}
         {item.tags && item.tags.length > 0 && (

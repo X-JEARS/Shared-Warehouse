@@ -96,9 +96,9 @@ Items → Reservations → Orders
 - Used for both box QR codes (`box.` prefix) and item QR codes
 
 ### UI Components
-- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Shows stock status (在库/离库) with green/red badge in Warehouse page. Accepts `showStockStatus` prop to toggle status display.
+- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Shows stock status (在库/离库/外来物品) with green/red badge. Accepts `showStockStatus` prop to toggle status display.
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
-- **Warehouse page**: Items displayed in 2-column grid, grouped by belong box. Shows all items belonging to the room, including borrowed ones. In-stock items shown first.
+- **Warehouse page**: Items displayed in 2-column grid. In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
 - **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail.
 - **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that starts scanner for continuous item insertion.
@@ -110,10 +110,19 @@ Items → Reservations → Orders
 - Warehouse creation/join moved to dropdown in WarehouseSelector
 
 ### Item Stock Status Logic
-- **In Stock (在库)**: Item's current box is in the same room as its belong box (`bb.box_belong_room_id = cb.box_belong_room_id`)
-- **Out of Stock (离库)**: Item's current box is in a different room (e.g., borrowed by another user, moved to another warehouse)
-- Warehouse page shows all items belonging to the room with their stock status
+- **In Stock (在库)**: Item's `current_box` is in the viewing room (`is_in_stock = true`, `is_foreign = false`)
+- **Out of Stock (离库)**: Item belongs to this room but `current_box` is NOT in this room (`is_in_stock = false`, `is_foreign = false`)
+- **Foreign Item (外来物品)**: Item belongs to another room but `current_box` is in this room (`is_in_stock = true`, `is_foreign = true`)
+- Warehouse page displays items in two sections:
+  - In-stock items: grouped by `current_box` (current location)
+  - Out-of-stock items: displayed together in "不在库中" section
 - `holder_nickname` shows who currently holds the item when it's out of stock
+
+### Item Tag Management
+- Tags are room-specific, stored in `item_room_tag_map` table
+- When viewing an item in a room (via `roomId` parameter), tags for that room are shown/edited
+- Items can have different tags in different rooms
+- Editing tags in one room does not affect tags in other rooms
 
 ### Reservation Conflict Detection
 Backend checks time overlap in `reservationController.ts` before creating reservations.

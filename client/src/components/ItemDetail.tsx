@@ -101,6 +101,7 @@ const CommentInput = styled.div`
 interface ItemDetailProps {
   visible: boolean;
   itemId: number | null;
+  roomId?: number; // 当前查看的仓库ID
   isOwner?: boolean;
   onClose: () => void;
   onUpdate?: () => void;
@@ -109,6 +110,7 @@ interface ItemDetailProps {
 export default function ItemDetail({
   visible,
   itemId,
+  roomId,
   isOwner,
   onClose,
   onUpdate,
@@ -132,7 +134,7 @@ export default function ItemDetail({
       loadHistory();
       loadComments();
     }
-  }, [visible, itemId]);
+  }, [visible, itemId, roomId]);
 
   // 当 item 加载完成后，加载该仓库的所有标签
   useEffect(() => {
@@ -143,7 +145,7 @@ export default function ItemDetail({
 
   const loadItem = async () => {
     try {
-      const res: any = await itemApi.getById(itemId!);
+      const res: any = await itemApi.getById(itemId!, roomId);
       setItem(res.data);
       setEditName(res.data.item_name);
       // 初始化已选标签
@@ -300,17 +302,23 @@ export default function ItemDetail({
                 )}
                 <ItemMeta>创建于 {formatTime(item.item_create_time)}</ItemMeta>
                 <ItemMeta>
-                  位置: {item.room_name}
-                  {item.belong_box_name && ` / ${item.belong_box_name}`}
+                  当前位置: {item.current_room_name || '未知仓库'}
+                  {item.current_box_name && ` / ${item.current_box_name}`}
                   {item.is_in_stock !== undefined && (
-                    <StockBadge $inStock={item.is_in_stock}>
-                      {item.is_in_stock ? '在库' : '离库'}
+                    <StockBadge $inStock={item.is_in_stock || item.is_foreign}>
+                      {item.is_foreign ? '外来物品' : (item.is_in_stock ? '在库' : '离库')}
                     </StockBadge>
                   )}
                 </ItemMeta>
-                {!item.is_in_stock && item.holder_nickname && (
-                  <ItemMeta style={{ color: '#ff4d4f' }}>
-                    正在: {item.holder_nickname}
+                {item.is_foreign && (
+                  <ItemMeta>
+                    归属: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
+                  </ItemMeta>
+                )}
+                {!item.is_in_stock && !item.is_foreign && (
+                  <ItemMeta>
+                    归属: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
+                    {item.holder_nickname && ` (正在: ${item.holder_nickname})`}
                   </ItemMeta>
                 )}
                 {item.owner_nickname && (

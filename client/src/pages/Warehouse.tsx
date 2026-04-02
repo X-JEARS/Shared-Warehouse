@@ -145,7 +145,8 @@ export default function Warehouse() {
   const navigate = useNavigate();
   const { currentRoom, rooms, setRooms, setCurrentRoom } = useRoomStore();
   const { items: cartItems } = useCartStore();
-  const [items, setItems] = useState<any[]>([]);
+  const [inStockItems, setInStockItems] = useState<any[]>([]);
+  const [outOfStockItems, setOutOfStockItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -189,7 +190,8 @@ export default function Warehouse() {
         ...filters,
         search: searchText || undefined,
       });
-      setItems(res.data || []);
+      setInStockItems(res.data?.inStock || []);
+      setOutOfStockItems(res.data?.outOfStock || []);
     } catch (error) {
       console.error('Failed to load items:', error);
     } finally {
@@ -295,7 +297,7 @@ export default function Warehouse() {
           <div style={{ textAlign: 'center', padding: 40 }}>
             <SpinLoading />
           </div>
-        ) : items.length === 0 ? (
+        ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <p style={{ color: '#999', marginBottom: 16 }}>当前仓库暂无物品</p>
             <Button color="primary" onClick={() => navigate('/create-item')}>
@@ -304,11 +306,11 @@ export default function Warehouse() {
           </div>
         ) : (
           <ItemList>
+            {/* 在库物品：按当前所在盒子分组显示 */}
             {(() => {
-              // 按归属盒子分组
-              const groupedItems = items.reduce((acc, item) => {
-                const boxKey = item.item_belong_box_id || 'no-box';
-                const boxName = item.belong_box_name || '未分配盒子';
+              const groupedItems = inStockItems.reduce((acc, item) => {
+                const boxKey = item.item_current_box_id || 'no-box';
+                const boxName = item.current_box_name || '未分配盒子';
                 if (!acc[boxKey]) {
                   acc[boxKey] = { name: boxName, items: [] };
                 }
@@ -331,6 +333,22 @@ export default function Warehouse() {
                 </BoxGroup>
               ));
             })()}
+
+            {/* 不在库物品：统一显示在"不在库中" */}
+            {outOfStockItems.length > 0 && (
+              <BoxGroup>
+                <BoxTitle>不在库中</BoxTitle>
+                <ItemGrid>
+                  {outOfStockItems.map((item) => (
+                    <ItemCard
+                      key={item.item_id}
+                      item={item}
+                      onClick={() => handleItemClick(item.item_id)}
+                    />
+                  ))}
+                </ItemGrid>
+              </BoxGroup>
+            )}
           </ItemList>
         )}
       </Content>
@@ -367,6 +385,7 @@ export default function Warehouse() {
       <ItemDetail
         visible={detailVisible}
         itemId={selectedItem}
+        roomId={currentRoom?.room_id}
         onClose={() => setDetailVisible(false)}
       />
 
