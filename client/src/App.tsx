@@ -9,6 +9,7 @@ import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
 import RoomSettings from './pages/RoomSettings';
 import AddBox from './pages/AddBox';
+import BoxDetail from './pages/BoxDetail';
 import Cart from './pages/Cart';
 import Scanner from './pages/Scanner';
 import CreateItem from './pages/CreateItem';
@@ -56,6 +57,14 @@ function App() {
           element={
             <PrivateRoute>
               <AddBox />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/box/:id"
+          element={
+            <PrivateRoute>
+              <BoxDetail />
             </PrivateRoute>
           }
         />

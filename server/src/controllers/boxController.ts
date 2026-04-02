@@ -3,6 +3,58 @@ import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 
+export const getBoxById = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+
+    // Get box info
+    const boxResult = await query(
+      `SELECT b.*, r.room_id, r.room_name, r.room_admin
+       FROM boxes b
+       LEFT JOIN rooms r ON b.box_belong_room_id = r.room_id
+       WHERE b.box_id = $1`,
+      [id]
+    );
+
+    if (boxResult.rows.length === 0) {
+      return error(res, 'Box not found', 404);
+    }
+
+    const box = boxResult.rows[0];
+
+    // Check access
+    if (box.room_id) {
+      const memberCheck = await query(
+        'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+        [box.room_id, userId]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        return error(res, 'Access denied', 403);
+      }
+    }
+
+    // Get items in this box
+    const itemsResult = await query(
+      `SELECT i.*, u.user_nickname as owner_nickname
+       FROM items i
+       LEFT JOIN users u ON i.item_belong_user_id = u.user_id
+       WHERE i.item_current_box_id = $1
+       ORDER BY i.item_create_time DESC`,
+      [id]
+    );
+
+    return success(res, {
+      ...box,
+      items: itemsResult.rows,
+    });
+  } catch (err) {
+    console.error('Get box error:', err);
+    return error(res, 'Failed to get box', 500);
+  }
+};
+
 export const getBoxes = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;

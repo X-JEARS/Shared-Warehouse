@@ -35,6 +35,7 @@ export const roomApi = {
 // Box API
 export const boxApi = {
   getByRoom: (roomId: number) => request.get(`/boxes/room/${roomId}`),
+  getById: (id: number) => request.get(`/boxes/${id}`),
   create: (roomId: number, data: { name: string; qrcode: string; notice?: string }) =>
     request.post(`/boxes/room/${roomId}`, data),
   update: (id: number, data: { name?: string; notice?: string }) =>

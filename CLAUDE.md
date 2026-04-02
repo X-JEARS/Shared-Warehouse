@@ -71,7 +71,14 @@ Items → Reservations → Orders
 - `POST /api/scan/borrow` moves item to user's personal box
 - Items can flow freely between people (anyone can take an item)
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
-- To return items, user scans a box QR code first (not implemented yet)
+
+### Box Detail and Item Return Flow
+- Scan box QR code (starts with `box.`) → directly navigates to BoxDetail page `/box/:id`
+- BoxDetail page shows box info and items inside
+- Click "存入物品" button → starts scanner for item QR codes
+- Scan item QR code → shows confirmation dialog
+- Confirm → `POST /api/scan/return` moves item to this box
+- Scanner continues for batch item insertion until user stops
 
 ### Box Management Flow
 - **Adding Box**: Requires QR code (must start with `box.`) and name. QR code can be scanned or manually entered.
@@ -83,7 +90,7 @@ Items → Reservations → Orders
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`
-- `onScan` callback receives scanned text, returns `boolean`:
+- `onScan` callback receives scanned text, can return `boolean` or `Promise<boolean>`:
   - Return `true` to stop scanning
   - Return `false` to continue scanning (for validation failures)
 - Used for both box QR codes (`box.` prefix) and item QR codes
@@ -94,6 +101,7 @@ Items → Reservations → Orders
 - **Warehouse page**: Items displayed in 2-column grid, grouped by belong box. Shows all items belonging to the room, including borrowed ones. In-stock items shown first.
 - **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
 - **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail.
+- **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that starts scanner for continuous item insertion.
 
 ### Warehouse Page Header Layout
 - Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin)

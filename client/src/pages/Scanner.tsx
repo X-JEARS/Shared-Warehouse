@@ -49,6 +49,13 @@ export default function Scanner() {
       setLoading(true);
       setScanning(false);
       const res: any = await scanApi.scan(qrcode);
+
+      // 如果是盒子码，直接跳转到盒子详情页面
+      if (res.data.type === 'box') {
+        navigate(`/box/${res.data.box.box_id}`);
+        return;
+      }
+
       setScanResult(res.data);
     } catch (error: any) {
       Toast.show({ icon: 'fail', content: error.message || '扫描失败' });
@@ -92,45 +99,31 @@ export default function Scanner() {
           <div>
             <ResultCard>
               <ItemInfo>
-                {scanResult.type === 'box' ? (
-                  <>
-                    <ItemName>📦 {scanResult.box?.box_name || '盒子'}</ItemName>
-                    <ItemMeta>盒子ID: {scanResult.box?.box_id}</ItemMeta>
-                    <ItemMeta>
-                      物品数量: {scanResult.items?.length || 0}
-                    </ItemMeta>
-                  </>
-                ) : (
-                  <>
-                    <ItemName>
-                      📦 {scanResult.item?.item_name}
-                    </ItemName>
-                    <ItemMeta>
-                      位置: {scanResult.item?.room_name}
-                      {scanResult.item?.box_name && ` / ${scanResult.item?.box_name}`}
-                    </ItemMeta>
-                    {scanResult.item?.currentHolder && (
-                      <ItemMeta>
-                        当前持有者: {scanResult.item.currentHolder.user_nickname}
-                      </ItemMeta>
-                    )}
-                  </>
+                <ItemName>
+                  📦 {scanResult.item?.item_name}
+                </ItemName>
+                <ItemMeta>
+                  位置: {scanResult.item?.room_name}
+                  {scanResult.item?.box_name && ` / ${scanResult.item?.box_name}`}
+                </ItemMeta>
+                {scanResult.item?.currentHolder && (
+                  <ItemMeta>
+                    当前持有者: {scanResult.item.currentHolder.user_nickname}
+                  </ItemMeta>
                 )}
               </ItemInfo>
             </ResultCard>
 
-            {scanResult.type === 'item' && (
-              <ActionButtons>
-                <Button
-                  block
-                  color="primary"
-                  onClick={handleTake}
-                  disabled={scanResult.item?.isInHand}
-                >
-                  {scanResult.item?.isInHand ? '已在手中' : '取走'}
-                </Button>
-              </ActionButtons>
-            )}
+            <ActionButtons>
+              <Button
+                block
+                color="primary"
+                onClick={handleTake}
+                disabled={scanResult.item?.isInHand}
+              >
+                {scanResult.item?.isInHand ? '已在手中' : '取走'}
+              </Button>
+            </ActionButtons>
 
             <Button
               block

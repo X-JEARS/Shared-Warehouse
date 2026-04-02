@@ -41,7 +41,7 @@ const Hint = styled.div`
 `;
 
 interface ScannerProps {
-  onScan: (result: string) => boolean | void; // 返回 false 表示继续扫描
+  onScan: (result: string) => boolean | void | Promise<boolean | void>; // 返回 false 表示继续扫描
   onError?: (error: Error) => void;
 }
 
@@ -80,11 +80,11 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
       reader.decodeFromVideoDevice(
         selectedDeviceId,
         videoRef.current!,
-        (result, error) => {
+        async (result, error) => {
           if (stoppedRef.current) return;
           if (result) {
             const text = result.getText();
-            const shouldStop = onScan(text);
+            const shouldStop = await Promise.resolve(onScan(text));
             // 只有当 onScan 返回 false 以外的值时才停止扫描
             if (shouldStop !== false) {
               stopScanning();
