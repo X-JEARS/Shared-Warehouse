@@ -15,6 +15,7 @@ import { AddOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { roomApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
+import TrashIcon from '../components/icons/TrashIcon';
 
 const Container = styled.div`
   min-height: 100%;
@@ -329,12 +330,10 @@ export default function RoomSettings() {
                   <MemberMeta>{box.box_notice}</MemberMeta>
                 )}
               </MemberInfo>
-              <span
-                style={{ color: '#ff4d4f', fontSize: 18, cursor: 'pointer' }}
+              <TrashIcon
+                style={{ color: '#ff4d4f', cursor: 'pointer' }}
                 onClick={() => handleDeleteBox(box)}
-              >
-                🗑️
-              </span>
+              />
             </MemberItem>
           ))
         )}
@@ -357,12 +356,10 @@ export default function RoomSettings() {
               <MemberInfo>
                 <MemberName>{tag.tag_name}</MemberName>
               </MemberInfo>
-              <span
-                style={{ color: '#ff4d4f', fontSize: 18, cursor: 'pointer' }}
+              <TrashIcon
+                style={{ color: '#ff4d4f', cursor: 'pointer' }}
                 onClick={() => handleDeleteTag(tag.tag_id)}
-              >
-                🗑️
-              </span>
+              />
             </MemberItem>
           ))
         )}
@@ -380,17 +377,15 @@ export default function RoomSettings() {
               <MemberMeta>@{member.user_login_name}</MemberMeta>
             </MemberInfo>
             {member.member_user_id !== room?.room_admin && (
-              <span
-                style={{ color: '#ff4d4f', fontSize: 18, cursor: 'pointer' }}
+              <TrashIcon
+                style={{ color: '#ff4d4f', cursor: 'pointer' }}
                 onClick={() =>
                   handleRemoveMember(
                     member.member_user_id,
                     member.member_name || member.user_nickname
                   )
                 }
-              >
-                🗑️
-              </span>
+              />
             )}
           </MemberItem>
         ))}
