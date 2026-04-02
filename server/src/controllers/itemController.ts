@@ -8,15 +8,29 @@ export const getItems = async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     const { roomId, boxId, tagId, search } = req.query;
 
-    // Build query
+    // Build query - show items that belong to the room (including borrowed items)
+    // item_belong_box_id indicates the "home" location of the item
+    // item_current_box_id indicates where the item currently is
+    // is_in_stock: item is in stock if current box is in the same room as belong box
     let sql = `
-      SELECT DISTINCT i.*, b.box_name, b.box_belong_room_id,
+      SELECT DISTINCT i.*,
+        bb.box_name as belong_box_name,
+        cb.box_name as current_box_name,
+        bb.box_belong_room_id as belong_room_id,
+        cb.box_belong_room_id as current_room_id,
         u.user_nickname as owner_nickname,
-        r.room_name
+        r.room_name,
+        CASE WHEN bb.box_belong_room_id = cb.box_belong_room_id THEN true ELSE false END as is_in_stock,
+        CASE WHEN bb.box_belong_room_id != cb.box_belong_room_id THEN
+          (SELECT u2.user_nickname FROM boxes b2
+           LEFT JOIN users u2 ON u2.user_box_id = b2.box_id
+           WHERE b2.box_id = i.item_current_box_id)
+        ELSE NULL END as holder_nickname
       FROM items i
-      JOIN boxes b ON i.item_current_box_id = b.box_id
-      JOIN rooms r ON b.box_belong_room_id = r.room_id
+      JOIN boxes bb ON i.item_belong_box_id = bb.box_id
+      JOIN rooms r ON bb.box_belong_room_id = r.room_id
       JOIN room_members rm ON r.room_id = rm.member_room_id
+      LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
       LEFT JOIN users u ON i.item_belong_user_id = u.user_id
       WHERE rm.member_user_id = $1
     `;
@@ -24,12 +38,14 @@ export const getItems = async (req: AuthRequest, res: Response) => {
     let paramCount = 2;
 
     if (roomId) {
-      sql += ` AND b.box_belong_room_id = $${paramCount++}`;
+      // Filter by the room where the item belongs (home room)
+      sql += ` AND bb.box_belong_room_id = $${paramCount++}`;
       values.push(roomId);
     }
 
     if (boxId) {
-      sql += ` AND i.item_current_box_id = $${paramCount++}`;
+      // Filter by specific box (belong box)
+      sql += ` AND i.item_belong_box_id = $${paramCount++}`;
       values.push(boxId);
     }
 
@@ -47,7 +63,7 @@ export const getItems = async (req: AuthRequest, res: Response) => {
       values.push(`%${search}%`, `%${search}%`);
     }
 
-    sql += ' ORDER BY i.item_create_time DESC';
+    sql += ' ORDER BY is_in_stock DESC, i.item_create_time DESC';
 
     const result = await query(sql, values);
 
@@ -96,15 +112,26 @@ export const getItemById = async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     const { id } = req.params;
 
+    // is_in_stock: item is in stock if current box is in the same room as belong box
     const result = await query(
-      `SELECT i.*, b.box_name, b.box_belong_room_id, r.room_name, r.room_id,
+      `SELECT i.*,
+        cb.box_name as current_box_name,
+        cb.box_belong_room_id as current_room_id,
+        bb.box_name as belong_box_name,
+        bb.box_belong_room_id as belong_room_id,
+        r.room_name,
         u.user_nickname as owner_nickname,
-        bb.box_name as belong_box_name
+        CASE WHEN bb.box_belong_room_id = cb.box_belong_room_id THEN true ELSE false END as is_in_stock,
+        CASE WHEN bb.box_belong_room_id != cb.box_belong_room_id THEN
+          (SELECT u2.user_nickname FROM boxes b2
+           LEFT JOIN users u2 ON u2.user_box_id = b2.box_id
+           WHERE b2.box_id = i.item_current_box_id)
+        ELSE NULL END as holder_nickname
       FROM items i
-      JOIN boxes b ON i.item_current_box_id = b.box_id
-      LEFT JOIN rooms r ON b.box_belong_room_id = r.room_id
-      LEFT JOIN users u ON i.item_belong_user_id = u.user_id
+      LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
       LEFT JOIN boxes bb ON i.item_belong_box_id = bb.box_id
+      LEFT JOIN rooms r ON bb.box_belong_room_id = r.room_id
+      LEFT JOIN users u ON i.item_belong_user_id = u.user_id
       WHERE i.item_id = $1`,
       [id]
     );
@@ -115,11 +142,11 @@ export const getItemById = async (req: AuthRequest, res: Response) => {
 
     const item = result.rows[0];
 
-    // Check if user has access to this item's room
-    if (item.room_id) {
+    // Check if user has access to this item's room (use belong_room_id for access check)
+    if (item.belong_room_id) {
       const memberCheck = await query(
         'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
-        [item.room_id, userId]
+        [item.belong_room_id, userId]
       );
 
       if (memberCheck.rows.length === 0) {
@@ -127,25 +154,28 @@ export const getItemById = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // Get tags for this item in current room
-    if (item.room_id) {
+    // Get tags for this item in its belong room
+    if (item.belong_room_id) {
       const tagsResult = await query(
         `SELECT t.* FROM tags t
          JOIN item_room_tag_map irt ON t.tag_id = irt.irt_tag_id
          WHERE irt.irt_item_id = $1 AND irt.irt_room_id = $2`,
-        [id, item.room_id]
+        [id, item.belong_room_id]
       );
       item.tags = tagsResult.rows;
     }
 
-    // Get remark for this item in current room
-    if (item.room_id) {
+    // Get remark for this item in its belong room
+    if (item.belong_room_id) {
       const remarkResult = await query(
         'SELECT * FROM item_remarks WHERE remark_item_id = $1 AND remark_room_id = $2',
-        [id, item.room_id]
+        [id, item.belong_room_id]
       );
       item.remark = remarkResult.rows[0]?.remark_name || null;
     }
+
+    // Set room_id for backward compatibility
+    item.room_id = item.belong_room_id;
 
     // Check if current user is owner
     item.isOwner = item.item_belong_user_id === userId;

@@ -89,10 +89,16 @@ Items → Reservations → Orders
 - Used for both box QR codes (`box.` prefix) and item QR codes
 
 ### UI Components
-- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Used in both Warehouse and InHand pages.
+- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Shows stock status (在库/离库) with green/red badge in Warehouse page. Accepts `showStockStatus` prop to toggle status display.
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
-- **Warehouse page**: Items displayed in 2-column grid, grouped by box. Box name shown as section header.
-- **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed.
+- **Warehouse page**: Items displayed in 2-column grid, grouped by belong box. Shows all items belonging to the room, including borrowed ones. In-stock items shown first.
+- **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
+
+### Item Stock Status Logic
+- **In Stock (在库)**: Item's current box is in the same room as its belong box (`bb.box_belong_room_id = cb.box_belong_room_id`)
+- **Out of Stock (离库)**: Item's current box is in a different room (e.g., borrowed by another user, moved to another warehouse)
+- Warehouse page shows all items belonging to the room with their stock status
+- `holder_nickname` shows who currently holds the item when it's out of stock
 
 ### Reservation Conflict Detection
 Backend checks time overlap in `reservationController.ts` before creating reservations.

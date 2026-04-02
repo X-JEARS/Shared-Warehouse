@@ -296,10 +296,10 @@ export default function Warehouse() {
         ) : (
           <ItemList>
             {(() => {
-              // 按盒子分组
+              // 按归属盒子分组
               const groupedItems = items.reduce((acc, item) => {
-                const boxKey = item.item_current_box_id || 'no-box';
-                const boxName = item.box_name || '未分配盒子';
+                const boxKey = item.item_belong_box_id || 'no-box';
+                const boxName = item.belong_box_name || '未分配盒子';
                 if (!acc[boxKey]) {
                   acc[boxKey] = { name: boxName, items: [] };
                 }

@@ -44,6 +44,16 @@ const ItemMeta = styled.div`
   margin-bottom: 4px;
 `;
 
+const StockBadge = styled.span<{ $inStock: boolean }>`
+  display: inline-block;
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  background: ${(props) => (props.$inStock ? '#e6f7e6' : '#fff0f0')};
+  color: ${(props) => (props.$inStock ? '#52c41a' : '#ff4d4f')};
+`;
+
 const Section = styled.div`
   margin-bottom: 20px;
 `;
@@ -291,8 +301,18 @@ export default function ItemDetail({
                 <ItemMeta>创建于 {formatTime(item.item_create_time)}</ItemMeta>
                 <ItemMeta>
                   位置: {item.room_name}
-                  {item.box_name && ` / ${item.box_name}`}
+                  {item.belong_box_name && ` / ${item.belong_box_name}`}
+                  {item.is_in_stock !== undefined && (
+                    <StockBadge $inStock={item.is_in_stock}>
+                      {item.is_in_stock ? '在库' : '离库'}
+                    </StockBadge>
+                  )}
                 </ItemMeta>
+                {!item.is_in_stock && item.holder_nickname && (
+                  <ItemMeta style={{ color: '#ff4d4f' }}>
+                    正在: {item.holder_nickname}
+                  </ItemMeta>
+                )}
                 {item.owner_nickname && (
                   <ItemMeta>所有者: {item.owner_nickname}</ItemMeta>
                 )}

@@ -38,6 +38,12 @@ const ItemInfo = styled.div`
   padding-top: 2px;
 `;
 
+const ItemHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+`;
+
 const ItemName = styled.div`
   font-size: 14px;
   font-weight: 500;
@@ -45,6 +51,16 @@ const ItemName = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+`;
+
+const StockStatus = styled.span<{ $inStock: boolean }>`
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  background: ${(props) => (props.$inStock ? '#e6f7e6' : '#fff0f0')};
+  color: ${(props) => (props.$inStock ? '#52c41a' : '#ff4d4f')};
 `;
 
 const ItemMeta = styled.div`
@@ -79,19 +95,34 @@ interface ItemCardProps {
     box_name?: string;
     room_name?: string;
     tags?: { tag_name: string }[];
+    is_in_stock?: boolean;
+    holder_nickname?: string;
   };
   onClick?: () => void;
+  showStockStatus?: boolean;
 }
 
-export default function ItemCard({ item, onClick }: ItemCardProps) {
+export default function ItemCard({ item, onClick, showStockStatus = true }: ItemCardProps) {
+  const isInStock = item.is_in_stock !== false;
+
   return (
     <CardContainer onClick={onClick}>
       <ItemImage $image={item.item_image}>
         {!item.item_image && '📦'}
       </ItemImage>
       <ItemInfo>
-        <ItemName>{item.item_name}</ItemName>
+        <ItemHeader>
+          <ItemName>{item.item_name}</ItemName>
+          {showStockStatus && (
+            <StockStatus $inStock={isInStock}>
+              {isInStock ? '在库' : '离库'}
+            </StockStatus>
+          )}
+        </ItemHeader>
         {item.item_notice && <ItemMeta>{item.item_notice}</ItemMeta>}
+        {showStockStatus && !isInStock && item.holder_nickname && (
+          <ItemMeta>正在: {item.holder_nickname}</ItemMeta>
+        )}
         {item.tags && item.tags.length > 0 && (
           <ItemTags>
             {item.tags.slice(0, 2).map((tag, index) => (

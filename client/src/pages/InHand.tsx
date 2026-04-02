@@ -138,6 +138,7 @@ export default function InHand() {
                 key={item.item_id}
                 item={item}
                 onClick={() => handleItemClick(item.item_id)}
+                showStockStatus={false}
               />
             ))}
           </ItemGrid>
