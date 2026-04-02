@@ -93,6 +93,13 @@ Items → Reservations → Orders
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
 - **Warehouse page**: Items displayed in 2-column grid, grouped by belong box. Shows all items belonging to the room, including borrowed ones. In-stock items shown first.
 - **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
+- **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail.
+
+### Warehouse Page Header Layout
+- Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin)
+- Right side: Add item button (+ icon)
+- FAB (bottom right): Scan button, Cart button (only visible when cart has items)
+- Warehouse creation/join moved to dropdown in WarehouseSelector
 
 ### Item Stock Status Logic
 - **In Stock (在库)**: Item's current box is in the same room as its belong box (`bb.box_belong_room_id = cb.box_belong_room_id`)

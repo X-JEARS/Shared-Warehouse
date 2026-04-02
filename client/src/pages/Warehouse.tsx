@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, SearchBar, SpinLoading, Dropdown } from 'antd-mobile';
-import { AddOutline, ScanCodeOutline, ShopbagOutline } from 'antd-mobile-icons';
+import { Button, SearchBar, SpinLoading } from 'antd-mobile';
+import { AddOutline, ScanCodeOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useRoomStore } from '../stores/roomStore';
 import { useCartStore } from '../stores/cartStore';
@@ -10,6 +10,7 @@ import WarehouseSelector from '../components/WarehouseSelector';
 import FilterBar from '../components/FilterBar';
 import ItemCard from '../components/ItemCard';
 import ItemDetail from '../components/ItemDetail';
+import CartPopup from '../components/CartPopup';
 
 const Container = styled.div`
   height: 100%;
@@ -114,6 +115,27 @@ const NoRoomText = styled.p`
   margin-bottom: 24px;
 `;
 
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+`;
+
+const IconButton = styled.div`
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 20px;
+  color: #333;
+
+  &:active {
+    opacity: 0.7;
+  }
+`;
+
 const ActionButtons = styled.div`
   display: flex;
   gap: 12px;
@@ -130,6 +152,7 @@ export default function Warehouse() {
   const [filters, setFilters] = useState<{ boxId?: number; tagId?: number }>({});
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
+  const [cartVisible, setCartVisible] = useState(false);
 
   // 加载仓库列表
   useEffect(() => {
@@ -234,32 +257,18 @@ export default function Warehouse() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <WarehouseSelector />
           {currentRoom && currentRoom.room_admin && (
-            <Button
-              size="small"
-              onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}
-            >
-              设置
-            </Button>
+            <IconButton onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}>
+              <SetOutline />
+            </IconButton>
           )}
         </div>
-        <Dropdown>
-          <Dropdown.Item key="actions" title={<span style={{ fontSize: 20 }}>⋯</span>}>
-            <div style={{ padding: '12px 16px' }}>
-              <div
-                onClick={() => navigate('/create-room')}
-                style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}
-              >
-                创建仓库
-              </div>
-              <div
-                onClick={() => navigate('/join-room')}
-                style={{ padding: '12px 0' }}
-              >
-                加入仓库
-              </div>
-            </div>
-          </Dropdown.Item>
-        </Dropdown>
+        <HeaderActions>
+          {currentRoom && (
+            <IconButton onClick={() => navigate('/create-item')}>
+              <AddOutline />
+            </IconButton>
+          )}
+        </HeaderActions>
       </Header>
 
       {currentRoom && (
@@ -327,17 +336,12 @@ export default function Warehouse() {
       </Content>
 
       <FAB>
-        {currentRoom && (
-          <FABButton $primary onClick={() => navigate('/create-item')}>
-            <AddOutline />
-          </FABButton>
-        )}
         <FABButton onClick={() => navigate('/scanner')}>
           <ScanCodeOutline />
         </FABButton>
-        <FABButton onClick={() => navigate('/cart')}>
-          <ShopbagOutline />
-          {cartItems.length > 0 && (
+        {cartItems.length > 0 && (
+          <FABButton onClick={() => setCartVisible(true)}>
+            <ShopbagOutline />
             <span
               style={{
                 position: 'absolute',
@@ -356,14 +360,19 @@ export default function Warehouse() {
             >
               {cartItems.length}
             </span>
-          )}
-        </FABButton>
+          </FABButton>
+        )}
       </FAB>
 
       <ItemDetail
         visible={detailVisible}
         itemId={selectedItem}
         onClose={() => setDetailVisible(false)}
+      />
+
+      <CartPopup
+        visible={cartVisible}
+        onClose={() => setCartVisible(false)}
       />
     </Container>
   );
