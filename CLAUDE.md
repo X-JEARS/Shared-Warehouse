@@ -96,7 +96,7 @@ Items → Reservations → Orders
 - Used for both box QR codes (`box.` prefix) and item QR codes
 
 ### UI Components
-- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Shows stock status (在库/离库/外来物品) with green/red badge. Accepts `showStockStatus` prop to toggle status display.
+- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Stock status badge (在库/离库/外来物品) positioned at bottom-right of image. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at card bottom-right (blue when not in cart, gray when added).
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
 - **Warehouse page**: Items displayed in 2-column grid. In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").

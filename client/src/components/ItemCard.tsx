@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { useCartStore } from '../stores/cartStore';
 
 const CardContainer = styled.div`
   background: white;
@@ -10,10 +11,16 @@ const CardContainer = styled.div`
   cursor: pointer;
   transition: transform 0.2s;
   height: 72px;
+  position: relative;
 
   &:active {
     transform: scale(0.98);
   }
+`;
+
+const ImageSection = styled.div`
+  position: relative;
+  flex-shrink: 0;
 `;
 
 const ItemImage = styled.div<{ $image?: string }>`
@@ -27,7 +34,18 @@ const ItemImage = styled.div<{ $image?: string }>`
   justify-content: center;
   color: #999;
   font-size: 24px;
-  flex-shrink: 0;
+`;
+
+const StockStatus = styled.span<{ $inStock: boolean }>`
+  position: absolute;
+  left: 63px;
+  bottom: 0;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: ${(props) => (props.$inStock ? '#e6f7e6' : '#fff0f0')};
+  color: ${(props) => (props.$inStock ? '#52c41a' : '#ff4d4f')};
+  white-space: nowrap;
 `;
 
 const ItemInfo = styled.div`
@@ -54,15 +72,6 @@ const ItemName = styled.div`
   flex: 1;
 `;
 
-const StockStatus = styled.span<{ $inStock: boolean }>`
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  flex-shrink: 0;
-  background: ${(props) => (props.$inStock ? '#e6f7e6' : '#fff0f0')};
-  color: ${(props) => (props.$inStock ? '#52c41a' : '#ff4d4f')};
-`;
-
 const ItemMeta = styled.div`
   font-size: 12px;
   color: #999;
@@ -86,12 +95,31 @@ const Tag = styled.span`
   border-radius: 4px;
 `;
 
+const CartButton = styled.button<{ $inCart: boolean }>`
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: none;
+  background: ${(props) => (props.$inCart ? '#d9d9d9' : '#1677ff')};
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
 interface ItemCardProps {
   item: {
     item_id: number;
     item_name: string;
     item_image?: string;
     item_notice?: string;
+    item_qrcode?: string;
     box_name?: string;
     room_name?: string;
     tags?: { tag_name: string }[];
@@ -101,25 +129,44 @@ interface ItemCardProps {
   };
   onClick?: () => void;
   showStockStatus?: boolean;
+  showCartButton?: boolean;
 }
 
-export default function ItemCard({ item, onClick, showStockStatus = true }: ItemCardProps) {
+export default function ItemCard({ item, onClick, showStockStatus = true, showCartButton = false }: ItemCardProps) {
   const isInStock = item.is_in_stock !== false;
   const isForeign = item.is_foreign === true;
+  const { items: cartItems, addItem } = useCartStore();
+  const isInCart = cartItems.some((i) => i.itemId === item.item_id);
+
+  const handleCartClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!isInCart) {
+      addItem({
+        itemId: item.item_id,
+        itemName: item.item_name,
+        itemQrcode: item.item_qrcode || '',
+        itemImage: item.item_image,
+        boxName: item.box_name,
+        roomName: item.room_name,
+      });
+    }
+  };
 
   return (
     <CardContainer onClick={onClick}>
-      <ItemImage $image={item.item_image}>
-        {!item.item_image && '📦'}
-      </ItemImage>
+      <ImageSection>
+        <ItemImage $image={item.item_image}>
+          {!item.item_image && '📦'}
+        </ItemImage>
+        {showStockStatus && (
+          <StockStatus $inStock={isInStock || isForeign}>
+            {isForeign ? '外来物品' : (isInStock ? '在库' : '离库')}
+          </StockStatus>
+        )}
+      </ImageSection>
       <ItemInfo>
         <ItemHeader>
           <ItemName>{item.item_name}</ItemName>
-          {showStockStatus && (
-            <StockStatus $inStock={isInStock || isForeign}>
-              {isForeign ? '外来物品' : (isInStock ? '在库' : '离库')}
-            </StockStatus>
-          )}
         </ItemHeader>
         {item.item_notice && <ItemMeta>{item.item_notice}</ItemMeta>}
         {showStockStatus && !isInStock && !isForeign && item.holder_nickname && (
@@ -133,6 +180,11 @@ export default function ItemCard({ item, onClick, showStockStatus = true }: Item
           </ItemTags>
         )}
       </ItemInfo>
+      {showCartButton && (
+        <CartButton $inCart={isInCart} onClick={handleCartClick}>
+          预约
+        </CartButton>
+      )}
     </CardContainer>
   );
 }

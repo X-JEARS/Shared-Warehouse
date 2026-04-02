@@ -327,6 +327,7 @@ export default function Warehouse() {
                         key={item.item_id}
                         item={item}
                         onClick={() => handleItemClick(item.item_id)}
+                        showCartButton
                       />
                     ))}
                   </ItemGrid>
@@ -344,6 +345,7 @@ export default function Warehouse() {
                       key={item.item_id}
                       item={item}
                       onClick={() => handleItemClick(item.item_id)}
+                      showCartButton
                     />
                   ))}
                 </ItemGrid>
