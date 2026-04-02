@@ -3,6 +3,7 @@ import { Popup, Button, DatePicker, Dialog, Toast } from 'antd-mobile';
 import styled from 'styled-components';
 import { useCartStore } from '../stores/cartStore';
 import { reservationApi } from '../services/api';
+import TrashIcon from './icons/TrashIcon';
 
 const PopupContent = styled.div`
   padding: 20px;
@@ -249,12 +250,10 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
               <CartItem key={item.itemId}>
                 <ItemHeader>
                   <ItemName>{item.itemName}</ItemName>
-                  <span
-                    style={{ color: '#ff4d4f', fontSize: 18, cursor: 'pointer' }}
+                  <TrashIcon
+                    style={{ color: '#ff4d4f', cursor: 'pointer' }}
                     onClick={() => removeItem(item.itemId)}
-                  >
-                    🗑️
-                  </span>
+                  />
                 </ItemHeader>
                 <ItemMeta>
                   {item.roomName}

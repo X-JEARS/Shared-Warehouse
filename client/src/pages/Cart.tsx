@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useCartStore } from '../stores/cartStore';
 import { reservationApi } from '../services/api';
 import { useState } from 'react';
+import TrashIcon from '../components/icons/TrashIcon';
 
 const Container = styled.div`
   min-height: 100%;
@@ -234,12 +235,10 @@ export default function Cart() {
               <CartItem key={item.itemId}>
                 <ItemHeader>
                   <ItemName>{item.itemName}</ItemName>
-                  <span
-                    style={{ color: '#ff4d4f', fontSize: 18, cursor: 'pointer' }}
+                  <TrashIcon
+                    style={{ color: '#ff4d4f', cursor: 'pointer' }}
                     onClick={() => removeItem(item.itemId)}
-                  >
-                    🗑️
-                  </span>
+                  />
                 </ItemHeader>
                 <ItemMeta>
                   {item.roomName}
