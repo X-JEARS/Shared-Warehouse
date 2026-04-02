@@ -117,6 +117,14 @@ Items → Reservations → Orders
   - In-stock items: grouped by `current_box` (current location)
   - Out-of-stock items: displayed together in "不在库中" section
 - `holder_nickname` shows who currently holds the item when it's out of stock
+- `display_location_name`: When item is in a user's personal box (`box_belong_room_id IS NULL`), shows the user's nickname; otherwise shows the room name. Used to avoid displaying "未知仓库" for items in personal boxes.
+
+### SQL NULL Comparison Note
+When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
+- `NULL != value` returns `NULL` (not `TRUE` or `FALSE`)
+- `NULL IS DISTINCT FROM value` returns `TRUE`
+- `NULL IS DISTINCT FROM NULL` returns `FALSE`
+- Example: `CASE WHEN bb.box_belong_room_id IS DISTINCT FROM cb.box_belong_room_id` to correctly detect items moved between rooms or to personal boxes
 
 ### Item Tag Management
 - Tags are room-specific, stored in `item_room_tag_map` table

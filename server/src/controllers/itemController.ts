@@ -39,11 +39,14 @@ export const getItems = async (req: AuthRequest, res: Response) => {
         cr.room_name as current_room_name,
         CASE WHEN cb.box_belong_room_id = ${roomId} THEN true ELSE false END as is_in_stock,
         CASE WHEN bb.box_belong_room_id != ${roomId} THEN true ELSE false END as is_foreign,
-        CASE WHEN bb.box_belong_room_id != cb.box_belong_room_id THEN
+        CASE WHEN bb.box_belong_room_id IS DISTINCT FROM cb.box_belong_room_id THEN
           (SELECT u2.user_nickname FROM boxes b2
            LEFT JOIN users u2 ON u2.user_box_id = b2.box_id
            WHERE b2.box_id = i.item_current_box_id)
-        ELSE NULL END as holder_nickname
+        ELSE NULL END as holder_nickname,
+        CASE WHEN cb.box_belong_room_id IS NULL THEN
+          (SELECT u3.user_nickname FROM users u3 WHERE u3.user_box_id = cb.box_id)
+        ELSE cr.room_name END as display_location_name
       FROM items i
       JOIN boxes bb ON i.item_belong_box_id = bb.box_id
       LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
@@ -171,11 +174,14 @@ export const getItemById = async (req: AuthRequest, res: Response) => {
         u.user_nickname as owner_nickname,
         CASE WHEN cb.box_belong_room_id = $2 THEN true ELSE false END as is_in_stock,
         CASE WHEN bb.box_belong_room_id != $2 THEN true ELSE false END as is_foreign,
-        CASE WHEN bb.box_belong_room_id != cb.box_belong_room_id THEN
+        CASE WHEN bb.box_belong_room_id IS DISTINCT FROM cb.box_belong_room_id THEN
           (SELECT u2.user_nickname FROM boxes b2
            LEFT JOIN users u2 ON u2.user_box_id = b2.box_id
            WHERE b2.box_id = i.item_current_box_id)
-        ELSE NULL END as holder_nickname
+        ELSE NULL END as holder_nickname,
+        CASE WHEN cb.box_belong_room_id IS NULL THEN
+          (SELECT u3.user_nickname FROM users u3 WHERE u3.user_box_id = cb.box_id)
+        ELSE cr.room_name END as display_location_name
       FROM items i
       LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
       LEFT JOIN boxes bb ON i.item_belong_box_id = bb.box_id

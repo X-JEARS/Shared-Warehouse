@@ -103,7 +103,7 @@ export default function Scanner() {
                   📦 {scanResult.item?.item_name}
                 </ItemName>
                 <ItemMeta>
-                  位置: {scanResult.item?.room_name}
+                  位置: {scanResult.item?.display_location_name || scanResult.item?.room_name || '未知位置'}
                   {scanResult.item?.box_name && ` / ${scanResult.item?.box_name}`}
                 </ItemMeta>
                 {scanResult.item?.currentHolder && (

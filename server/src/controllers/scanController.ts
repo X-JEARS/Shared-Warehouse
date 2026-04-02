@@ -58,7 +58,10 @@ export const scanQrcode = async (req: AuthRequest, res: Response) => {
 
     // Check if it's an item QR code
     const itemResult = await query(
-      `SELECT i.*, b.box_name, b.box_belong_room_id, r.room_id, r.room_name
+      `SELECT i.*, b.box_name, b.box_belong_room_id, r.room_id, r.room_name,
+        CASE WHEN b.box_belong_room_id IS NULL THEN
+          (SELECT u3.user_nickname FROM users u3 WHERE u3.user_box_id = b.box_id)
+        ELSE r.room_name END as display_location_name
        FROM items i
        JOIN boxes b ON i.item_current_box_id = b.box_id
        LEFT JOIN rooms r ON b.box_belong_room_id = r.room_id

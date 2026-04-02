@@ -302,7 +302,7 @@ export default function ItemDetail({
                 )}
                 <ItemMeta>创建于 {formatTime(item.item_create_time)}</ItemMeta>
                 <ItemMeta>
-                  当前位置: {item.current_room_name || '未知仓库'}
+                  当前位置: {item.display_location_name || item.current_room_name || '未知仓库'}
                   {item.current_box_name && ` / ${item.current_box_name}`}
                   {item.is_in_stock !== undefined && (
                     <StockBadge $inStock={item.is_in_stock || item.is_foreign}>
