@@ -25,6 +25,24 @@ export const getItems = async (req: AuthRequest, res: Response) => {
 
     const result: { inStock: any[]; outOfStock: any[] } = { inStock: [], outOfStock: [] };
 
+    // Helper function to add remarks to items
+    const addRemarksToItems = async (items: any[], viewRoomId: number) => {
+      if (items.length === 0) return items;
+      const itemIds = items.map(i => i.item_id);
+      const remarksResult = await query(
+        `SELECT remark_item_id, remark_name FROM item_remarks
+         WHERE remark_item_id = ANY($1) AND remark_room_id = $2`,
+        [itemIds, viewRoomId]
+      );
+      const remarksMap = new Map(
+        remarksResult.rows.map(r => [r.remark_item_id, r.remark_name])
+      );
+      return items.map(item => ({
+        ...item,
+        remark: remarksMap.get(item.item_id) || null
+      }));
+    };
+
     // Build common SELECT clause
     // is_in_stock: item's current_box is in the viewing room (physically present)
     // is_foreign: item belongs to other room but is currently in this room
@@ -84,7 +102,7 @@ export const getItems = async (req: AuthRequest, res: Response) => {
     inStockSql += ' ORDER BY i.item_create_time DESC';
 
     const inStockResult = await query(inStockSql, inStockValues);
-    result.inStock = inStockResult.rows;
+    result.inStock = await addRemarksToItems(inStockResult.rows, parseInt(roomId as string));
 
     // Query 2: Items that belong to this room but are NOT currently in this room
     // These are items borrowed out to other rooms/users
@@ -111,7 +129,7 @@ export const getItems = async (req: AuthRequest, res: Response) => {
       outOfStockSql += ' ORDER BY i.item_create_time DESC';
 
       const outOfStockResult = await query(outOfStockSql, outOfStockValues);
-      result.outOfStock = outOfStockResult.rows;
+      result.outOfStock = await addRemarksToItems(outOfStockResult.rows, parseInt(roomId as string));
     }
 
     return success(res, result);
