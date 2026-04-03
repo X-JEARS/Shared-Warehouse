@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Popup, Button, Input, Toast } from 'antd-mobile';
 import styled from 'styled-components';
-import { itemApi, tagApi } from '../services/api';
+import { itemApi, tagApi, reservationApi } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 
 const PopupContent = styled.div`
@@ -124,6 +124,7 @@ export default function ItemDetail({
   const [allTags, setAllTags] = useState<any[]>([]);
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [editingTags, setEditingTags] = useState(false);
+  const [reservations, setReservations] = useState<any[]>([]);
   const { addItem, items: cartItems } = useCartStore();
 
   const isInCart = cartItems.some((i) => i.itemId === itemId);
@@ -133,6 +134,7 @@ export default function ItemDetail({
       loadItem();
       loadHistory();
       loadComments();
+      loadReservations();
     }
   }, [visible, itemId, roomId]);
 
@@ -181,6 +183,15 @@ export default function ItemDetail({
       setComments(res.data);
     } catch (error) {
       console.error('Failed to load comments:', error);
+    }
+  };
+
+  const loadReservations = async () => {
+    try {
+      const res: any = await reservationApi.getByItem(itemId!);
+      setReservations(res.data || []);
+    } catch (error) {
+      console.error('Failed to load reservations:', error);
     }
   };
 
@@ -416,6 +427,31 @@ export default function ItemDetail({
                 </div>
               )}
             </Section>
+
+            {reservations.length > 0 && (
+              <Section>
+                <SectionTitle>预约记录</SectionTitle>
+                {reservations.map((r) => (
+                  <HistoryItem key={r.reservation_id}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 500 }}>{r.user_nickname}</span>
+                      <span style={{
+                        fontSize: 12,
+                        padding: '2px 8px',
+                        background: r.reservation_start_time > Date.now() ? '#fff7e6' : '#e6f7e6',
+                        color: r.reservation_start_time > Date.now() ? '#fa8c16' : '#52c41a',
+                        borderRadius: 4
+                      }}>
+                        {r.reservation_start_time > Date.now() ? '待使用' : '使用中'}
+                      </span>
+                    </div>
+                    <div style={{ color: '#666', fontSize: 12, marginTop: 4 }}>
+                      {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
+                    </div>
+                  </HistoryItem>
+                ))}
+              </Section>
+            )}
 
             {history.length > 0 && (
               <Section>
