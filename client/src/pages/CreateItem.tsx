@@ -4,6 +4,7 @@ import { NavBar, Form, Input, Button, TextArea, Toast, Selector, Dialog } from '
 import styled from 'styled-components';
 import { itemApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
+import { useAuthStore } from '../stores/authStore';
 import Scanner from '../components/Scanner';
 
 const Container = styled.div`
@@ -50,6 +51,7 @@ const ScanModal = styled.div`
 export default function CreateItem() {
   const navigate = useNavigate();
   const { currentRoom } = useRoomStore();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [boxes, setBoxes] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>([]);
@@ -185,12 +187,14 @@ export default function CreateItem() {
             <WarningText>
               物品需要存放在盒子中，请先在仓库设置中添加至少一个盒子
             </WarningText>
-            <Button
-              color="primary"
-              onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}
-            >
-              前往添加盒子
-            </Button>
+            {currentRoom?.room_admin === user?.user_id && (
+              <Button
+                color="primary"
+                onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}
+              >
+                前往添加盒子
+              </Button>
+            )}
           </WarningBox>
         </Content>
       </Container>

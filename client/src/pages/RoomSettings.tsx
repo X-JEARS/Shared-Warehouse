@@ -15,6 +15,7 @@ import { AddOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { roomApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
+import { useAuthStore } from '../stores/authStore';
 import TrashIcon from '../components/icons/TrashIcon';
 
 const Container = styled.div`
@@ -93,6 +94,7 @@ export default function RoomSettings() {
   const navigate = useNavigate();
   const location = useLocation();
   const { updateRoom } = useRoomStore();
+  const { user } = useAuthStore();
   const [room, setRoom] = useState<any>(null);
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -290,6 +292,18 @@ export default function RoomSettings() {
     );
   }
 
+  // 权限检查：只有管理员可以访问
+  if (!room || room.room_admin !== user?.user_id) {
+    return (
+      <Container>
+        <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
+        <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>
+          您不是该仓库的管理员，无法访问此页面
+        </div>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
@@ -300,7 +314,7 @@ export default function RoomSettings() {
             仓库名称: {room?.room_name}
           </List.Item>
           <List.Item>
-            成员数: {members.length}
+            仓库ID: {room?.room_id}
           </List.Item>
         </List>
       </Section>
@@ -365,7 +379,12 @@ export default function RoomSettings() {
         )}
       </Section>
 
-      <SectionHeader>成员管理</SectionHeader>
+      <SectionHeader>
+        成员管理
+        <span style={{ fontWeight: 400, color: '#999', fontSize: 13 }}>
+          ({members.length}人)
+        </span>
+      </SectionHeader>
       <Section>
         {members.map((member) => (
           <MemberItem key={member.member_id}>
