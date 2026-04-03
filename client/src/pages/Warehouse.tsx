@@ -258,7 +258,7 @@ export default function Warehouse() {
   return (
     <Container>
       <Header>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <WarehouseSelector />
           {currentRoom && currentRoom.room_admin === user?.user_id && (
             <IconButton onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}>

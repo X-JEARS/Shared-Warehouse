@@ -7,7 +7,7 @@ import { useRoomStore } from '../stores/roomStore';
 import { roomApi } from '../services/api';
 
 const SelectorContainer = styled.div`
-  padding: 8px 16px;
+  padding: 8px 0;
   background: white;
   display: flex;
   align-items: center;
