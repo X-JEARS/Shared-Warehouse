@@ -128,6 +128,8 @@ export default function ItemDetail({
   const [reservations, setReservations] = useState<any[]>([]);
   const [showAllHistory, setShowAllHistory] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
+  const [editingRemark, setEditingRemark] = useState(false);
+  const [editRemarkText, setEditRemarkText] = useState('');
   const { addItem, items: cartItems } = useCartStore();
 
   const isInCart = cartItems.some((i) => i.itemId === itemId);
@@ -256,13 +258,26 @@ export default function ItemDetail({
     if (!item) return;
     addItem({
       itemId: item.item_id,
-      itemName: item.item_name,
+      itemName: item.remark || item.item_name,
       itemQrcode: item.item_qrcode,
       itemImage: item.item_image,
       boxName: item.box_name,
       roomName: item.room_name,
     });
     Toast.show({ icon: 'success', content: '已添加到购物车' });
+  };
+
+  const handleSaveRemark = async () => {
+    if (!item?.room_id) return;
+    try {
+      await itemApi.setRemark(itemId!, item.room_id, editRemarkText);
+      setItem({ ...item, remark: editRemarkText || null });
+      setEditingRemark(false);
+      Toast.show({ icon: 'success', content: '备注名已更新' });
+      onUpdate?.();
+    } catch (error) {
+      Toast.show({ icon: 'fail', content: '更新失败' });
+    }
   };
 
   const formatTime = (timestamp: number | string) => {
@@ -313,14 +328,30 @@ export default function ItemDetail({
                   </div>
                 ) : (
                   <ItemName>
-                    {item.item_name}
+                    <span>{item.remark || item.item_name}</span>
+                    {item.room_id && (
+                      <span
+                        onClick={() => {
+                          setEditRemarkText(item.remark || '');
+                          setEditingRemark(true);
+                        }}
+                        style={{
+                          marginLeft: 8,
+                          cursor: 'pointer',
+                          color: '#1677ff',
+                          fontSize: 14,
+                        }}
+                      >
+                        ✏️
+                      </span>
+                    )}
                     {isOwner && (
                       <Button
                         size="mini"
                         style={{ marginLeft: 8 }}
                         onClick={() => setEditing(true)}
                       >
-                        编辑
+                        编辑名称
                       </Button>
                     )}
                   </ItemName>
@@ -544,6 +575,34 @@ export default function ItemDetail({
               <CommentTime>{formatTime(c.comment_create_time)}</CommentTime>
             </CommentItem>
           ))}
+        </PopupContent>
+      </Popup>
+
+      {/* 备注名编辑弹窗 */}
+      <Popup
+        visible={editingRemark}
+        onMaskClick={() => setEditingRemark(false)}
+        bodyStyle={{ borderRadius: '12px 12px 0 0' }}
+      >
+        <PopupContent>
+          <SectionTitle style={{ marginBottom: 16 }}>编辑备注名</SectionTitle>
+          <div style={{ marginBottom: 16, fontSize: 13, color: '#666' }}>
+            原名称：{item?.item_name}
+          </div>
+          <Input
+            value={editRemarkText}
+            onChange={setEditRemarkText}
+            placeholder="输入备注名（留空则显示原名称）"
+            style={{ marginBottom: 16 }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button color="primary" size="small" onClick={handleSaveRemark}>
+              保存
+            </Button>
+            <Button size="small" onClick={() => setEditingRemark(false)}>
+              取消
+            </Button>
+          </div>
         </PopupContent>
       </Popup>
     </>

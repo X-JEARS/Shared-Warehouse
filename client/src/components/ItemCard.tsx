@@ -126,6 +126,7 @@ interface ItemCardProps {
     is_in_stock?: boolean;
     is_foreign?: boolean;
     holder_nickname?: string;
+    remark?: string;
   };
   onClick?: () => void;
   showStockStatus?: boolean;
@@ -137,13 +138,14 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
   const isForeign = item.is_foreign === true;
   const { items: cartItems, addItem } = useCartStore();
   const isInCart = cartItems.some((i) => i.itemId === item.item_id);
+  const displayName = item.remark || item.item_name;
 
   const handleCartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isInCart) {
       addItem({
         itemId: item.item_id,
-        itemName: item.item_name,
+        itemName: displayName,
         itemQrcode: item.item_qrcode || '',
         itemImage: item.item_image,
         boxName: item.box_name,
@@ -166,7 +168,7 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
       </ImageSection>
       <ItemInfo>
         <ItemHeader>
-          <ItemName>{item.item_name}</ItemName>
+          <ItemName>{displayName}</ItemName>
         </ItemHeader>
         {item.item_notice && <ItemMeta>{item.item_notice}</ItemMeta>}
         {showStockStatus && !isInStock && !isForeign && item.holder_nickname && (
