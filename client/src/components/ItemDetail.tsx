@@ -5,6 +5,7 @@ import { itemApi, tagApi, reservationApi } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 
 const PopupContent = styled.div`
+  position: relative;
   padding: 20px;
   max-height: 70vh;
   overflow-y: auto;
@@ -280,6 +281,16 @@ export default function ItemDetail({
       <PopupContent>
         {item && (
           <>
+            <div style={{ position: 'absolute', top: 16, right: 16 }}>
+              <Button
+                color={isInCart ? 'default' : 'primary'}
+                size="small"
+                onClick={handleAddToCart}
+                disabled={isInCart}
+              >
+                {isInCart ? '已预约' : '预约'}
+              </Button>
+            </div>
             <ItemHeader>
               <ItemImage $image={item.item_image}>
                 {!item.item_image && '📦'}
@@ -340,17 +351,6 @@ export default function ItemDetail({
                 )}
               </ItemTitle>
             </ItemHeader>
-
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-              <Button
-                color={isInCart ? 'default' : 'primary'}
-                size="small"
-                onClick={handleAddToCart}
-                disabled={isInCart}
-              >
-                {isInCart ? '已在购物车' : '加入购物车'}
-              </Button>
-            </div>
 
             {item.remark && (
               <Section>
