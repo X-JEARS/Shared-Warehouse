@@ -125,6 +125,8 @@ export default function ItemDetail({
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [editingTags, setEditingTags] = useState(false);
   const [reservations, setReservations] = useState<any[]>([]);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+  const [showAllComments, setShowAllComments] = useState(false);
   const { addItem, items: cartItems } = useCartStore();
 
   const isInCart = cartItems.some((i) => i.itemId === itemId);
@@ -269,7 +271,8 @@ export default function ItemDetail({
   };
 
   return (
-    <Popup
+    <>
+      <Popup
       visible={visible}
       onMaskClick={onClose}
       bodyStyle={{ height: '80vh', borderRadius: '12px 12px 0 0' }}
@@ -455,8 +458,13 @@ export default function ItemDetail({
 
             {history.length > 0 && (
               <Section>
-                <SectionTitle>转移记录</SectionTitle>
-                {history.slice(0, 5).map((h) => (
+                <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  转移记录
+                  {history.length > 3 && (
+                    <Button size="mini" onClick={() => setShowAllHistory(true)}>更多</Button>
+                  )}
+                </SectionTitle>
+                {history.slice(0, 3).map((h) => (
                   <HistoryItem key={h.history_id}>
                     <div>
                       {h.user_nickname} 移动到 {h.box_name}
@@ -470,7 +478,12 @@ export default function ItemDetail({
             )}
 
             <Section>
-              <SectionTitle>评论 ({comments.length})</SectionTitle>
+              <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                评论 ({comments.length})
+                {comments.length > 5 && (
+                  <Button size="mini" onClick={() => setShowAllComments(true)}>更多</Button>
+                )}
+              </SectionTitle>
               <CommentInput>
                 <Input
                   value={commentText}
@@ -494,5 +507,45 @@ export default function ItemDetail({
         )}
       </PopupContent>
     </Popup>
+
+      {/* 转移记录完整列表弹窗 */}
+      <Popup
+        visible={showAllHistory}
+        onMaskClick={() => setShowAllHistory(false)}
+        bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0' }}
+      >
+        <PopupContent>
+          <SectionTitle style={{ marginBottom: 16 }}>转移记录 (全部 {history.length} 条)</SectionTitle>
+          {history.map((h) => (
+            <HistoryItem key={h.history_id}>
+              <div>
+                {h.user_nickname} 移动到 {h.box_name}
+              </div>
+              <div style={{ color: '#999', fontSize: 12 }}>
+                {formatTime(h.history_time)}
+              </div>
+            </HistoryItem>
+          ))}
+        </PopupContent>
+      </Popup>
+
+      {/* 评论完整列表弹窗 */}
+      <Popup
+        visible={showAllComments}
+        onMaskClick={() => setShowAllComments(false)}
+        bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0' }}
+      >
+        <PopupContent>
+          <SectionTitle style={{ marginBottom: 16 }}>评论 (全部 {comments.length} 条)</SectionTitle>
+          {comments.map((c) => (
+            <CommentItem key={c.comment_id}>
+              <CommentUser>{c.user_nickname}</CommentUser>
+              <CommentContent>{c.comment_content}</CommentContent>
+              <CommentTime>{formatTime(c.comment_create_time)}</CommentTime>
+            </CommentItem>
+          ))}
+        </PopupContent>
+      </Popup>
+    </>
   );
 }
