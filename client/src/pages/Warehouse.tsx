@@ -37,6 +37,7 @@ const Content = styled.div`
   flex: 1;
   overflow-y: auto;
   padding: 12px 16px;
+  padding-bottom: calc(12px + 50px + 48px + 16px + env(safe-area-inset-bottom, 0px));
 `;
 
 const ItemList = styled.div`
@@ -68,7 +69,7 @@ const ItemGrid = styled.div`
 const FAB = styled.div`
   position: fixed;
   right: 16px;
-  bottom: 80px;
+  bottom: calc(50px + env(safe-area-inset-bottom, 0px) + 16px);
   display: flex;
   flex-direction: column;
   gap: 12px;
