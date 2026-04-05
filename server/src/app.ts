@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
 import { errorHandler, notFound } from './middlewares/errorHandler';
 
 // Import routes
@@ -13,6 +14,7 @@ import scanRoutes from './routes/scan';
 import reservationRoutes from './routes/reservations';
 import cartRoutes from './routes/cart';
 import notificationRoutes from './routes/notifications';
+import uploadRoutes from './routes/upload';
 
 dotenv.config();
 
@@ -23,6 +25,9 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -39,6 +44,7 @@ app.use('/api/scan', scanRoutes);
 app.use('/api/reservations', reservationRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Error handling
 app.use(notFound);

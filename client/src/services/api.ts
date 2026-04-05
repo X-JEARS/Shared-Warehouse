@@ -15,6 +15,10 @@ export const userApi = {
     request.put('/users/profile', data),
   updatePassword: (data: { currentPassword: string; newPassword: string }) =>
     request.put('/users/password', data),
+  uploadAvatar: (formData: FormData) =>
+    request.post('/upload/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 // Room API

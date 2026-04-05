@@ -142,6 +142,14 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Supports search functionality
 - Uses `GET /api/items/my` API endpoint
 
+### Profile Page (我的)
+- Located at `client/src/pages/Profile.tsx`
+- Features:
+  - Avatar: Click to upload, supports cropping (react-image-crop), compressed to 200x200 JPEG
+  - Nickname: Display with edit button below, click to modify via dialog
+  - Avatar stored at `/avatars/{user_id}.jpg` on server
+- Uses `POST /api/upload/avatar` for avatar upload (multipart/form-data)
+
 ### Reservation Conflict Detection
 - Backend checks time overlap in `reservationController.ts` before creating reservations
 - `POST /api/reservations/check-conflicts` API for batch conflict checking in cart
