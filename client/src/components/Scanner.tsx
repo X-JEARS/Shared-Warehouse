@@ -92,15 +92,10 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
       // 使用约束优先请求后置摄像头
       const constraints: MediaStreamConstraints = selectedDeviceId
         ? { video: { deviceId: { exact: selectedDeviceId } } }
-        : { video: { facingMode: { exact: 'environment' } } };
+        : { video: { facingMode: { ideal: 'environment' } } };
 
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
-
-      reader.decodeFromVideo(
+      await reader.decodeFromConstraints(
+        constraints,
         videoRef.current!,
         async (result, error) => {
           if (stoppedRef.current) return;
