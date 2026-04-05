@@ -34,3 +34,6 @@ temp/
 # Database exports
 database.numbers
 databases/
+
+# User uploaded avatars
+server/public/avatars/
