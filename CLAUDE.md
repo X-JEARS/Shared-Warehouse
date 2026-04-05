@@ -95,9 +95,11 @@ Items → Reservations → Orders
   - Return `false` to continue scanning (for validation failures)
 - Used for both box QR codes (`box.` prefix) and item QR codes
 - Camera selection: Prioritizes back camera (main camera) by detecting device labels or using `facingMode: 'environment'` constraint
+- High resolution video stream (1920x1080) with continuous auto-focus for better QR code recognition
+- Torch (flashlight) button in top-right corner, only visible when device supports it
 
 ### UI Components
-- **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Stock status badge (在库/离库/外来物品) positioned at bottom-right of image. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at card bottom-right (blue when not in cart, gray when added).
+- **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at bottom-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at top-right corner (blue when not in cart, gray when added).
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
 - **Warehouse page**: Items displayed in 2-column grid. In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
@@ -106,7 +108,8 @@ Items → Reservations → Orders
 
 ### Warehouse Page Header Layout
 - Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin)
-- Right side: Add item button (+ icon)
+- Right side: Search button (magnifier icon) + Add item button (+ icon)
+- Search bar hidden by default, click search button to show with auto-focus
 - FAB (bottom right): Scan button, Cart button (only visible when cart has items)
 - Warehouse creation/join moved to dropdown in WarehouseSelector
 

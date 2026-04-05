@@ -40,6 +40,29 @@ const Hint = styled.div`
   font-size: 14px;
 `;
 
+const TorchButton = styled.button<{ $active: boolean }>`
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: ${(props) => (props.$active ? '#1677ff' : 'rgba(0, 0, 0, 0.5)')};
+  color: white;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s;
+
+  &:active {
+    opacity: 0.8;
+  }
+`;
+
 interface ScannerProps {
   onScan: (result: string) => boolean | void | Promise<boolean | void>; // 返回 false 表示继续扫描
   onError?: (error: Error) => void;
@@ -48,8 +71,11 @@ interface ScannerProps {
 export default function Scanner({ onScan, onError }: ScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [torchEnabled, setTorchEnabled] = useState(false);
+  const [torchSupported, setTorchSupported] = useState(false);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const stoppedRef = useRef(false);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     // 等待 DOM 准备好后再启动扫描
@@ -89,10 +115,16 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
 
       setIsScanning(true);
 
-      // 使用约束优先请求后置摄像头
-      const constraints: MediaStreamConstraints = selectedDeviceId
-        ? { video: { deviceId: { exact: selectedDeviceId } } }
-        : { video: { facingMode: { ideal: 'environment' } } };
+      // 使用约束优先请求后置摄像头，并请求高分辨率和连续对焦
+      const constraints: MediaStreamConstraints = {
+        video: {
+          deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
+          facingMode: selectedDeviceId ? undefined : { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          focusMode: { ideal: 'continuous' },
+        } as any,
+      };
 
       await reader.decodeFromConstraints(
         constraints,
@@ -113,6 +145,19 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
           }
         }
       );
+
+      // 获取 stream 来检测手电筒支持
+      if (videoRef.current?.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        streamRef.current = stream;
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          const capabilities = videoTrack.getCapabilities?.() as any;
+          if (capabilities?.torch) {
+            setTorchSupported(true);
+          }
+        }
+      }
     } catch (error: any) {
       console.error('Scanner error:', error);
       Dialog.alert({ content: `启动摄像头失败: ${error.message}` });
@@ -120,13 +165,33 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
     }
   };
 
+  const toggleTorch = async () => {
+    if (!streamRef.current) return;
+    const videoTrack = streamRef.current.getVideoTracks()[0];
+    if (!videoTrack) return;
+
+    try {
+      const newTorchState = !torchEnabled;
+      await videoTrack.applyConstraints({
+        advanced: [{ torch: newTorchState } as any]
+      });
+      setTorchEnabled(newTorchState);
+    } catch (error) {
+      console.error('Failed to toggle torch:', error);
+    }
+  };
+
   const stopScanning = () => {
     stoppedRef.current = true;
+    setTorchEnabled(false);
+    setTorchSupported(false);
 
     // 手动停止视频流（这是关键，因为 zxing 的 reset 可能不会立即停止）
-    if (videoRef.current?.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
 
@@ -149,6 +214,11 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
         <Video ref={videoRef} />
         {isScanning && <Overlay />}
         {isScanning && <Hint>将二维码放入框内</Hint>}
+        {isScanning && torchSupported && (
+          <TorchButton $active={torchEnabled} onClick={toggleTorch}>
+            💡
+          </TorchButton>
+        )}
       </ScannerContainer>
 
       {isScanning && (

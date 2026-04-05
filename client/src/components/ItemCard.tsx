@@ -6,11 +6,11 @@ const CardContainer = styled.div`
   border-radius: 8px;
   padding: 8px;
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.2s;
-  height: 72px;
   position: relative;
 
   &:active {
@@ -38,10 +38,10 @@ const ItemImage = styled.div<{ $image?: string }>`
 
 const StockStatus = styled.span<{ $inStock: boolean }>`
   position: absolute;
-  left: 63px;
-  bottom: 0;
-  font-size: 11px;
-  padding: 2px 6px;
+  right: 8px;
+  bottom: 8px;
+  font-size: 10px;
+  padding: 2px 5px;
   border-radius: 4px;
   background: ${(props) => (props.$inStock ? '#e6f7e6' : '#fff0f0')};
   color: ${(props) => (props.$inStock ? '#52c41a' : '#ff4d4f')};
@@ -49,17 +49,10 @@ const StockStatus = styled.span<{ $inStock: boolean }>`
 `;
 
 const ItemInfo = styled.div`
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  padding-top: 2px;
-`;
-
-const ItemHeader = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  gap: 4px;
 `;
 
 const ItemName = styled.div`
@@ -69,7 +62,6 @@ const ItemName = styled.div`
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1;
 `;
 
 const ItemMeta = styled.div`
@@ -84,7 +76,6 @@ const ItemTags = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  margin-top: 4px;
 `;
 
 const Tag = styled.span`
@@ -98,7 +89,7 @@ const Tag = styled.span`
 const CartButton = styled.button<{ $inCart: boolean }>`
   position: absolute;
   right: 8px;
-  bottom: 8px;
+  top: 8px;
   font-size: 12px;
   padding: 4px 10px;
   border-radius: 4px;
@@ -160,16 +151,9 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
         <ItemImage $image={item.item_image}>
           {!item.item_image && '📦'}
         </ItemImage>
-        {showStockStatus && (
-          <StockStatus $inStock={isInStock || isForeign}>
-            {isForeign ? '外来物品' : (isInStock ? '在库' : '离库')}
-          </StockStatus>
-        )}
       </ImageSection>
       <ItemInfo>
-        <ItemHeader>
-          <ItemName>{displayName}</ItemName>
-        </ItemHeader>
+        <ItemName>{displayName}</ItemName>
         {item.item_notice && <ItemMeta>{item.item_notice}</ItemMeta>}
         {showStockStatus && !isInStock && !isForeign && item.holder_nickname && (
           <ItemMeta>正在: {item.holder_nickname}</ItemMeta>
@@ -186,6 +170,11 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
         <CartButton $inCart={isInCart} onClick={handleCartClick}>
           预约
         </CartButton>
+      )}
+      {showStockStatus && (
+        <StockStatus $inStock={isInStock || isForeign}>
+          {isForeign ? '外来物品' : (isInStock ? '在库' : '离库')}
+        </StockStatus>
       )}
     </CardContainer>
   );

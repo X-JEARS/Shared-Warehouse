@@ -7,7 +7,7 @@ import { useRoomStore } from '../stores/roomStore';
 import { roomApi } from '../services/api';
 
 const SelectorContainer = styled.div`
-  padding: 8px 0;
+  padding: 2px 0;
   background: white;
   display: flex;
   align-items: center;
@@ -17,7 +17,7 @@ const RoomName = styled.div`
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
 `;
 

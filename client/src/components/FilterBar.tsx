@@ -4,11 +4,11 @@ import styled from 'styled-components';
 import { boxApi, tagApi } from '../services/api';
 
 const FilterContainer = styled.div`
-  padding: 8px 16px;
+  padding: 2px 8px;
   background: white;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   border-bottom: 1px solid #f0f0f0;
 `;
 
@@ -17,10 +17,10 @@ const FilterItem = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  padding: 4px;
   background: #f5f5f5;
-  border-radius: 6px;
-  font-size: 14px;
+  border-radius: 4px;
+  font-size: 12px;
   cursor: pointer;
 `;
 
