@@ -10,6 +10,7 @@ declare module 'antd-mobile-icons' {
   export const AddOutline: FC<any>;
   export const ScanCodeOutline: FC<any>;
   export const SetOutline: FC<any>;
+  export const ShopbagOutline: FC<any>;
   export const LockFillOutline: FC<any>;
   export const InformationCircleOutline: FC<any>;
   export const ExitOutline: FC<any>;

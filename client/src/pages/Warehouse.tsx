@@ -320,11 +320,11 @@ export default function Warehouse() {
                 return acc;
               }, {} as Record<string, { name: string; items: any[] }>);
 
-              return Object.entries(groupedItems).map(([boxKey, group]) => (
+              return (Object.entries(groupedItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
                 <BoxGroup key={boxKey}>
                   <BoxTitle>{group.name}</BoxTitle>
                   <ItemGrid>
-                    {group.items.map((item) => (
+                    {group.items.map((item: any) => (
                       <ItemCard
                         key={item.item_id}
                         item={item}

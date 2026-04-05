@@ -36,7 +36,7 @@ psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 
 ### Frontend (client/)
 - **React + TypeScript + Vite** on port 5173
-- **Ant Design Mobile** for UI components (avoid antd-mobile-icons - use emoji instead)
+- **Ant Design Mobile** for UI components with outline icons from `antd-mobile-icons`. New icons must be declared in `client/src/vite-env.d.ts`.
 - **Zustand** for state management with localStorage persistence (stores in `src/stores/`)
 - **API layer**: Centralized in `src/services/api.ts`, uses axios wrapper in `src/utils/request.ts`
 - **Routing**: Protected routes use `PrivateRoute` wrapper checking `useAuthStore`

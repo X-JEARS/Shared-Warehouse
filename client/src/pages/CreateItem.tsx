@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Form, Input, Button, TextArea, Toast, Selector, Dialog } from 'antd-mobile';
+import { NavBar, Form, Input, Button, TextArea, Toast, Selector } from 'antd-mobile';
 import styled from 'styled-components';
 import { itemApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';

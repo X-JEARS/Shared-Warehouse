@@ -26,8 +26,8 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files
-app.use(express.static(path.join(__dirname, '../public')));
+// Serve static files (avatars, etc.)
+app.use('/avatars', express.static(path.join(__dirname, '../public/avatars')));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -46,8 +46,15 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 
+// Serve frontend static files (production)
+app.use(express.static(path.join(__dirname, '../public/frontend')));
+
+// SPA fallback - serve index.html for all non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/frontend/index.html'));
+});
+
 // Error handling
-app.use(notFound);
 app.use(errorHandler);
 
 // Start server

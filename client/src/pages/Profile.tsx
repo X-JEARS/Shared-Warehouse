@@ -387,22 +387,20 @@ export default function Profile() {
 
             if (!newNickname) {
               Toast.show({ content: '昵称不能为空' });
-              return false;
+              return;
             }
 
             if (newNickname.length > 16) {
               Toast.show({ content: '昵称最多16个字符' });
-              return false;
+              return;
             }
 
             try {
               await userApi.updateProfile({ nickname: newNickname });
               updateUser({ user_nickname: newNickname });
               Toast.show({ icon: 'success', content: '昵称修改成功' });
-              return true;
             } catch (error: any) {
               Toast.show({ icon: 'fail', content: error.message || '修改失败' });
-              return false;
             }
           },
         },
