@@ -275,6 +275,11 @@ export const createItem = async (req: AuthRequest, res: Response) => {
       return error(res, 'QR code, name, and box ID are required');
     }
 
+    // 二维码长度限制
+    if (qrcode.length > 64) {
+      return error(res, '二维码长度不能超过64个字符', 400);
+    }
+
     // Check if qrcode already exists
     const qrcodeCheck = await query(
       'SELECT item_id FROM items WHERE item_qrcode = $1',

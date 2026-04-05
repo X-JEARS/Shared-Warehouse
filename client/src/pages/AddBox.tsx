@@ -100,6 +100,7 @@ export default function AddBox() {
                 onChange={(v) => setFormData({ ...formData, qrcode: v })}
                 placeholder="请扫描或输入二维码"
                 style={{ flex: 1 }}
+                maxLength={64}
               />
               <Button
                 size="small"

@@ -116,6 +116,11 @@ export const createBox = async (req: AuthRequest, res: Response) => {
       return error(res, '盒子二维码不能为空', 400);
     }
 
+    // 二维码长度限制
+    if (qrcode.length > 64) {
+      return error(res, '二维码长度不能超过64个字符', 400);
+    }
+
     // 检查二维码是否已存在
     const qrcodeCheck = await query(
       'SELECT box_id FROM boxes WHERE box_qrcode = $1',
