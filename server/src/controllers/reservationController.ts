@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
+import { createNotification } from './notificationController';
 
 // 获取用户的预约订单列表
 export const getOrders = async (req: AuthRequest, res: Response) => {
@@ -338,6 +339,7 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
     // Create reservations for each item
     const reservations = [];
+    const itemNames: string[] = [];
 
     for (const item of items) {
       const result = await query(
@@ -348,6 +350,34 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       );
 
       reservations.push(result.rows[0]);
+
+      // 获取物品名称
+      const itemResult = await query('SELECT item_name FROM items WHERE item_id = $1', [item.itemId]);
+      if (itemResult.rows.length > 0) {
+        itemNames.push(itemResult.rows[0].item_name);
+      }
+    }
+
+    // 创建预约成功通知
+    const formatDate = (timestamp: number) => {
+      const date = new Date(timestamp);
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    };
+
+    // 获取最小开始时间和最大结束时间
+    const startTime = Math.min(...items.map(i => i.startTime));
+    const endTime = Math.max(...items.map(i => i.endTime));
+    const timeStr = `${formatDate(startTime)} 至 ${formatDate(endTime)}`;
+    const content = `预约时间：${timeStr}\n预约器材：${itemNames.join('、')}`;
+
+    if (userId) {
+      await createNotification(
+        userId,
+        'reservation',
+        '预约成功',
+        content,
+        order.order_id
+      );
     }
 
     return success(res, { order, reservations }, 'Order created', 201);
