@@ -72,6 +72,8 @@ export const itemApi = {
     request.put(`/items/${itemId}/tags`, { roomId, tagIds }),
   setRemark: (itemId: number, roomId: number, remark: string) =>
     request.put(`/items/${itemId}/remark`, { roomId, remark }),
+  changeBelongBox: (itemId: number, newBoxId: number) =>
+    request.put(`/items/${itemId}/belong-box`, { newBoxId }),
 };
 
 // Scan API

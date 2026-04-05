@@ -624,3 +624,63 @@ export const getMyItems = async (req: AuthRequest, res: Response) => {
     return error(res, 'Failed to get my items', 500);
   }
 };
+
+export const changeBelongBox = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+    const { newBoxId } = req.body;
+
+    if (!newBoxId) {
+      return error(res, '新盒子ID不能为空', 400);
+    }
+
+    // 验证物品存在且当前用户是所有者
+    const itemCheck = await query(
+      'SELECT item_belong_user_id, item_belong_box_id FROM items WHERE item_id = $1',
+      [id]
+    );
+
+    if (itemCheck.rows.length === 0) {
+      return error(res, '物品不存在', 404);
+    }
+
+    if (itemCheck.rows[0].item_belong_user_id !== userId) {
+      return error(res, '只有物品所有者才能更改归属盒子', 403);
+    }
+
+    // 验证新盒子存在且不是个人盒子
+    const boxCheck = await query(
+      `SELECT b.box_id, b.box_name, b.box_belong_room_id, r.room_name
+       FROM boxes b
+       LEFT JOIN rooms r ON b.box_belong_room_id = r.room_id
+       WHERE b.box_id = $1`,
+      [newBoxId]
+    );
+
+    if (boxCheck.rows.length === 0) {
+      return error(res, '盒子不存在', 404);
+    }
+
+    const newBox = boxCheck.rows[0];
+
+    // 检查盒子是否是个人盒子（box_belong_room_id 为 NULL）
+    if (newBox.box_belong_room_id === null) {
+      return error(res, '不能将物品归属到个人盒子', 400);
+    }
+
+    // 更新物品的归属盒子
+    await query(
+      'UPDATE items SET item_belong_box_id = $1 WHERE item_id = $2',
+      [newBoxId, id]
+    );
+
+    return success(res, {
+      belongBoxName: newBox.box_name,
+      belongRoomName: newBox.room_name
+    }, '归属盒子已更新');
+  } catch (err) {
+    console.error('Change belong box error:', err);
+    return error(res, 'Failed to change belong box', 500);
+  }
+};

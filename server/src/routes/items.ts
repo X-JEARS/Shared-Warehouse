@@ -12,6 +12,7 @@ import {
   setItemTags,
   setItemRemark,
   getMyItems,
+  changeBelongBox,
 } from '../controllers/itemController';
 import { auth } from '../middlewares/auth';
 
@@ -29,5 +30,6 @@ router.get('/:id/comments', auth, getComments);
 router.post('/:id/comments', auth, addComment);
 router.put('/:itemId/tags', auth, setItemTags);
 router.put('/:itemId/remark', auth, setItemRemark);
+router.put('/:id/belong-box', auth, changeBelongBox);
 
 export default router;
