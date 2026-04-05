@@ -19,7 +19,7 @@ const Container = styled.div`
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 50px;
 `;
 
 const TabBarContainer = styled.div`
