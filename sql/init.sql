@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS rooms (
 -- Boxes table
 CREATE TABLE IF NOT EXISTS boxes (
     box_id SERIAL PRIMARY KEY,
-    box_qrcode VARCHAR(32) NOT NULL UNIQUE,
+    box_qrcode VARCHAR(64) NOT NULL UNIQUE,
     box_name VARCHAR(24),
     box_belong_room_id INT REFERENCES rooms(room_id),
     box_create_time BIGINT NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS room_members (
 -- Items table
 CREATE TABLE IF NOT EXISTS items (
     item_id SERIAL PRIMARY KEY,
-    item_qrcode VARCHAR(32) NOT NULL UNIQUE,
+    item_qrcode VARCHAR(64) NOT NULL UNIQUE,
     item_name VARCHAR(24) NOT NULL,
     item_current_box_id INT NOT NULL REFERENCES boxes(box_id),
     item_belong_user_id INT NOT NULL REFERENCES users(user_id),

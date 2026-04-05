@@ -214,6 +214,7 @@ export default function CreateItem() {
                 onChange={(v) => setFormData({ ...formData, qrcode: v })}
                 placeholder="请扫描物品二维码"
                 style={{ flex: 1 }}
+                maxLength={64}
               />
               <Button
                 size="small"
