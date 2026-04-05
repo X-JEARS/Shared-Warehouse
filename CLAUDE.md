@@ -94,6 +94,7 @@ Items → Reservations → Orders
   - Return `true` to stop scanning
   - Return `false` to continue scanning (for validation failures)
 - Used for both box QR codes (`box.` prefix) and item QR codes
+- Camera selection: Prioritizes back camera (main camera) by detecting device labels or using `facingMode: 'environment'` constraint
 
 ### UI Components
 - **ItemCard**: Displays item in a compact card with image on left, name/tags on right. Stock status badge (在库/离库/外来物品) positioned at bottom-right of image. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at card bottom-right (blue when not in cart, gray when added).
@@ -171,3 +172,5 @@ PORT, NODE_ENV
 - Manifest in `public/manifest.json`
 - Icons in `public/icons/`
 - iOS add-to-homescreen requires HTTPS in production
+- iOS safe area: Uses `viewport-fit=cover` and `env(safe-area-inset-bottom)` to handle home indicator area
+- Theme color is white (`#ffffff`) for consistent status bar appearance on iOS

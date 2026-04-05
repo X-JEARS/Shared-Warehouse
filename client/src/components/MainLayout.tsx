@@ -19,7 +19,7 @@ const Container = styled.div`
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding-bottom: 60px;
+  padding-bottom: calc(60px + env(safe-area-inset-bottom, 0px));
 `;
 
 const TabBarContainer = styled.div`
@@ -30,6 +30,7 @@ const TabBarContainer = styled.div`
   background: white;
   border-top: 1px solid #eee;
   z-index: 1000;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 `;
 
 const tabs = [
