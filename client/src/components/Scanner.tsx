@@ -68,17 +68,39 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
 
+      // 优先选择后置摄像头（主摄像头）
       const videoInputDevices = await reader.listVideoInputDevices();
       if (videoInputDevices.length === 0) {
         Dialog.alert({ content: '未找到摄像头设备' });
         return;
       }
 
-      const selectedDeviceId = videoInputDevices[0].deviceId;
+      // 查找后置摄像头，如果没有则使用第一个可用摄像头
+      let selectedDeviceId: string | undefined;
+      const backCamera = videoInputDevices.find(
+        (device) =>
+          device.label.toLowerCase().includes('back') ||
+          device.label.toLowerCase().includes('rear') ||
+          device.label.toLowerCase().includes('environment') ||
+          device.label.toLowerCase().includes('后置') ||
+          device.label.toLowerCase().includes('主摄')
+      );
+      selectedDeviceId = backCamera ? backCamera.deviceId : undefined;
+
       setIsScanning(true);
 
-      reader.decodeFromVideoDevice(
-        selectedDeviceId,
+      // 使用约束优先请求后置摄像头
+      const constraints: MediaStreamConstraints = selectedDeviceId
+        ? { video: { deviceId: { exact: selectedDeviceId } } }
+        : { video: { facingMode: { exact: 'environment' } } };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      reader.decodeFromVideo(
         videoRef.current!,
         async (result, error) => {
           if (stoppedRef.current) return;
