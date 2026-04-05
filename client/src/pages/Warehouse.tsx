@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, SearchBar, SpinLoading } from 'antd-mobile';
-import { AddOutline, ScanCodeOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
+import type { InputRef } from 'antd-mobile/es/components/input';
+import { AddOutline, ScanCodeOutline, SearchOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useRoomStore } from '../stores/roomStore';
 import { useCartStore } from '../stores/cartStore';
@@ -21,7 +22,7 @@ const Container = styled.div`
 
 const Header = styled.div`
   background: white;
-  padding: 8px 16px;
+  padding: 1px 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -29,7 +30,7 @@ const Header = styled.div`
 `;
 
 const SearchContainer = styled.div`
-  padding: 12px 16px;
+  padding: 8px 12px;
   background: white;
 `;
 
@@ -124,13 +125,13 @@ const HeaderActions = styled.div`
 `;
 
 const IconButton = styled.div`
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 20px;
+  font-size: 18px;
   color: #333;
 
   &:active {
@@ -157,6 +158,8 @@ export default function Warehouse() {
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const searchInputRef = useRef<InputRef>(null);
 
   // 加载仓库列表
   useEffect(() => {
@@ -269,21 +272,44 @@ export default function Warehouse() {
         </div>
         <HeaderActions>
           {currentRoom && (
-            <IconButton onClick={() => navigate('/create-item')}>
-              <AddOutline />
-            </IconButton>
+            <>
+              <IconButton onClick={() => {
+                setShowSearch(true);
+                setTimeout(() => {
+                  searchInputRef.current?.focus();
+                }, 100);
+              }}>
+                <SearchOutline />
+              </IconButton>
+              <IconButton onClick={() => navigate('/create-item')}>
+                <AddOutline />
+              </IconButton>
+            </>
           )}
         </HeaderActions>
       </Header>
 
-      {currentRoom && (
+      {currentRoom && showSearch && (
         <SearchContainer>
           <SearchBar
+            ref={searchInputRef}
             value={searchText}
             onChange={setSearchText}
             placeholder="搜索物品..."
-            onSearch={handleSearch}
+            onSearch={() => {
+              handleSearch();
+              setShowSearch(false);
+            }}
+            onBlur={() => {
+              if (!searchText) {
+                setShowSearch(false);
+              }
+            }}
             showCancelButton
+            onCancel={() => {
+              setSearchText('');
+              setShowSearch(false);
+            }}
           />
         </SearchContainer>
       )}
