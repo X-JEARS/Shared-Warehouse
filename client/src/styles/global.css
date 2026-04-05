@@ -13,12 +13,6 @@ html, body, #root {
 
 :root {
   --primary-color: #1677ff;
-  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* Bottom safe area for iOS */
-.adm-tab-bar {
-  padding-bottom: var(--safe-area-bottom);
 }
 
 /* Custom scrollbar */
