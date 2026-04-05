@@ -11,6 +11,7 @@ import {
   getTags,
   createTag,
   deleteTag,
+  checkConflicts,
 } from '../controllers/reservationController';
 import { auth } from '../middlewares/auth';
 
@@ -18,6 +19,7 @@ const router = Router();
 
 router.get('/', auth, getReservations);
 router.post('/', auth, createReservation);
+router.post('/check-conflicts', auth, checkConflicts);
 router.delete('/:id', auth, cancelReservation);
 
 router.get('/orders', auth, getOrders);

@@ -468,3 +468,70 @@ export const deleteTag = async (req: AuthRequest, res: Response) => {
     return error(res, 'Failed to delete tag', 500);
   }
 };
+
+// 批量检查物品预约冲突
+export const checkConflicts = async (req: AuthRequest, res: Response) => {
+  try {
+    const { itemIds, startTime, endTime } = req.body;
+
+    if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
+      return error(res, 'Item IDs are required');
+    }
+
+    if (!startTime || !endTime) {
+      return error(res, 'Start time and end time are required');
+    }
+
+    if (startTime >= endTime) {
+      return error(res, 'End time must be after start time');
+    }
+
+    const conflicts: {
+      itemId: number;
+      itemName: string;
+      conflictingReservations: Array<{
+        reservationId: number;
+        startTime: number;
+        endTime: number;
+        userNickname: string;
+      }>;
+    }[] = [];
+
+    for (const itemId of itemIds) {
+      const conflictResult = await query(
+        `SELECT r.reservation_id, r.reservation_start_time, r.reservation_end_time,
+                i.item_name, u.user_nickname
+         FROM reservations r
+         JOIN items i ON r.reservation_item_id = i.item_id
+         JOIN users u ON r.reservation_user_id = u.user_id
+         WHERE r.reservation_item_id = $1
+           AND r.reservation_is_canceled = false
+           AND (
+             (r.reservation_start_time <= $2 AND r.reservation_end_time >= $2)
+             OR (r.reservation_start_time <= $3 AND r.reservation_end_time >= $3)
+             OR (r.reservation_start_time >= $2 AND r.reservation_end_time <= $3)
+           )
+         ORDER BY r.reservation_start_time ASC`,
+        [itemId, startTime, endTime]
+      );
+
+      if (conflictResult.rows.length > 0) {
+        conflicts.push({
+          itemId,
+          itemName: conflictResult.rows[0].item_name,
+          conflictingReservations: conflictResult.rows.map((row: any) => ({
+            reservationId: row.reservation_id,
+            startTime: row.reservation_start_time,
+            endTime: row.reservation_end_time,
+            userNickname: row.user_nickname,
+          })),
+        });
+      }
+    }
+
+    return success(res, conflicts);
+  } catch (err) {
+    console.error('Check conflicts error:', err);
+    return error(res, 'Failed to check conflicts', 500);
+  }
+};

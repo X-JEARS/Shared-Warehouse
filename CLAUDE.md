@@ -100,7 +100,7 @@ Items → Reservations → Orders
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
 - **Warehouse page**: Items displayed in 2-column grid. In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
-- **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail.
+- **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Automatically checks for reservation conflicts when time is set, displays conflicting time periods on affected items.
 - **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that starts scanner for continuous item insertion.
 
 ### Warehouse Page Header Layout
@@ -133,7 +133,10 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Editing tags in one room does not affect tags in other rooms
 
 ### Reservation Conflict Detection
-Backend checks time overlap in `reservationController.ts` before creating reservations.
+- Backend checks time overlap in `reservationController.ts` before creating reservations
+- `POST /api/reservations/check-conflicts` API for batch conflict checking in cart
+- Frontend `CartPopup` automatically checks conflicts when time is set, uses debounce to avoid excessive requests
+- Conflict info stored in `cartStore` with `hasConflict` and `conflictingReservations` fields on each cart item
 
 ## Environment Variables
 

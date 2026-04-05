@@ -1,13 +1,23 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-interface CartItem {
+export interface ConflictingReservation {
+  reservationId: number;
+  startTime: number;
+  endTime: number;
+  userNickname: string;
+}
+
+export interface CartItem {
   itemId: number;
   itemName: string;
   itemQrcode: string;
   itemImage?: string;
   boxName?: string;
   roomName?: string;
+  // 冲突信息
+  hasConflict?: boolean;
+  conflictingReservations?: ConflictingReservation[];
 }
 
 interface CartState {
@@ -19,6 +29,10 @@ interface CartState {
   setTime: (start?: number, end?: number) => void;
   clearCart: () => void;
   itemCount: () => number;
+  // 更新物品冲突信息
+  updateConflict: (itemId: number, conflict: { hasConflict: boolean; conflictingReservations?: ConflictingReservation[] }) => void;
+  // 清除所有冲突信息
+  clearConflicts: () => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -46,6 +60,22 @@ export const useCartStore = create<CartState>()(
         setTime: (start, end) => set({ startTime: start, endTime: end }),
         clearCart: () => set({ items: [], startTime: undefined, endTime: undefined }),
         itemCount: () => get().items.length,
+        updateConflict: (itemId, conflict) =>
+          set((state) => ({
+            items: state.items.map((i) =>
+              i.itemId === itemId
+                ? { ...i, hasConflict: conflict.hasConflict, conflictingReservations: conflict.conflictingReservations }
+                : i
+            ),
+          })),
+        clearConflicts: () =>
+          set((state) => ({
+            items: state.items.map((i) => ({
+              ...i,
+              hasConflict: undefined,
+              conflictingReservations: undefined,
+            })),
+          })),
       }),
     {
       name: 'cart-storage',

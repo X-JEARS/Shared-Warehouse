@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Popup, Button, DatePicker, Dialog, Toast } from 'antd-mobile';
 import styled from 'styled-components';
-import { useCartStore } from '../stores/cartStore';
+import { useCartStore, ConflictingReservation } from '../stores/cartStore';
 import { reservationApi } from '../services/api';
 import TrashIcon from './icons/TrashIcon';
 
 const PopupContent = styled.div`
-  padding: 20px;
-  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+`;
+
+const ScrollContent = styled.div`
+  flex: 1;
   overflow-y: auto;
+  padding: 20px;
+  padding-bottom: 12px;
 `;
 
 const PopupHeader = styled.div`
@@ -83,6 +90,18 @@ const ItemHeader = styled.div`
 const ItemName = styled.div`
   font-size: 16px;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ConflictBadge = styled.span`
+  background: #fff2f0;
+  color: #ff4d4f;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: normal;
 `;
 
 const ItemMeta = styled.div`
@@ -97,17 +116,46 @@ const ItemCount = styled.div`
   margin-bottom: 16px;
 `;
 
+const ConflictInfo = styled.div`
+  background: #fff2f0;
+  border-radius: 6px;
+  padding: 10px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #ff4d4f;
+`;
+
+const ConflictTime = styled.div`
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+`;
+
 const Footer = styled.div`
   display: flex;
   gap: 12px;
-  margin-top: 16px;
-  padding-top: 16px;
+  padding: 16px 20px;
   border-top: 1px solid #f0f0f0;
+  background: white;
+  flex-shrink: 0;
 `;
 
 const EmptyContainer = styled.div`
   text-align: center;
   padding: 40px 20px;
+`;
+
+const ConflictWarning = styled.div`
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #d46b08;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 `;
 
 interface CartPopupProps {
@@ -116,8 +164,97 @@ interface CartPopupProps {
 }
 
 export default function CartPopup({ visible, onClose }: CartPopupProps) {
-  const { items, startTime, endTime, setTime, removeItem, clearCart } = useCartStore();
+  const { items, startTime, endTime, setTime, removeItem, clearCart, updateConflict, clearConflicts } = useCartStore();
   const [loading, setLoading] = useState(false);
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
+
+  // 用 ref 存储最新的 items，避免 checkConflicts 依赖 items 导致无限循环
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  // 格式化时间戳
+  const formatTime = (timestamp?: number) => {
+    if (!timestamp) return '选择时间';
+    return new Date(timestamp).toLocaleString('zh-CN', {
+      month: 'numeric',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // 格式化冲突时间段
+  const formatConflictTime = (reservation: ConflictingReservation) => {
+    // 处理可能是字符串或数字的时间戳
+    const startMs = typeof reservation.startTime === 'string' ? parseInt(reservation.startTime, 10) : reservation.startTime;
+    const endMs = typeof reservation.endTime === 'string' ? parseInt(reservation.endTime, 10) : reservation.endTime;
+
+    if (isNaN(startMs) || isNaN(endMs)) {
+      return '时间信息无效';
+    }
+
+    const start = new Date(startMs);
+    const end = new Date(endMs);
+    return `${start.toLocaleDateString('zh-CN')} ${start.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} ~ ${end.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  // 检查冲突 - 使用 ref 避免无限循环
+  const checkConflicts = useCallback(async (currentTimeStart: number, currentTimeEnd: number) => {
+    const currentItems = itemsRef.current;
+    if (!currentTimeStart || !currentTimeEnd || currentItems.length === 0) {
+      clearConflicts();
+      return;
+    }
+
+    setCheckingConflicts(true);
+    try {
+      const itemIds = currentItems.map(item => item.itemId);
+      const result = await reservationApi.checkConflicts({
+        itemIds,
+        startTime: currentTimeStart,
+        endTime: currentTimeEnd,
+      });
+
+      // 先清除所有冲突信息
+      clearConflicts();
+
+      // 更新有冲突的物品
+      const conflicts = (result as any).data || result;
+      if (Array.isArray(conflicts)) {
+        for (const conflict of conflicts) {
+          updateConflict(conflict.itemId, {
+            hasConflict: true,
+            conflictingReservations: conflict.conflictingReservations,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('检查冲突失败:', error);
+    } finally {
+      setCheckingConflicts(false);
+    }
+  }, [clearConflicts, updateConflict]);
+
+  // 当时间或物品数量变化时检查冲突（使用 debounce 避免频繁请求）
+  useEffect(() => {
+    if (visible && startTime && endTime && items.length > 0) {
+      const timer = setTimeout(() => {
+        checkConflicts(startTime, endTime);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, startTime, endTime, items.length, checkConflicts]);
+
+  // 关闭时清除冲突检查
+  useEffect(() => {
+    if (!visible) {
+      clearConflicts();
+    }
+  }, [visible, clearConflicts]);
+
+  // 获取有冲突的物品数量
+  const conflictedItems = items.filter(item => item.hasConflict);
+  const hasConflicts = conflictedItems.length > 0;
 
   const handleCheckout = async () => {
     if (!startTime || !endTime) {
@@ -132,6 +269,11 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
 
     if (endTime <= startTime) {
       Toast.show({ content: '结束时间必须晚于开始时间' });
+      return;
+    }
+
+    if (hasConflicts) {
+      Toast.show({ content: '存在时间冲突的物品，请调整预约时间' });
       return;
     }
 
@@ -169,16 +311,6 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
     }
   };
 
-  const formatTime = (timestamp?: number) => {
-    if (!timestamp) return '选择时间';
-    return new Date(timestamp).toLocaleString('zh-CN', {
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <Popup
       visible={visible}
@@ -186,102 +318,125 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
       bodyStyle={{ height: '80vh', borderRadius: '12px 12px 0 0' }}
     >
       <PopupContent>
-        <PopupHeader>
-          <PopupTitle>🛒 购物车</PopupTitle>
-          {items.length > 0 && (
-            <Button
-              size="small"
-              fill="outline"
-              onClick={() => clearCart()}
-            >
-              清空
-            </Button>
-          )}
-        </PopupHeader>
-
-        {items.length === 0 ? (
-          <EmptyContainer>
-            <p style={{ color: '#999', marginBottom: 16 }}>购物车为空</p>
-            <Button onClick={onClose}>继续浏览</Button>
-          </EmptyContainer>
-        ) : (
-          <>
-            <TimeCard>
-              <TimeCardTitle>📅 预约时间</TimeCardTitle>
-              <TimeSelector>
-                <TimeField>
-                  <TimeLabel>开始时间</TimeLabel>
-                  <DatePicker
-                    title="选择开始时间"
-                    value={startTime ? new Date(startTime) : undefined}
-                    onConfirm={(val) => handleSetTime('start', val)}
-                    min={new Date()}
-                    precision="minute"
-                  >
-                    {(_, { open }) => (
-                      <TimeButton onClick={open}>
-                        {startTime ? formatTime(startTime) : '选择时间'}
-                      </TimeButton>
-                    )}
-                  </DatePicker>
-                </TimeField>
-                <TimeField>
-                  <TimeLabel>结束时间</TimeLabel>
-                  <DatePicker
-                    title="选择结束时间"
-                    value={endTime ? new Date(endTime) : undefined}
-                    onConfirm={(val) => handleSetTime('end', val)}
-                    min={startTime ? new Date(startTime) : new Date()}
-                    precision="minute"
-                  >
-                    {(_, { open }) => (
-                      <TimeButton onClick={open}>
-                        {endTime ? formatTime(endTime) : '选择时间'}
-                      </TimeButton>
-                    )}
-                  </DatePicker>
-                </TimeField>
-              </TimeSelector>
-            </TimeCard>
-
-            <ItemCount>共 {items.length} 个物品</ItemCount>
-
-            {items.map((item) => (
-              <CartItem key={item.itemId}>
-                <ItemHeader>
-                  <ItemName>{item.itemName}</ItemName>
-                  <TrashIcon
-                    style={{ color: '#ff4d4f', cursor: 'pointer' }}
-                    onClick={() => removeItem(item.itemId)}
-                  />
-                </ItemHeader>
-                <ItemMeta>
-                  {item.roomName}
-                  {item.boxName && ` / ${item.boxName}`}
-                </ItemMeta>
-              </CartItem>
-            ))}
-
-            <Footer>
-              <div style={{ flex: 1, fontSize: 14 }}>
-                {startTime && endTime ? (
-                  <span>
-                    {formatTime(startTime)} ~ {formatTime(endTime)}
-                  </span>
-                ) : (
-                  <span style={{ color: '#ff4d4f' }}>请设置预约时间</span>
-                )}
-              </div>
+        <ScrollContent>
+          <PopupHeader>
+            <PopupTitle>🛒 购物车</PopupTitle>
+            {items.length > 0 && (
               <Button
-                color="primary"
-                loading={loading}
-                onClick={handleCheckout}
-                disabled={!startTime || !endTime}
+                size="small"
+                fill="outline"
+                onClick={() => clearCart()}
               >
-                确认预约
+                清空
               </Button>
-            </Footer>
-          </>
+            )}
+          </PopupHeader>
+
+          {items.length === 0 ? (
+            <EmptyContainer>
+              <p style={{ color: '#999', marginBottom: 16 }}>购物车为空</p>
+              <Button onClick={onClose}>继续浏览</Button>
+            </EmptyContainer>
+          ) : (
+            <>
+              <TimeCard>
+                <TimeCardTitle>📅 预约时间</TimeCardTitle>
+                <TimeSelector>
+                  <TimeField>
+                    <TimeLabel>开始时间</TimeLabel>
+                    <DatePicker
+                      title="选择开始时间"
+                      value={startTime ? new Date(startTime) : undefined}
+                      onConfirm={(val) => handleSetTime('start', val)}
+                      min={new Date()}
+                      precision="minute"
+                    >
+                      {(_, { open }) => (
+                        <TimeButton onClick={open}>
+                          {startTime ? formatTime(startTime) : '选择时间'}
+                        </TimeButton>
+                      )}
+                    </DatePicker>
+                  </TimeField>
+                  <TimeField>
+                    <TimeLabel>结束时间</TimeLabel>
+                    <DatePicker
+                      title="选择结束时间"
+                      value={endTime ? new Date(endTime) : undefined}
+                      onConfirm={(val) => handleSetTime('end', val)}
+                      min={startTime ? new Date(startTime) : new Date()}
+                      precision="minute"
+                    >
+                      {(_, { open }) => (
+                        <TimeButton onClick={open}>
+                          {endTime ? formatTime(endTime) : '选择时间'}
+                        </TimeButton>
+                      )}
+                    </DatePicker>
+                  </TimeField>
+                </TimeSelector>
+              </TimeCard>
+
+              {hasConflicts && startTime && endTime && (
+                <ConflictWarning>
+                  ⚠️ {conflictedItems.length} 个物品在所选时间段存在冲突
+                </ConflictWarning>
+              )}
+
+              <ItemCount>共 {items.length} 个物品</ItemCount>
+
+              {items.map((item) => (
+                <CartItem key={item.itemId}>
+                  <ItemHeader>
+                    <ItemName>
+                      {item.itemName}
+                      {item.hasConflict && <ConflictBadge>冲突</ConflictBadge>}
+                    </ItemName>
+                    <TrashIcon
+                      style={{ color: '#ff4d4f', cursor: 'pointer' }}
+                      onClick={() => removeItem(item.itemId)}
+                    />
+                  </ItemHeader>
+                  <ItemMeta>
+                    {item.roomName}
+                    {item.boxName && ` / ${item.boxName}`}
+                  </ItemMeta>
+                  {item.hasConflict && item.conflictingReservations && item.conflictingReservations.length > 0 && (
+                    <ConflictInfo>
+                      <div>已被 {item.conflictingReservations[0].userNickname} 预约：</div>
+                      {item.conflictingReservations.map((res) => (
+                        <ConflictTime key={res.reservationId}>
+                          • {formatConflictTime(res)}
+                        </ConflictTime>
+                      ))}
+                    </ConflictInfo>
+                  )}
+                </CartItem>
+              ))}
+            </>
+          )}
+        </ScrollContent>
+
+        {items.length > 0 && (
+          <Footer>
+            <div style={{ flex: 1, fontSize: 14 }}>
+              {startTime && endTime ? (
+                <span>
+                  {formatTime(startTime)} ~ {formatTime(endTime)}
+                </span>
+              ) : (
+                <span style={{ color: '#ff4d4f' }}>请设置预约时间</span>
+              )}
+            </div>
+            <Button
+              color="primary"
+              loading={loading || checkingConflicts}
+              onClick={handleCheckout}
+              disabled={!startTime || !endTime || hasConflicts}
+            >
+              确认预约
+            </Button>
+          </Footer>
         )}
       </PopupContent>
     </Popup>
