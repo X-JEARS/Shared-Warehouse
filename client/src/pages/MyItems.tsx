@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { SearchBar, SpinLoading, Input, Button, Toast, Popup } from 'antd-mobile';
 import styled from 'styled-components';
-import { itemApi } from '../services/api';
+import { itemApi, scanApi } from '../services/api';
+import Scanner from '../components/Scanner';
 
 const Container = styled.div`
   height: 100%;
@@ -84,6 +85,9 @@ const ItemMeta = styled.div`
   font-size: 13px;
   color: #666;
   margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 `;
 
 const EditButton = styled.span`
@@ -127,6 +131,35 @@ const PopupButtons = styled.div`
   margin-top: 16px;
 `;
 
+const ScannerPopupContent = styled.div`
+  padding: 20px;
+`;
+
+const ConfirmInfo = styled.div`
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 8px;
+  margin: 16px 0;
+`;
+
+const ConfirmRow = styled.div`
+  display: flex;
+  margin-bottom: 8px;
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const ConfirmLabel = styled.span`
+  color: #666;
+  width: 80px;
+  flex-shrink: 0;
+`;
+
+const ConfirmValue = styled.span`
+  color: #333;
+`;
+
 interface MyItem {
   item_id: number;
   item_name: string;
@@ -136,7 +169,16 @@ interface MyItem {
   current_room_name?: string;
   belong_box_name?: string;
   belong_room_name?: string;
+  belong_box_id?: number;
+  belong_room_id?: number;
   display_location_name?: string;
+}
+
+interface BoxInfo {
+  box_id: number;
+  box_name: string;
+  box_belong_room_id: number;
+  room_name: string;
 }
 
 export default function MyItems() {
@@ -146,6 +188,10 @@ export default function MyItems() {
   const [editingItem, setEditingItem] = useState<MyItem | null>(null);
   const [editName, setEditName] = useState('');
   const [popupVisible, setPopupVisible] = useState(false);
+  const [scannerVisible, setScannerVisible] = useState(false);
+  const [changingBelongBoxItem, setChangingBelongBoxItem] = useState<MyItem | null>(null);
+  const [scannedBoxInfo, setScannedBoxInfo] = useState<BoxInfo | null>(null);
+  const [confirmVisible, setConfirmVisible] = useState(false);
 
   useEffect(() => {
     loadItems();
@@ -185,6 +231,79 @@ export default function MyItems() {
       Toast.show({ icon: 'success', content: '名称已更新' });
     } catch (error) {
       Toast.show({ icon: 'fail', content: '更新失败' });
+    }
+  };
+
+  const handleChangeBelongBox = (item: MyItem) => {
+    setChangingBelongBoxItem(item);
+    setScannerVisible(true);
+  };
+
+  const handleScan = async (scannedText: string): Promise<boolean> => {
+    // 验证是盒子二维码
+    if (!scannedText.startsWith('box.')) {
+      Toast.show({ content: '请扫描盒子二维码' });
+      return false; // 继续扫描
+    }
+
+    try {
+      // 通过扫描 API 获取盒子信息
+      const res: any = await scanApi.scan(scannedText);
+
+      if (res.data?.type !== 'box') {
+        Toast.show({ content: '未找到该盒子' });
+        return false;
+      }
+
+      const box = res.data.box;
+
+      // 检查盒子是否是个人盒子（box_belong_room_id 为 null 表示是个人盒子）
+      if (!box.box_belong_room_id) {
+        Toast.show({ content: '不能将物品归属到个人盒子' });
+        return false;
+      }
+
+      setScannedBoxInfo({
+        box_id: box.box_id,
+        box_name: box.box_name,
+        box_belong_room_id: box.box_belong_room_id,
+        room_name: box.room_name
+      });
+      setScannerVisible(false);
+      setConfirmVisible(true);
+      return true; // 停止扫描
+    } catch (error: any) {
+      console.error('Scan box error:', error);
+      Toast.show({ content: error.message || '扫码失败' });
+      return false;
+    }
+  };
+
+  const handleConfirmChange = async () => {
+    if (!changingBelongBoxItem || !scannedBoxInfo) return;
+
+    try {
+      await itemApi.changeBelongBox(changingBelongBoxItem.item_id, scannedBoxInfo.box_id);
+
+      // 更新本地数据
+      setItems(items.map(item =>
+        item.item_id === changingBelongBoxItem.item_id
+          ? {
+              ...item,
+              belong_box_id: scannedBoxInfo.box_id,
+              belong_box_name: scannedBoxInfo.box_name,
+              belong_room_id: scannedBoxInfo.box_belong_room_id,
+              belong_room_name: scannedBoxInfo.room_name
+            }
+          : item
+      ));
+
+      setConfirmVisible(false);
+      setScannedBoxInfo(null);
+      setChangingBelongBoxItem(null);
+      Toast.show({ icon: 'success', content: '归属盒子已更新' });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '更新失败' });
     }
   };
 
@@ -258,6 +377,9 @@ export default function MyItems() {
                   <ItemMeta>
                     归属: {item.belong_room_name || '未知仓库'}
                     {item.belong_box_name && ` / ${item.belong_box_name}`}
+                    <EditButton onClick={() => handleChangeBelongBox(item)}>
+                      变更
+                    </EditButton>
                   </ItemMeta>
                 </ItemInfo>
               </ItemRow>
@@ -283,6 +405,63 @@ export default function MyItems() {
               保存
             </Button>
             <Button size="small" onClick={() => setPopupVisible(false)}>
+              取消
+            </Button>
+          </PopupButtons>
+        </PopupContent>
+      </Popup>
+
+      <Popup
+        visible={scannerVisible}
+        onMaskClick={() => {
+          setScannerVisible(false);
+          setChangingBelongBoxItem(null);
+        }}
+        bodyStyle={{ borderRadius: '12px 12px 0 0' }}
+      >
+        <ScannerPopupContent>
+          <PopupTitle>扫描新归属盒子</PopupTitle>
+          <Scanner
+            onScan={handleScan}
+            onError={(e) => console.error('Scanner error:', e)}
+          />
+        </ScannerPopupContent>
+      </Popup>
+
+      <Popup
+        visible={confirmVisible}
+        onMaskClick={() => {
+          setConfirmVisible(false);
+          setScannedBoxInfo(null);
+          setChangingBelongBoxItem(null);
+        }}
+        bodyStyle={{ borderRadius: '12px 12px 0 0' }}
+      >
+        <PopupContent>
+          <PopupTitle>确认变更归属盒子</PopupTitle>
+          <ConfirmInfo>
+            <ConfirmRow>
+              <ConfirmLabel>物品名称:</ConfirmLabel>
+              <ConfirmValue>{changingBelongBoxItem?.item_name}</ConfirmValue>
+            </ConfirmRow>
+            <ConfirmRow>
+              <ConfirmLabel>新归属盒子:</ConfirmLabel>
+              <ConfirmValue>{scannedBoxInfo?.box_name}</ConfirmValue>
+            </ConfirmRow>
+            <ConfirmRow>
+              <ConfirmLabel>所属仓库:</ConfirmLabel>
+              <ConfirmValue>{scannedBoxInfo?.room_name}</ConfirmValue>
+            </ConfirmRow>
+          </ConfirmInfo>
+          <PopupButtons>
+            <Button color="primary" size="small" onClick={handleConfirmChange}>
+              确认变更
+            </Button>
+            <Button size="small" onClick={() => {
+              setConfirmVisible(false);
+              setScannedBoxInfo(null);
+              setChangingBelongBoxItem(null);
+            }}>
               取消
             </Button>
           </PopupButtons>
