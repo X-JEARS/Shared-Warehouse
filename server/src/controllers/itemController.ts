@@ -591,3 +591,36 @@ export const setItemRemark = async (req: AuthRequest, res: Response) => {
     return error(res, 'Failed to set remark', 500);
   }
 };
+
+export const getMyItems = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    // Get items where belong_user_id is the current user
+    const result = await query(
+      `SELECT i.*,
+        cb.box_name as current_box_name,
+        cb.box_belong_room_id as current_room_id,
+        bb.box_name as belong_box_name,
+        bb.box_belong_room_id as belong_room_id,
+        r.room_name as belong_room_name,
+        cr.room_name as current_room_name,
+        CASE WHEN cb.box_belong_room_id IS NULL THEN
+          (SELECT u3.user_nickname FROM users u3 WHERE u3.user_box_id = cb.box_id)
+        ELSE cr.room_name END as display_location_name
+       FROM items i
+       LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
+       LEFT JOIN boxes bb ON i.item_belong_box_id = bb.box_id
+       LEFT JOIN rooms r ON bb.box_belong_room_id = r.room_id
+       LEFT JOIN rooms cr ON cb.box_belong_room_id = cr.room_id
+       WHERE i.item_belong_user_id = $1
+       ORDER BY i.item_create_time DESC`,
+      [userId]
+    );
+
+    return success(res, result.rows);
+  } catch (err) {
+    console.error('Get my items error:', err);
+    return error(res, 'Failed to get my items', 500);
+  }
+};

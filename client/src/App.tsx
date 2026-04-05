@@ -7,6 +7,7 @@ import Warehouse from './pages/Warehouse';
 import InHand from './pages/InHand';
 import Notifications from './pages/Notifications';
 import Profile from './pages/Profile';
+import MyItems from './pages/MyItems';
 import RoomSettings from './pages/RoomSettings';
 import AddBox from './pages/AddBox';
 import BoxDetail from './pages/BoxDetail';
@@ -97,6 +98,14 @@ function App() {
           element={
             <PrivateRoute>
               <CreateRoom />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-items"
+          element={
+            <PrivateRoute>
+              <MyItems />
             </PrivateRoute>
           }
         />

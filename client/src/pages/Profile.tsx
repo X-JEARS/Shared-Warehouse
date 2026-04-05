@@ -135,16 +135,10 @@ export default function Profile() {
       <Section>
         <List>
           <List.Item
-            prefix={<span style={{ fontSize: 18 }}>🏠</span>}
-            onClick={() => navigate('/create-room')}
+            prefix={<span style={{ fontSize: 18 }}>📦</span>}
+            onClick={() => navigate('/my-items')}
           >
-            创建仓库
-          </List.Item>
-          <List.Item
-            prefix={<span style={{ fontSize: 18 }}>🚪</span>}
-            onClick={() => navigate('/join-room')}
-          >
-            加入仓库
+            我的物品
           </List.Item>
           <List.Item
             prefix={<SetOutline />}

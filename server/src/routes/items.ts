@@ -11,6 +11,7 @@ import {
   getItemByQrcode,
   setItemTags,
   setItemRemark,
+  getMyItems,
 } from '../controllers/itemController';
 import { auth } from '../middlewares/auth';
 
@@ -18,6 +19,7 @@ const router = Router();
 
 router.get('/', auth, getItems);
 router.get('/in-hand', auth, getInHandItems);
+router.get('/my', auth, getMyItems);
 router.get('/qrcode/:code', auth, getItemByQrcode);
 router.get('/:id', auth, getItemById);
 router.post('/', auth, createItem);

@@ -132,6 +132,16 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Items can have different tags in different rooms
 - Editing tags in one room does not affect tags in other rooms
 
+### My Items Page (我的物品)
+- Located at `client/src/pages/MyItems.tsx`, accessible from Profile page
+- Shows all items where `item_belong_user_id` equals current user
+- Each item card displays:
+  - Item image and name (editable via popup)
+  - Current location (`display_location_name` + `current_box_name`)
+  - Belong info (`belong_room_name` + `belong_box_name`)
+- Supports search functionality
+- Uses `GET /api/items/my` API endpoint
+
 ### Reservation Conflict Detection
 - Backend checks time overlap in `reservationController.ts` before creating reservations
 - `POST /api/reservations/check-conflicts` API for batch conflict checking in cart
