@@ -77,3 +77,24 @@ export const markAllAsRead = async (req: AuthRequest, res: Response) => {
     return error(res, 'Failed to mark all as read', 500);
   }
 };
+
+// 创建通知（供其他控制器调用）
+export const createNotification = async (
+  userId: number,
+  type: string,
+  title: string,
+  content: string | null,
+  relatedId: number | null = null
+) => {
+  try {
+    const createTime = Date.now();
+    await query(
+      `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_is_read, notification_create_time)
+       VALUES ($1, $2, $3, $4, $5, false, $6)`,
+      [userId, type, title, content, relatedId, createTime]
+    );
+  } catch (err) {
+    console.error('Create notification error:', err);
+    // 不抛出错误，避免影响主流程
+  }
+};
