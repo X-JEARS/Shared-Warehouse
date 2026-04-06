@@ -168,8 +168,21 @@ export default function Warehouse() {
         setRoomsLoading(true);
         const res: any = await roomApi.getAll();
         setRooms(res.data || []);
-        if (res.data?.length > 0 && !currentRoom) {
-          setCurrentRoom(res.data[0]);
+
+        // 如果有仓库
+        if (res.data?.length > 0) {
+          // 检查 currentRoom 是否仍在仓库列表中（验证用户是否仍是该仓库成员）
+          if (currentRoom) {
+            const isRoomValid = res.data.some((r: any) => r.room_id === currentRoom.room_id);
+            if (!isRoomValid) {
+              // 如果之前的仓库已不可访问，则选择第一个
+              setCurrentRoom(res.data[0]);
+            }
+            // 如果有效，保持 currentRoom 不变
+          } else {
+            // 没有 currentRoom 时，选择第一个
+            setCurrentRoom(res.data[0]);
+          }
         }
       } catch (error) {
         console.error('Failed to load rooms:', error);
