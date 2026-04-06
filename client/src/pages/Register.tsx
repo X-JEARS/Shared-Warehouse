@@ -81,7 +81,7 @@ export default function Register() {
     <Container>
       <Logo>
         <LogoText>创建账号</LogoText>
-        <LogoSubtext>加入固定资产管理系统</LogoSubtext>
+        <LogoSubtext>加入共享仓库</LogoSubtext>
       </Logo>
 
       <Form form={form} layout="horizontal">

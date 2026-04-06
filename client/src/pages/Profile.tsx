@@ -448,7 +448,7 @@ export default function Profile() {
           onClick={() =>
             Dialog.alert({
               title: '关于',
-              content: '固定资产管理系统 v1.0.0\n扫码借还，高效管理',
+              content: '共享仓库 v1.0.0\n扫码借还，高效管理',
             })
           }
         />

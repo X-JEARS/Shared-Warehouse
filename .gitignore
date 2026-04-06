@@ -39,3 +39,10 @@ databases/
 
 # User uploaded avatars
 server/public/avatars/
+
+# Frontend build output in server
+server/public/frontend/
+
+# Deployment archives
+*.zip
+*.tar.gz

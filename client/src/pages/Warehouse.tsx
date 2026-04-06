@@ -243,7 +243,7 @@ export default function Warehouse() {
         </Header>
         <Content>
           <NoRoomContainer>
-            <NoRoomTitle>欢迎使用固定资产管理系统</NoRoomTitle>
+            <NoRoomTitle>欢迎使用共享仓库</NoRoomTitle>
             <NoRoomText>您还没有加入任何仓库，请创建或加入一个仓库开始使用</NoRoomText>
             <ActionButtons>
               <Button color="primary" onClick={() => navigate('/create-room')}>
