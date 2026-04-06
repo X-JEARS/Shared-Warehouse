@@ -146,6 +146,9 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
   - Belong info (`belong_room_name` + `belong_box_name`)
 - Supports search functionality
 - Uses `GET /api/items/my` API endpoint
+- **Item Image Upload**: Click item image to upload new image, supports cropping (react-image-crop), compressed to 200x200 JPEG
+- Image stored at `/images/{item_id}.jpg` on server
+- Uses `POST /api/upload/items/:id/image` for image upload (multipart/form-data)
 
 ### Profile Page (我的)
 - Located at `client/src/pages/Profile.tsx`

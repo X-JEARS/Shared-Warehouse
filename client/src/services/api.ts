@@ -78,6 +78,10 @@ export const itemApi = {
     request.put(`/items/${itemId}/remark`, { roomId, remark }),
   changeBelongBox: (itemId: number, newBoxId: number) =>
     request.put(`/items/${itemId}/belong-box`, { newBoxId }),
+  uploadImage: (itemId: number, formData: FormData) =>
+    request.post(`/upload/items/${itemId}/image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
 };
 
 // Scan API

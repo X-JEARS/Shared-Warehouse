@@ -181,6 +181,7 @@ warehouse/
 - `PUT /api/users/profile` - 修改用户信息（昵称、电话）
 - `PUT /api/users/password` - 修改密码
 - `POST /api/upload/avatar` - 上传头像（multipart/form-data）
+- `POST /api/upload/items/:id/image` - 上传物品图片（multipart/form-data，仅物品主人可操作）
 
 ## 开发说明
 

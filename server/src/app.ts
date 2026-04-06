@@ -28,8 +28,9 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve static files (avatars, etc.)
+// Serve static files (avatars, images, etc.)
 app.use('/avatars', express.static(path.join(__dirname, '../public/avatars')));
+app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
 // Health check
 app.get('/health', (req, res) => {

@@ -40,6 +40,9 @@ databases/
 # User uploaded avatars
 server/public/avatars/
 
+# User uploaded item images
+server/public/images/
+
 # Frontend build output in server
 server/public/frontend/
 

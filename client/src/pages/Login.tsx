@@ -48,7 +48,7 @@ const LinkText = styled.span`
 export default function Login() {
   const navigate = useNavigate();
   const login = useAuthStore((state) => state.login);
-  const { setRooms, setCurrentRoom } = useRoomStore();
+  const { setRooms } = useRoomStore();
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 

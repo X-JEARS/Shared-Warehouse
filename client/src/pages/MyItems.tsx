@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { SearchBar, SpinLoading, Input, Button, Toast, Popup } from 'antd-mobile';
 import styled from 'styled-components';
 import { itemApi, scanApi } from '../services/api';
 import Scanner from '../components/Scanner';
+import ReactCrop from 'react-image-crop';
+import { makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 const Container = styled.div`
   height: 100%;
@@ -160,6 +163,60 @@ const ConfirmValue = styled.span`
   color: #333;
 `;
 
+const ImageOverlay = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  opacity: 0;
+  transition: opacity 0.2s;
+`;
+
+const ImageWrapper = styled.div`
+  position: relative;
+  cursor: pointer;
+
+  &:hover ${ImageOverlay} {
+    opacity: 1;
+  }
+`;
+
+const HiddenInput = styled.input`
+  display: none;
+`;
+
+const CropContainer = styled.div`
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const CropActions = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+  width: 100%;
+`;
+
+const CropButton = styled.button<{ $primary?: boolean }>`
+  flex: 1;
+  padding: 12px;
+  border: ${(props) => (props.$primary ? 'none' : '1px solid #ddd')};
+  border-radius: 8px;
+  background: ${(props) => (props.$primary ? '#1677ff' : 'white')};
+  color: ${(props) => (props.$primary ? 'white' : '#333')};
+  font-size: 16px;
+  cursor: pointer;
+`;
+
 interface MyItem {
   item_id: number;
   item_name: string;
@@ -193,6 +250,15 @@ export default function MyItems() {
   const [scannedBoxInfo, setScannedBoxInfo] = useState<BoxInfo | null>(null);
   const [confirmVisible, setConfirmVisible] = useState(false);
 
+  // Image upload states
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [imageCropPopupVisible, setImageCropPopupVisible] = useState(false);
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
+  const [uploadingItem, setUploadingItem] = useState<MyItem | null>(null);
+
   useEffect(() => {
     loadItems();
   }, []);
@@ -206,6 +272,122 @@ export default function MyItems() {
       console.error('Failed to load my items:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Image upload handlers
+  const handleImageClick = (item: MyItem) => {
+    setUploadingItem(item);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      Toast.show({ icon: 'fail', content: '请选择图片文件' });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageSrc(reader.result as string);
+      setImageCropPopupVisible(true);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const newCrop = makeAspectCrop(
+      {
+        unit: '%',
+        width: 90,
+      },
+      1,
+      width,
+      height,
+    );
+    setCrop(newCrop);
+    setCompletedCrop(undefined);
+  };
+
+  const getCroppedImg = useCallback(async (): Promise<File | null> => {
+    if (!imgRef.current || !completedCrop) return null;
+
+    const image = imgRef.current;
+    const canvas = document.createElement('canvas');
+    const targetSize = 200;
+    canvas.width = targetSize;
+    canvas.height = targetSize;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+
+    ctx.drawImage(
+      image,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+      0,
+      0,
+      targetSize,
+      targetSize
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+            resolve(file);
+          } else {
+            resolve(null);
+          }
+        },
+        'image/jpeg',
+        0.8
+      );
+    });
+  }, [completedCrop]);
+
+  const handleCropConfirm = async () => {
+    try {
+      if (!uploadingItem) return;
+
+      const croppedFile = await getCroppedImg();
+      if (!croppedFile) {
+        Toast.show({ icon: 'fail', content: '请先选择裁剪区域' });
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', croppedFile);
+
+      const res: any = await itemApi.uploadImage(uploadingItem.item_id, formData);
+      const newImagePath = res.data.image;
+
+      // Update local state
+      setItems(items.map(item =>
+        item.item_id === uploadingItem.item_id
+          ? { ...item, item_image: `${newImagePath}?t=${Date.now()}` }
+          : item
+      ));
+
+      Toast.show({ icon: 'success', content: '图片更新成功' });
+      setImageCropPopupVisible(false);
+      setImageSrc(null);
+      setUploadingItem(null);
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '更新失败' });
     }
   };
 
@@ -357,9 +539,12 @@ export default function MyItems() {
           filteredItems.map((item) => (
             <ItemCard key={item.item_id}>
               <ItemRow>
-                <ItemImage $image={item.item_image}>
-                  {!item.item_image && '📦'}
-                </ItemImage>
+                <ImageWrapper onClick={() => handleImageClick(item)}>
+                  <ItemImage $image={item.item_image}>
+                    {!item.item_image && '📦'}
+                  </ItemImage>
+                  <ImageOverlay>📷</ImageOverlay>
+                </ImageWrapper>
                 <ItemInfo>
                   <ItemName>
                     {item.item_name}
@@ -466,6 +651,56 @@ export default function MyItems() {
             </Button>
           </PopupButtons>
         </PopupContent>
+      </Popup>
+
+      {/* Hidden file input for image upload */}
+      <HiddenInput
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+      />
+
+      {/* Image Crop Popup */}
+      <Popup
+        visible={imageCropPopupVisible}
+        onMaskClick={() => {
+          setImageCropPopupVisible(false);
+          setImageSrc(null);
+          setUploadingItem(null);
+        }}
+        bodyStyle={{ height: 'auto' }}
+      >
+        <CropContainer>
+          {imageSrc && (
+            <ReactCrop
+              crop={crop}
+              onChange={(c) => setCrop(c)}
+              onComplete={(c) => setCompletedCrop(c)}
+              aspect={1}
+            >
+              <img
+                ref={imgRef}
+                src={imageSrc}
+                alt="Crop preview"
+                style={{ maxHeight: '50vh', maxWidth: '100%' }}
+                onLoad={onImageLoad}
+              />
+            </ReactCrop>
+          )}
+          <CropActions>
+            <CropButton onClick={() => {
+              setImageCropPopupVisible(false);
+              setImageSrc(null);
+              setUploadingItem(null);
+            }}>
+              取消
+            </CropButton>
+            <CropButton $primary onClick={handleCropConfirm}>
+              确定
+            </CropButton>
+          </CropActions>
+        </CropContainer>
       </Popup>
     </Container>
   );
