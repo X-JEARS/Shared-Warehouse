@@ -79,7 +79,7 @@ export default function Login() {
   return (
     <Container>
       <Logo>
-        <LogoText>固定资产管理</LogoText>
+        <LogoText>共享仓库</LogoText>
         <LogoSubtext>扫码借还，高效管理</LogoSubtext>
       </Logo>
 

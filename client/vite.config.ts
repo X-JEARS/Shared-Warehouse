@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: '固定资产管理系统',
-        short_name: '资产管理',
-        description: '固定资产管理PWA应用',
+        name: '共享仓库',
+        short_name: '共享仓库',
+        description: '共享仓库PWA应用，支持扫码借还物品',
         theme_color: '#1677ff',
         background_color: '#ffffff',
         display: 'standalone',

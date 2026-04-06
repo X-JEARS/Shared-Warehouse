@@ -1,7 +1,7 @@
 {
-  "name": "固定资产管理系统",
-  "short_name": "资产管理",
-  "description": "固定资产管理PWA应用，支持扫码借还物品",
+  "name": "共享仓库",
+  "short_name": "共享仓库",
+  "description": "共享仓库PWA应用，支持扫码借还物品",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
