@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { NavBar, Button, Tag, SpinLoading, Dialog, Toast } from 'antd-mobile';
 import styled from 'styled-components';
 import { reservationApi } from '../services/api';
+import { useAuthStore } from '../stores/authStore';
 
 const Container = styled.div`
   min-height: 100%;
@@ -104,6 +105,7 @@ interface OrderDetail {
     order_create_time: number;
     order_title: string | null;
     order_is_canceled: boolean;
+    order_user_id: number;
   };
   reservations: Reservation[];
 }
@@ -111,6 +113,7 @@ interface OrderDetail {
 export default function ReservationOrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const [data, setData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -215,7 +218,8 @@ export default function ReservationOrderDetail() {
   }
 
   const activeReservations = data.reservations.filter((r) => !r.reservation_is_canceled);
-  const canCancelOrder = !data.order.order_is_canceled && activeReservations.length > 0;
+  const isOwner = user?.user_id === data.order.order_user_id;
+  const canCancelOrder = isOwner && !data.order.order_is_canceled && activeReservations.length > 0;
 
   return (
     <Container>
@@ -251,7 +255,7 @@ export default function ReservationOrderDetail() {
             <TimeRange>
               📅 {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
             </TimeRange>
-            {!r.reservation_is_canceled && (
+            {isOwner && !r.reservation_is_canceled && (
               <div style={{ marginTop: 12, textAlign: 'right' }}>
                 <Button
                   size="mini"

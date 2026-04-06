@@ -100,6 +100,8 @@ export const reservationApi = {
     request.post('/reservations/orders', data),
   getOrders: (status?: 'active' | 'past') =>
     request.get('/reservations/orders', { params: { status } }),
+  getRoomOrders: (roomId: number, status?: 'active' | 'past') =>
+    request.get(`/reservations/rooms/${roomId}/orders`, { params: { status } }),
   getOrderDetail: (id: number) => request.get(`/reservations/orders/${id}`),
   cancelOrder: (id: number) => request.delete(`/reservations/orders/${id}`),
   checkConflicts: (data: { itemIds: number[]; startTime: number; endTime: number }) =>

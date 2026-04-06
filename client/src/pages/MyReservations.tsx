@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { NavBar, Tag, SpinLoading, Tabs } from 'antd-mobile';
 import styled from 'styled-components';
 import { reservationApi } from '../services/api';
-import { useRoomStore } from '../stores/roomStore';
 
 const Container = styled.div`
   min-height: 100%;
@@ -32,15 +31,6 @@ const OrderHeader = styled.div`
 const OrderTitle = styled.div`
   font-size: 16px;
   font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-`;
-
-const OrderUser = styled.span`
-  font-size: 13px;
-  color: #999;
-  font-weight: normal;
 `;
 
 const OrderMeta = styled.div`
@@ -63,18 +53,11 @@ const EmptyContainer = styled.div`
   color: #999;
 `;
 
-const NoRoomTip = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #999;
-`;
-
 interface Order {
   order_id: number;
   order_create_time: number;
   order_title: string | null;
   order_is_canceled: boolean;
-  order_user_nickname?: string;
   total_items: string;
   active_items: string;
   start_time: number | null;
@@ -82,28 +65,22 @@ interface Order {
   order_status: string;
 }
 
-export default function ReservationOrders() {
+export default function MyReservations() {
   const navigate = useNavigate();
-  const { currentRoom } = useRoomStore();
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [pastOrders, setPastOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (currentRoom) {
-      loadRoomOrders();
-    } else {
-      setLoading(false);
-    }
-  }, [currentRoom]);
+    loadOrders();
+  }, []);
 
-  const loadRoomOrders = async () => {
-    if (!currentRoom) return;
+  const loadOrders = async () => {
     try {
       setLoading(true);
       const [activeRes, pastRes]: any[] = await Promise.all([
-        reservationApi.getRoomOrders(currentRoom.room_id, 'active'),
-        reservationApi.getRoomOrders(currentRoom.room_id, 'past'),
+        reservationApi.getOrders('active'),
+        reservationApi.getOrders('past'),
       ]);
       setActiveOrders(activeRes.data || []);
       setPastOrders(pastRes.data || []);
@@ -153,9 +130,6 @@ export default function ReservationOrders() {
         <OrderHeader>
           <OrderTitle>
             {order.order_title || `预约单 #${order.order_id}`}
-            {order.order_user_nickname && (
-              <OrderUser>- {order.order_user_nickname}</OrderUser>
-            )}
           </OrderTitle>
           {getStatusTag(order.order_status)}
         </OrderHeader>
@@ -177,7 +151,7 @@ export default function ReservationOrders() {
   if (loading) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>仓库预约</NavBar>
+        <NavBar onBack={() => navigate(-1)}>我的预约</NavBar>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
         </div>
@@ -185,18 +159,9 @@ export default function ReservationOrders() {
     );
   }
 
-  if (!currentRoom) {
-    return (
-      <Container>
-        <NavBar onBack={() => navigate(-1)}>仓库预约</NavBar>
-        <NoRoomTip>请先选择一个仓库</NoRoomTip>
-      </Container>
-    );
-  }
-
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>仓库预约</NavBar>
+      <NavBar onBack={() => navigate(-1)}>我的预约</NavBar>
       <Tabs>
         <Tabs.Tab title={`进行中 (${activeOrders.length})`} key="active">
           <Content>{renderOrderList(activeOrders)}</Content>

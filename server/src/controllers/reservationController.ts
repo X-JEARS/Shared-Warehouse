@@ -65,16 +65,93 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// 获取仓库所有预约订单列表
+export const getRoomOrders = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { roomId } = req.params;
+    const { status } = req.query;
+
+    // 验证用户是否是仓库成员
+    const memberCheck = await query(
+      'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+      [roomId, userId]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return error(res, 'Access denied', 403);
+    }
+
+    // 获取仓库所有订单（通过物品所属仓库关联）
+    let sql = `
+      SELECT DISTINCT
+        o.order_id,
+        o.order_create_time,
+        o.order_title,
+        o.order_is_canceled,
+        u.user_nickname as order_user_nickname,
+        COUNT(r.reservation_id) as total_items,
+        COUNT(CASE WHEN r.reservation_is_canceled = false THEN 1 END) as active_items,
+        MIN(CASE WHEN r.reservation_is_canceled = false THEN r.reservation_start_time END) as start_time,
+        MAX(CASE WHEN r.reservation_is_canceled = false THEN r.reservation_end_time END) as end_time
+      FROM orders o
+      JOIN reservations r ON o.order_id = r.reservation_order_id
+      JOIN items i ON r.reservation_item_id = i.item_id
+      JOIN boxes b ON i.item_belong_box_id = b.box_id
+      JOIN users u ON o.order_user_id = u.user_id
+      WHERE b.box_belong_room_id = $1
+    `;
+    const values: any[] = [roomId];
+    let paramCount = 2;
+
+    if (status === 'active') {
+      sql += ` AND o.order_is_canceled = false AND r.reservation_is_canceled = false AND r.reservation_end_time > $${paramCount++}`;
+      values.push(Date.now());
+    } else if (status === 'past') {
+      sql += ` AND (o.order_is_canceled = true OR r.reservation_is_canceled = true OR r.reservation_end_time <= $${paramCount++})`;
+      values.push(Date.now());
+    }
+
+    sql += ' GROUP BY o.order_id, u.user_nickname ORDER BY o.order_create_time DESC';
+
+    const result = await query(sql, values);
+
+    // 计算每个订单的状态
+    const orders = result.rows.map((order: any) => {
+      const now = Date.now();
+      let orderStatus = 'active';
+
+      if (order.order_is_canceled) {
+        orderStatus = 'canceled';
+      } else if (order.end_time && order.end_time < now) {
+        orderStatus = 'completed';
+      } else if (order.start_time && order.start_time > now) {
+        orderStatus = 'upcoming';
+      }
+
+      return {
+        ...order,
+        order_status: orderStatus,
+      };
+    });
+
+    return success(res, orders);
+  } catch (err) {
+    console.error('Get room orders error:', err);
+    return error(res, 'Failed to get room orders', 500);
+  }
+};
+
 // 获取订单详情
 export const getOrderDetail = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
     const { id } = req.params;
 
-    // 获取订单信息
+    // 获取订单信息（允许订单所有者或仓库成员查看）
     const orderResult = await query(
-      `SELECT * FROM orders WHERE order_id = $1 AND order_user_id = $2`,
-      [id, userId]
+      `SELECT * FROM orders WHERE order_id = $1`,
+      [id]
     );
 
     if (orderResult.rows.length === 0) {
@@ -82,6 +159,35 @@ export const getOrderDetail = async (req: AuthRequest, res: Response) => {
     }
 
     const order = orderResult.rows[0];
+
+    // 如果不是订单所有者，需要验证是否是仓库成员
+    if (order.order_user_id !== userId) {
+      // 获取订单中物品所属的仓库
+      const roomCheckResult = await query(
+        `SELECT DISTINCT b.box_belong_room_id
+         FROM reservations r
+         JOIN items i ON r.reservation_item_id = i.item_id
+         JOIN boxes b ON i.item_belong_box_id = b.box_id
+         WHERE r.reservation_order_id = $1`,
+        [id]
+      );
+
+      if (roomCheckResult.rows.length === 0) {
+        return error(res, 'Order not found', 404);
+      }
+
+      // 检查用户是否是任一相关仓库的成员
+      const roomIds = roomCheckResult.rows.map((row: any) => row.box_belong_room_id);
+      const memberCheck = await query(
+        `SELECT 1 FROM room_members
+         WHERE member_user_id = $1 AND member_room_id = ANY($2::int[])`,
+        [userId, roomIds]
+      );
+
+      if (memberCheck.rows.length === 0) {
+        return error(res, 'Access denied', 403);
+      }
+    }
 
     // 获取订单下的所有预约
     const reservationsResult = await query(

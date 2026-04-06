@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, Toast, Popup, Input } from 'antd-mobile';
 import {
   InformationCircleOutline,
@@ -182,6 +183,7 @@ function EditIcon({ size = 16 }: { size?: number }) {
 }
 
 export default function Profile() {
+  const navigate = useNavigate();
   const { user, logout, updateUser } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cropPopupVisible, setCropPopupVisible] = useState(false);
@@ -437,8 +439,9 @@ export default function Profile() {
       </Header>
 
       <Section>
-        <MenuItem icon="📦" text="我的物品" onClick={handleMyItems} />
-        <MenuItem icon="🔒" text="修改密码" onClick={handleChangePassword} showBorder />
+        <MenuItem icon="📦" text="我的物品" onClick={handleMyItems} showBorder />
+        <MenuItem icon="📋" text="我的预约" onClick={() => navigate('/my-reservations')} showBorder />
+        <MenuItem icon="🔒" text="修改密码" onClick={handleChangePassword} />
       </Section>
 
       <Section>
