@@ -160,6 +160,18 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Frontend `CartPopup` automatically checks conflicts when time is set, uses debounce to avoid excessive requests
 - Conflict info stored in `cartStore` with `hasConflict` and `conflictingReservations` fields on each cart item
 
+### Reservation Orders (预约订单)
+- **My Reservations (我的预约)**: Located at `client/src/pages/MyReservations.tsx`, accessible from Profile page. Shows current user's reservation orders.
+- **Room Reservations (仓库预约)**: Located at `client/src/pages/ReservationOrders.tsx`, shows all reservation orders for the current room.
+- **API Endpoints**:
+  - `GET /api/reservations/orders` - Get current user's orders
+  - `GET /api/reservations/rooms/:roomId/orders` - Get all orders for a room (members only)
+  - `GET /api/reservations/orders/:id` - Get order detail (owner or room members can view)
+  - `DELETE /api/reservations/orders/:id` - Cancel order (owner only)
+- **Permission Logic**:
+  - Order detail: Owner can view and cancel; room members can view but cannot cancel
+  - Frontend checks `order_user_id` against current user to show/hide cancel buttons
+
 ## Environment Variables
 
 Backend requires `.env` file (copy from `.env.example`):

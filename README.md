@@ -81,7 +81,7 @@ npm run dev
 - **我的物品**: 查看所有归属自己的物品列表，支持修改物品名称，显示物品当前位置和归属信息
 - **个人中心**: 支持修改用户昵称和头像，头像支持裁剪上传并压缩存储
 - **购物车批量预约**: 将物品加入购物车，统一设置预约时间，批量提交预约，购物车以弹窗形式展示；设置时间后自动检测预约冲突并提示冲突时间段
-- **预约订单管理**: 以订单形式查看和管理预约，支持取消单个物品预约或整个订单
+- **预约订单管理**: 仓库预约页面显示仓库所有预约订单，我的预约页面显示个人预约，支持取消单个物品预约或整个订单
 - **标签管理**: 每个仓库可独立管理标签，物品可在不同仓库设置不同标签
 - **物品备注名**: 为物品添加仓库内通用的备注名，减少歧义
 - **简洁界面**: 仓库页面右上角添加物品，设置按钮使用齿轮图标，购物车仅在有物品时显示，创建/加入仓库入口在仓库下拉菜单中
@@ -165,10 +165,11 @@ warehouse/
 - `POST /api/reservations/check-conflicts` - 批量检查物品预约冲突
 
 ### 预约订单
-- `GET /api/reservations/orders` - 获取预约订单列表
+- `GET /api/reservations/orders` - 获取我的预约订单列表
+- `GET /api/reservations/rooms/:roomId/orders` - 获取仓库所有预约订单列表
 - `POST /api/reservations/orders` - 创建预约订单（批量预约）
-- `GET /api/reservations/orders/:id` - 获取订单详情
-- `DELETE /api/reservations/orders/:id` - 取消整个订单
+- `GET /api/reservations/orders/:id` - 获取订单详情（创建者或仓库成员可查看）
+- `DELETE /api/reservations/orders/:id` - 取消整个订单（仅创建者可操作）
 
 ### 通知
 - `GET /api/notifications` - 获取通知列表
