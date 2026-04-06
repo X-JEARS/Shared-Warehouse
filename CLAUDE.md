@@ -57,6 +57,7 @@ Items → Reservations → Orders
 - **Item (物品)**: Physical asset with QR code, can be taken by scanning its QR code
 - **Tags**: Room-specific, items have different tags in different rooms
 - **Cart**: Client-side only, persisted to localStorage via Zustand
+- **Room Persistence**: `currentRoom` is persisted to localStorage, so users return to their last visited room on login/app start. Warehouse page validates that the stored room is still accessible (user is still a member)
 
 ## Important Patterns
 

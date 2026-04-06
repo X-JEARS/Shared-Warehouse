@@ -65,8 +65,8 @@ export default function Login() {
       const res: any = await authApi.login(values);
       login(res.data.user, res.data.token);
       // 清空旧的房间数据，进入仓库页面时会重新加载
+      // 但保留 currentRoom 以记住用户上次访问的仓库
       setRooms([]);
-      setCurrentRoom(null);
       Toast.show({ icon: 'success', content: '登录成功' });
       navigate('/warehouse');
     } catch (error: any) {
