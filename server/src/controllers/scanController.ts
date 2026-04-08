@@ -28,18 +28,6 @@ export const scanQrcode = async (req: AuthRequest, res: Response) => {
 
       const box = boxResult.rows[0];
 
-      // Check access
-      if (box.room_id) {
-        const memberCheck = await query(
-          'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
-          [box.room_id, userId]
-        );
-
-        if (memberCheck.rows.length === 0) {
-          return error(res, 'Access denied', 403);
-        }
-      }
-
       // Get items in this box
       const itemsResult = await query(
         `SELECT i.*, u.user_nickname as owner_nickname
@@ -74,18 +62,6 @@ export const scanQrcode = async (req: AuthRequest, res: Response) => {
     }
 
     const item = itemResult.rows[0];
-
-    // Check access
-    if (item.room_id) {
-      const memberCheck = await query(
-        'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
-        [item.room_id, userId]
-      );
-
-      if (memberCheck.rows.length === 0) {
-        return error(res, 'Access denied', 403);
-      }
-    }
 
     item.isOwner = item.item_belong_user_id === userId;
 
@@ -229,18 +205,6 @@ export const returnItem = async (req: AuthRequest, res: Response) => {
     }
 
     const targetBox = boxCheck.rows[0];
-
-    // Check access to target room
-    if (targetBox.room_id) {
-      const memberCheck = await query(
-        'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
-        [targetBox.room_id, userId]
-      );
-
-      if (memberCheck.rows.length === 0) {
-        return error(res, 'Access denied to target box');
-      }
-    }
 
     // Move item to target box
     await query(
