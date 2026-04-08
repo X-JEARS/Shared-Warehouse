@@ -216,19 +216,6 @@ export const getItemById = async (req: AuthRequest, res: Response) => {
 
     const item = result.rows[0];
 
-    // Check if user has access to this item (either through belong_room or current_room)
-    const roomIdToCheck = item.belong_room_id || item.current_room_id;
-    if (roomIdToCheck) {
-      const memberCheck = await query(
-        'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
-        [roomIdToCheck, userId]
-      );
-
-      if (memberCheck.rows.length === 0) {
-        return error(res, 'Access denied', 403);
-      }
-    }
-
     // Determine which room's tags/remark to show
     // If roomId is provided, use it; otherwise fall back to belong_room_id
     const viewRoomId = roomId ? parseInt(roomId as string) : item.belong_room_id;
@@ -491,18 +478,6 @@ export const getItemByQrcode = async (req: AuthRequest, res: Response) => {
     }
 
     const item = result.rows[0];
-
-    // Check if user has access
-    if (item.room_id) {
-      const memberCheck = await query(
-        'SELECT * FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
-        [item.room_id, userId]
-      );
-
-      if (memberCheck.rows.length === 0) {
-        return error(res, 'Access denied', 403);
-      }
-    }
 
     item.isOwner = item.item_belong_user_id === userId;
 
