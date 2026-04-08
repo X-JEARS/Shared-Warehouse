@@ -36,7 +36,7 @@ const Content = styled.div`
 
 const ItemGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
 `;
 

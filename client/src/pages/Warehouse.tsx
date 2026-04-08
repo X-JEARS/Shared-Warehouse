@@ -39,6 +39,10 @@ const Content = styled.div`
   overflow-y: auto;
   padding: 12px 16px;
   padding-bottom: calc(12px + 50px + 48px + 16px + env(safe-area-inset-bottom, 0px));
+
+  @media (min-width: 768px) {
+    padding-bottom: calc(12px + 48px + 16px);
+  }
 `;
 
 const ItemList = styled.div`
@@ -63,7 +67,7 @@ const BoxTitle = styled.div`
 
 const ItemGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
 `;
 
@@ -75,6 +79,10 @@ const FAB = styled.div`
   flex-direction: column;
   gap: 12px;
   z-index: 100;
+
+  @media (min-width: 768px) {
+    bottom: 16px;
+  }
 `;
 
 const FABButton = styled.div<{ $primary?: boolean }>`
@@ -122,6 +130,7 @@ const HeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-right: 2px;
 `;
 
 const IconButton = styled.div`

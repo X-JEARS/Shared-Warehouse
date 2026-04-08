@@ -102,8 +102,9 @@ Items → Reservations → Orders
 ### UI Components
 - **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at bottom-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at top-right corner (blue when not in cart, gray when added).
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
-- **Warehouse page**: Items displayed in 2-column grid. In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
-- **InHand page**: Items displayed in 2-column grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
+- **MainLayout**: Responsive navigation - bottom tab bar on mobile, left sidebar (56px width) on desktop (≥768px). Sidebar shows icons and titles vertically.
+- **Warehouse page**: Items displayed in adaptive grid (`repeat(auto-fill, minmax(150px, 1fr))`). In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
+- **InHand page**: Items displayed in adaptive grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
 - **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Automatically checks for reservation conflicts when time is set, displays conflicting time periods on affected items.
 - **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that starts scanner for continuous item insertion.
 
