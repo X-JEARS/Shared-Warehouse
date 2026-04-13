@@ -373,12 +373,12 @@ export default function ItemDetail({
                 </ItemMeta>
                 {item.is_foreign && (
                   <ItemMeta>
-                    归属: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
+                    应归还到: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
                   </ItemMeta>
                 )}
                 {!item.is_in_stock && !item.is_foreign && (
                   <ItemMeta>
-                    归属: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
+                    应归还到: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
                     {item.holder_nickname && ` (正在: ${item.holder_nickname})`}
                   </ItemMeta>
                 )}
@@ -548,10 +548,12 @@ export default function ItemDetail({
       <Popup
         visible={showAllHistory}
         onMaskClick={() => setShowAllHistory(false)}
-        bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0' }}
+        bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0', display: 'flex', flexDirection: 'column' }}
       >
-        <PopupContent>
+        <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
           <SectionTitle style={{ marginBottom: 16 }}>转移记录 (全部 {history.length} 条)</SectionTitle>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 20px' }}>
           {history.map((h) => (
             <HistoryItem key={h.history_id}>
               <div>
@@ -562,17 +564,19 @@ export default function ItemDetail({
               </div>
             </HistoryItem>
           ))}
-        </PopupContent>
+        </div>
       </Popup>
 
       {/* 评论完整列表弹窗 */}
       <Popup
         visible={showAllComments}
         onMaskClick={() => setShowAllComments(false)}
-        bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0' }}
+        bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0', display: 'flex', flexDirection: 'column' }}
       >
-        <PopupContent>
+        <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
           <SectionTitle style={{ marginBottom: 16 }}>评论 (全部 {comments.length} 条)</SectionTitle>
+        </div>
+        <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 20px' }}>
           {comments.map((c) => (
             <CommentItem key={c.comment_id}>
               <CommentUser>{c.user_nickname}</CommentUser>
@@ -580,7 +584,7 @@ export default function ItemDetail({
               <CommentTime>{formatTime(c.comment_create_time)}</CommentTime>
             </CommentItem>
           ))}
-        </PopupContent>
+        </div>
       </Popup>
 
       {/* 备注名编辑弹窗 */}

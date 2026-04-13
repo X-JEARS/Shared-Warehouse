@@ -4,6 +4,34 @@ import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 
+export const searchUsers = async (req: AuthRequest, res: Response) => {
+  try {
+    const { keyword } = req.query;
+
+    if (!keyword || typeof keyword !== 'string') {
+      return error(res, '搜索关键词不能为空', 400);
+    }
+
+    if (keyword.length < 1) {
+      return error(res, '搜索关键词至少1个字符', 400);
+    }
+
+    const result = await query(
+      `SELECT user_id, user_nickname, user_avatar
+       FROM users
+       WHERE user_nickname ILIKE $1
+       ORDER BY user_nickname
+       LIMIT 20`,
+      [`%${keyword}%`]
+    );
+
+    return success(res, result.rows);
+  } catch (err) {
+    console.error('Search users error:', err);
+    return error(res, 'Failed to search users', 500);
+  }
+};
+
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;

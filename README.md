@@ -78,7 +78,7 @@ npm run dev
 - **位置显示**: 物品在用户个人盒子时，位置显示为用户名而非"未知仓库"
 - **跨仓库标签管理**: 物品在不同仓库可设置不同标签，互不影响；基于 `item_room_tag_map` 表实现
 - **我手中的**: 查看当前用户个人盒子中的所有物品，支持搜索功能
-- **我的物品**: 查看所有归属自己的物品列表，支持修改物品名称，显示物品当前位置和归属信息
+- **我的物品**: 查看所有归属自己的物品列表，支持操作功能（编辑名称、转让、删除），显示物品当前位置和应归还到信息
 - **个人中心**: 支持修改用户昵称和头像，头像支持裁剪上传并压缩存储
 - **购物车批量预约**: 将物品加入购物车，统一设置预约时间，批量提交预约，购物车以弹窗形式展示；设置时间后自动检测预约冲突并提示冲突时间段
 - **预约订单管理**: 仓库预约页面显示仓库所有预约订单，我的预约页面显示个人预约，支持取消单个物品预约或整个订单
@@ -142,8 +142,11 @@ warehouse/
 - `GET /api/items/qrcode/:code` - 通过二维码获取物品
 - `POST /api/items` - 创建物品
 - `PUT /api/items/:id` - 修改物品信息
+- `DELETE /api/items/:id` - 删除物品（仅所有者可操作，会删除所有关联数据）
+- `POST /api/items/:id/transfer` - 转让物品（仅所有者可操作）
 - `PUT /api/items/:id/tags` - 设置物品在仓库中的标签
 - `PUT /api/items/:id/remark` - 设置物品在仓库中的备注
+- `PUT /api/items/:id/belong-box` - 更改物品归属盒子
 - `GET /api/items/:id/history` - 获取物品转移历史
 - `GET /api/items/:id/comments` - 获取物品评论
 - `POST /api/items/:id/comments` - 添加评论
@@ -185,6 +188,7 @@ warehouse/
 - `PUT /api/notifications/read-all` - 全部标记为已读
 
 ### 用户
+- `GET /api/users/search` - 搜索用户（按昵称）
 - `PUT /api/users/profile` - 修改用户信息（昵称、电话）
 - `PUT /api/users/password` - 修改密码
 - `POST /api/upload/avatar` - 上传头像（multipart/form-data）

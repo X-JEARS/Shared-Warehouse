@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { SearchBar, SpinLoading, Input, Button, Toast, Popup } from 'antd-mobile';
+import { SearchBar, SpinLoading, Input, Button, Toast, Popup, Dialog, ActionSheet } from 'antd-mobile';
 import styled from 'styled-components';
-import { itemApi, scanApi } from '../services/api';
+import { itemApi, scanApi, userApi } from '../services/api';
 import Scanner from '../components/Scanner';
 import ReactCrop from 'react-image-crop';
 import { makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
@@ -93,10 +93,11 @@ const ItemMeta = styled.div`
   gap: 4px;
 `;
 
-const EditButton = styled.span`
+const ActionButton = styled.span`
   color: #1677ff;
   cursor: pointer;
   font-size: 13px;
+  white-space: nowrap;
 `;
 
 const LocationTag = styled.span`
@@ -217,6 +218,57 @@ const CropButton = styled.button<{ $primary?: boolean }>`
   cursor: pointer;
 `;
 
+const UserSearchContainer = styled.div`
+  margin-bottom: 16px;
+`;
+
+const UserList = styled.div`
+  max-height: 300px;
+  overflow-y: auto;
+`;
+
+const UserItem = styled.div<{ $selected?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: ${(props) => (props.$selected ? '#e6f4ff' : 'transparent')};
+  transition: background 0.2s;
+
+  &:hover {
+    background: #f5f5f5;
+  }
+`;
+
+const UserAvatar = styled.div<{ $avatar?: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: ${(props) =>
+    props.$avatar ? `url(${props.$avatar}) center/cover` : '#e0e0e0'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+`;
+
+const UserInfo = styled.div`
+  flex: 1;
+`;
+
+const UserNickname = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+`;
+
+const NoUsers = styled.div`
+  text-align: center;
+  padding: 20px;
+  color: #999;
+`;
+
 interface MyItem {
   item_id: number;
   item_name: string;
@@ -238,13 +290,17 @@ interface BoxInfo {
   room_name: string;
 }
 
+interface SearchedUser {
+  user_id: number;
+  user_nickname: string;
+  user_avatar?: string;
+}
+
 export default function MyItems() {
   const [items, setItems] = useState<MyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
-  const [editingItem, setEditingItem] = useState<MyItem | null>(null);
   const [editName, setEditName] = useState('');
-  const [popupVisible, setPopupVisible] = useState(false);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [changingBelongBoxItem, setChangingBelongBoxItem] = useState<MyItem | null>(null);
   const [scannedBoxInfo, setScannedBoxInfo] = useState<BoxInfo | null>(null);
@@ -258,6 +314,14 @@ export default function MyItems() {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [uploadingItem, setUploadingItem] = useState<MyItem | null>(null);
+
+  // Transfer states
+  const [transferPopupVisible, setTransferPopupVisible] = useState(false);
+  const [transferItem, setTransferItem] = useState<MyItem | null>(null);
+  const [userSearchKeyword, setUserSearchKeyword] = useState('');
+  const [searchedUsers, setSearchedUsers] = useState<SearchedUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<SearchedUser | null>(null);
+  const [searchingUsers, setSearchingUsers] = useState(false);
 
   useEffect(() => {
     loadItems();
@@ -391,28 +455,120 @@ export default function MyItems() {
     }
   };
 
-  const handleEdit = (item: MyItem) => {
-    setEditingItem(item);
-    setEditName(item.item_name);
-    setPopupVisible(true);
+  const showActionSheet = (item: MyItem) => {
+    const handler = ActionSheet.show({
+      actions: [
+        { text: '编辑名称', key: 'edit' },
+        { text: '转让', key: 'transfer' },
+        { text: '删除', key: 'delete', danger: true },
+      ],
+      cancelText: '取消',
+      onAction: (action) => {
+        handler.close();
+        if (action.key === 'edit') {
+          handleEditName(item);
+        } else if (action.key === 'transfer') {
+          handleTransfer(item);
+        } else if (action.key === 'delete') {
+          handleDelete(item);
+        }
+      },
+    });
   };
 
-  const handleSaveName = async () => {
-    if (!editingItem || !editName.trim()) {
-      Toast.show({ content: '物品名称不能为空' });
+  const handleEditName = (item: MyItem) => {
+    setEditName(item.item_name);
+    Dialog.confirm({
+      content: (
+        <div>
+          <div style={{ marginBottom: 12, fontWeight: 500 }}>修改物品名称</div>
+          <Input
+            value={editName}
+            onChange={setEditName}
+            placeholder="请输入物品名称"
+            style={{ '--text-align': 'left' }}
+          />
+        </div>
+      ),
+      confirmText: '保存',
+      cancelText: '取消',
+      onConfirm: async () => {
+        if (!editName.trim()) {
+          Toast.show({ content: '物品名称不能为空' });
+          return;
+        }
+        try {
+          await itemApi.update(item.item_id, { name: editName });
+          setItems(items.map(i =>
+            i.item_id === item.item_id
+              ? { ...i, item_name: editName }
+              : i
+          ));
+          Toast.show({ icon: 'success', content: '名称已更新' });
+        } catch (error) {
+          Toast.show({ icon: 'fail', content: '更新失败' });
+        }
+      },
+    });
+  };
+
+  const handleTransfer = (item: MyItem) => {
+    setTransferItem(item);
+    setUserSearchKeyword('');
+    setSearchedUsers([]);
+    setSelectedUser(null);
+    setTransferPopupVisible(true);
+  };
+
+  const searchUsers = async (keyword: string) => {
+    if (!keyword.trim()) {
+      setSearchedUsers([]);
       return;
     }
+
     try {
-      await itemApi.update(editingItem.item_id, { name: editName });
-      setItems(items.map(item =>
-        item.item_id === editingItem.item_id
-          ? { ...item, item_name: editName }
-          : item
-      ));
-      setPopupVisible(false);
-      Toast.show({ icon: 'success', content: '名称已更新' });
-    } catch (error) {
-      Toast.show({ icon: 'fail', content: '更新失败' });
+      setSearchingUsers(true);
+      const res: any = await userApi.search(keyword);
+      setSearchedUsers(res.data || []);
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '搜索失败' });
+    } finally {
+      setSearchingUsers(false);
+    }
+  };
+
+  const handleConfirmTransfer = async () => {
+    if (!transferItem || !selectedUser) {
+      Toast.show({ content: '请选择要转让的用户' });
+      return;
+    }
+
+    try {
+      await itemApi.transfer(transferItem.item_id, selectedUser.user_id);
+      // 从列表中移除已转让的物品
+      setItems(items.filter(item => item.item_id !== transferItem.item_id));
+      setTransferPopupVisible(false);
+      Toast.show({ icon: 'success', content: `物品已转让给 ${selectedUser.user_nickname}` });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '转让失败' });
+    }
+  };
+
+  const handleDelete = async (item: MyItem) => {
+    const confirmed = await Dialog.confirm({
+      content: `确定要删除「${item.item_name}」吗？删除后将无法恢复，该物品的所有记录（历史、评论、预约等）都将被删除。`,
+      confirmText: <span style={{ color: '#ff4d4f' }}>删除</span>,
+      cancelText: '取消',
+    });
+
+    if (confirmed) {
+      try {
+        await itemApi.delete(item.item_id);
+        setItems(items.filter(i => i.item_id !== item.item_id));
+        Toast.show({ icon: 'success', content: '物品已删除' });
+      } catch (error: any) {
+        Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+      }
     }
   };
 
@@ -548,9 +704,9 @@ export default function MyItems() {
                 <ItemInfo>
                   <ItemName>
                     {item.item_name}
-                    <EditButton onClick={() => handleEdit(item)}>
-                      编辑
-                    </EditButton>
+                    <ActionButton onClick={() => showActionSheet(item)}>
+                      操作
+                    </ActionButton>
                   </ItemName>
                   <ItemMeta>
                     所在位置:
@@ -560,11 +716,11 @@ export default function MyItems() {
                     {item.current_box_name && ` / ${item.current_box_name}`}
                   </ItemMeta>
                   <ItemMeta>
-                    归属: {item.belong_room_name || '未知仓库'}
+                    应归还到: {item.belong_room_name || '未知仓库'}
                     {item.belong_box_name && ` / ${item.belong_box_name}`}
-                    <EditButton onClick={() => handleChangeBelongBox(item)}>
+                    <ActionButton onClick={() => handleChangeBelongBox(item)}>
                       变更
-                    </EditButton>
+                    </ActionButton>
                   </ItemMeta>
                 </ItemInfo>
               </ItemRow>
@@ -572,29 +728,6 @@ export default function MyItems() {
           ))
         )}
       </Content>
-
-      <Popup
-        visible={popupVisible}
-        onMaskClick={() => setPopupVisible(false)}
-        bodyStyle={{ borderRadius: '12px 12px 0 0' }}
-      >
-        <PopupContent>
-          <PopupTitle>修改物品名称</PopupTitle>
-          <Input
-            value={editName}
-            onChange={setEditName}
-            placeholder="请输入物品名称"
-          />
-          <PopupButtons>
-            <Button color="primary" size="small" onClick={handleSaveName}>
-              保存
-            </Button>
-            <Button size="small" onClick={() => setPopupVisible(false)}>
-              取消
-            </Button>
-          </PopupButtons>
-        </PopupContent>
-      </Popup>
 
       <Popup
         visible={scannerVisible}
@@ -647,6 +780,69 @@ export default function MyItems() {
               setScannedBoxInfo(null);
               setChangingBelongBoxItem(null);
             }}>
+              取消
+            </Button>
+          </PopupButtons>
+        </PopupContent>
+      </Popup>
+
+      {/* Transfer Popup */}
+      <Popup
+        visible={transferPopupVisible}
+        onMaskClick={() => setTransferPopupVisible(false)}
+        bodyStyle={{ borderRadius: '12px 12px 0 0' }}
+      >
+        <PopupContent>
+          <PopupTitle>转让物品「{transferItem?.item_name}」</PopupTitle>
+          <UserSearchContainer>
+            <SearchBar
+              value={userSearchKeyword}
+              onChange={(value) => {
+                setUserSearchKeyword(value);
+                searchUsers(value);
+              }}
+              placeholder="搜索用户昵称..."
+            />
+          </UserSearchContainer>
+          {searchingUsers ? (
+            <div style={{ textAlign: 'center', padding: 20 }}>
+              <SpinLoading />
+            </div>
+          ) : searchedUsers.length > 0 ? (
+            <UserList>
+              {searchedUsers.map((user) => (
+                <UserItem
+                  key={user.user_id}
+                  $selected={selectedUser?.user_id === user.user_id}
+                  onClick={() => setSelectedUser(user)}
+                >
+                  <UserAvatar $avatar={user.user_avatar}>
+                    {!user.user_avatar && '👤'}
+                  </UserAvatar>
+                  <UserInfo>
+                    <UserNickname>{user.user_nickname}</UserNickname>
+                  </UserInfo>
+                  {selectedUser?.user_id === user.user_id && (
+                    <span style={{ color: '#1677ff' }}>✓</span>
+                  )}
+                </UserItem>
+              ))}
+            </UserList>
+          ) : userSearchKeyword ? (
+            <NoUsers>未找到匹配的用户</NoUsers>
+          ) : (
+            <NoUsers>请输入用户昵称搜索</NoUsers>
+          )}
+          <PopupButtons>
+            <Button
+              color="primary"
+              size="small"
+              onClick={handleConfirmTransfer}
+              disabled={!selectedUser}
+            >
+              确认转让
+            </Button>
+            <Button size="small" onClick={() => setTransferPopupVisible(false)}>
               取消
             </Button>
           </PopupButtons>

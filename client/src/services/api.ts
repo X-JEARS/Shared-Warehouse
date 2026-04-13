@@ -19,6 +19,8 @@ export const userApi = {
     request.post('/upload/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
+  search: (keyword: string) =>
+    request.get('/users/search', { params: { keyword } }),
 };
 
 // Room API
@@ -78,6 +80,7 @@ export const itemApi = {
   }) => request.post('/items', data),
   update: (id: number, data: { name?: string; notice?: string; image?: string }) =>
     request.put(`/items/${id}`, data),
+  delete: (id: number) => request.delete(`/items/${id}`),
   getHistory: (id: number) => request.get(`/items/${id}/history`),
   getComments: (id: number) => request.get(`/items/${id}/comments`),
   addComment: (id: number, content: string) =>
@@ -88,6 +91,8 @@ export const itemApi = {
     request.put(`/items/${itemId}/remark`, { roomId, remark }),
   changeBelongBox: (itemId: number, newBoxId: number) =>
     request.put(`/items/${itemId}/belong-box`, { newBoxId }),
+  transfer: (itemId: number, targetUserId: number) =>
+    request.post(`/items/${itemId}/transfer`, { targetUserId }),
   uploadImage: (itemId: number, formData: FormData) =>
     request.post(`/upload/items/${itemId}/image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },

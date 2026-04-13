@@ -664,3 +664,114 @@ export const changeBelongBox = async (req: AuthRequest, res: Response) => {
     return error(res, 'Failed to change belong box', 500);
   }
 };
+
+export const transferItem = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+    const { targetUserId } = req.body;
+
+    if (!targetUserId) {
+      return error(res, '目标用户ID不能为空', 400);
+    }
+
+    // 验证物品存在且当前用户是所有者
+    const itemCheck = await query(
+      'SELECT item_belong_user_id, item_belong_box_id FROM items WHERE item_id = $1',
+      [id]
+    );
+
+    if (itemCheck.rows.length === 0) {
+      return error(res, '物品不存在', 404);
+    }
+
+    if (itemCheck.rows[0].item_belong_user_id !== userId) {
+      return error(res, '只有物品所有者才能转让物品', 403);
+    }
+
+    // 验证目标用户存在
+    const targetUserCheck = await query(
+      'SELECT user_id, user_nickname, user_box_id FROM users WHERE user_id = $1',
+      [targetUserId]
+    );
+
+    if (targetUserCheck.rows.length === 0) {
+      return error(res, '目标用户不存在', 404);
+    }
+
+    const targetUser = targetUserCheck.rows[0];
+
+    // 不能转让给自己
+    if (targetUserId === userId) {
+      return error(res, '不能转让给自己', 400);
+    }
+
+    // 只更新物品的所有者，不改变归属盒子
+    await query(
+      'UPDATE items SET item_belong_user_id = $1 WHERE item_id = $2',
+      [targetUserId, id]
+    );
+
+    return success(res, {
+      newOwnerNickname: targetUser.user_nickname
+    }, '物品转让成功');
+  } catch (err) {
+    console.error('Transfer item error:', err);
+    return error(res, 'Failed to transfer item', 500);
+  }
+};
+
+export const deleteItem = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+
+    // 验证物品存在且当前用户是所有者
+    const itemCheck = await query(
+      'SELECT item_belong_user_id, item_image FROM items WHERE item_id = $1',
+      [id]
+    );
+
+    if (itemCheck.rows.length === 0) {
+      return error(res, '物品不存在', 404);
+    }
+
+    if (itemCheck.rows[0].item_belong_user_id !== userId) {
+      return error(res, '只有物品所有者才能删除物品', 403);
+    }
+
+    // 删除关联数据（按外键依赖顺序）
+    // 1. 删除预约记录
+    await query('DELETE FROM reservations WHERE reservation_item_id = $1', [id]);
+
+    // 2. 删除评论
+    await query('DELETE FROM comments WHERE comment_item_id = $1', [id]);
+
+    // 3. 删除历史记录
+    await query('DELETE FROM histories WHERE history_item_id = $1', [id]);
+
+    // 4. 删除标签映射
+    await query('DELETE FROM item_room_tag_map WHERE irt_item_id = $1', [id]);
+
+    // 5. 删除备注
+    await query('DELETE FROM item_remarks WHERE remark_item_id = $1', [id]);
+
+    // 6. 删除物品本身
+    await query('DELETE FROM items WHERE item_id = $1', [id]);
+
+    // 7. 删除物品图片文件（如果存在）
+    if (itemCheck.rows[0].item_image) {
+      const fs = require('fs');
+      const path = require('path');
+      const imagePath = path.join(__dirname, '../../public', itemCheck.rows[0].item_image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    return success(res, null, '物品已删除');
+  } catch (err) {
+    console.error('Delete item error:', err);
+    return error(res, 'Failed to delete item', 500);
+  }
+};

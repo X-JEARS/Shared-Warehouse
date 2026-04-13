@@ -153,14 +153,20 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Located at `client/src/pages/MyItems.tsx`, accessible from Profile page
 - Shows all items where `item_belong_user_id` equals current user
 - Each item card displays:
-  - Item image and name (editable via popup)
+  - Item image and name
   - Current location (`display_location_name` + `current_box_name`)
-  - Belong info (`belong_room_name` + `belong_box_name`)
+  - Return location (`belong_room_name` + `belong_box_name`, labeled as "应归还到")
 - Supports search functionality
 - Uses `GET /api/items/my` API endpoint
 - **Item Image Upload**: Click item image to upload new image, supports cropping (react-image-crop), compressed to 200x200 JPEG
 - Image stored at `/images/{item_id}.jpg` on server
 - Uses `POST /api/upload/items/:id/image` for image upload (multipart/form-data)
+- **Item Operations**: Click "操作" button to show action sheet from bottom with options:
+  - Edit name: Edit item name via center dialog
+  - Transfer: Search users by nickname and transfer item ownership
+  - Delete: Delete item with confirmation (red delete button text)
+- **Transfer Item**: `POST /api/items/:id/transfer` with `targetUserId`, only changes owner, does not change belong box
+- **Delete Item**: `DELETE /api/items/:id`, removes item and all related records (history, comments, reservations, tags, remarks)
 
 ### Profile Page (我的)
 - Located at `client/src/pages/Profile.tsx`
