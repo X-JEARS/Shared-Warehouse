@@ -68,7 +68,7 @@ npm run dev
 
 ## 功能特性
 
-- **多仓库管理**: 用户可以加入多个仓库，查看不同仓库中的物品
+- **多仓库管理**: 用户可以加入多个仓库，查看不同仓库中的物品；加入仓库需管理员审批
 - **二维码扫描**: 扫描物品二维码取走物品，扫描盒子二维码进入盒子详情；物品可在人与人、人与仓库之间自由流动；支持手电筒照明，高清视频流提升小二维码识别率
 - **盒子详情**: 扫描盒子码直接进入盒子详情页，可查看盒子信息和物品列表，支持连续扫描放入物品
 - **物品管理**: 添加物品时扫描物品二维码，支持设置标签和备注名，存放位置默认选择第一个盒子
@@ -125,8 +125,14 @@ warehouse/
 - `POST /api/rooms` - 创建仓库
 - `GET /api/rooms/:id` - 获取仓库详情
 - `PUT /api/rooms/:id` - 修改仓库信息
-- `POST /api/rooms/:id/join` - 加入仓库
+- `POST /api/rooms/:id/join` - 加入仓库（直接加入，保留兼容）
+- `POST /api/rooms/:id/request-join` - 申请加入仓库（需审批）
+- `GET /api/rooms/:id/join-request-status` - 查询申请状态
+- `GET /api/rooms/:id/join-requests` - 获取加入申请列表（管理员）
+- `POST /api/rooms/:id/join-requests/:requestId/approve` - 同意申请
+- `POST /api/rooms/:id/join-requests/:requestId/reject` - 拒绝申请
 - `GET /api/rooms/:id/members` - 获取仓库成员
+- `DELETE /api/rooms/:id/members/:memberId` - 移除成员（管理员）
 
 ### 物品
 - `GET /api/items` - 获取物品列表

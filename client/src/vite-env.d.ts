@@ -17,4 +17,6 @@ declare module 'antd-mobile-icons' {
   export const DeleteFill: FC<any>;
   export const CalendarOutline: FC<any>;
   export const SearchOutline: FC<any>;
+  export const CheckCircleOutline: FC<any>;
+  export const CloseCircleOutline: FC<any>;
 }

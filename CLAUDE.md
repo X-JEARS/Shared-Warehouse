@@ -29,7 +29,7 @@ psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 
 ### Backend (server/)
 - **Express + TypeScript** REST API on port 3000
-- **PostgreSQL** database with 13 tables (see sql/init.sql)
+- **PostgreSQL** database with 14 tables (see sql/init.sql)
 - **JWT authentication** via middleware in `src/middlewares/auth.ts`
 - **Route structure**: Each route file imports its controller, all routes use `/api` prefix
 - **Response format**: Use `success()` and `error()` helpers from `src/utils/response.ts`
@@ -46,18 +46,20 @@ psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 Users → Boxes (personal box: user_box_id)
 Rooms → Boxes → Items
 Room_Members (user-room many-to-many)
+Room_Join_Requests (join requests requiring admin approval)
 Items ↔ Tags (via item_room_tag_map, tags are room-specific)
 Items → Histories (transfer records)
 Items → Reservations → Orders
 ```
 
 ### Key Domain Concepts
-- **Room (仓库)**: A warehouse/workspace that users can join
+- **Room (仓库)**: A warehouse/workspace that users can join (requires admin approval)
 - **Box (盒子)**: Storage container within a room, or user's personal box (user_box_id)
 - **Item (物品)**: Physical asset with QR code, can be taken by scanning its QR code
 - **Tags**: Room-specific, items have different tags in different rooms
 - **Cart**: Client-side only, persisted to localStorage via Zustand
 - **Room Persistence**: `currentRoom` is persisted to localStorage, so users return to their last visited room on login/app start. Warehouse page validates that the stored room is still accessible (user is still a member)
+- **Room Join Request**: Users request to join a room, admin approves/rejects in room settings
 
 ## Important Patterns
 
@@ -66,6 +68,15 @@ Items → Reservations → Orders
 2. Token stored in Zustand (`authStore`) with localStorage persistence
 3. `request.ts` interceptor adds `Authorization: Bearer <token>` header
 4. Backend `auth` middleware validates token, injects `req.user`
+
+### Room Join Request Flow
+- User submits join request via `POST /api/rooms/:id/request-join` with optional member name
+- Request stored in `room_join_requests` table with status `pending`
+- Admin sees pending requests in room settings page
+- Admin can approve (`POST /api/rooms/:id/join-requests/:requestId/approve`) or reject (`POST /api/rooms/:id/join-requests/:requestId/reject`)
+- Approved: User added to `room_members`, request status updated to `approved`
+- Rejected: Request status updated to `rejected`, user can reapply
+- User can check request status via `GET /api/rooms/:id/join-request-status`
 
 ### Item Taking Flow
 - Scan item QR code → `POST /api/scan` identifies item, returns `isInHand` flag
