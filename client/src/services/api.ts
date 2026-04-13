@@ -31,6 +31,16 @@ export const roomApi = {
     request.put(`/rooms/${id}`, data),
   join: (id: number, memberName?: string) =>
     request.post(`/rooms/${id}/join`, { memberName }),
+  requestJoin: (id: number, memberName?: string) =>
+    request.post(`/rooms/${id}/request-join`, { memberName }),
+  getJoinRequestStatus: (id: number) =>
+    request.get(`/rooms/${id}/join-request-status`),
+  getJoinRequests: (id: number) =>
+    request.get(`/rooms/${id}/join-requests`),
+  approveJoinRequest: (roomId: number, requestId: number) =>
+    request.post(`/rooms/${roomId}/join-requests/${requestId}/approve`),
+  rejectJoinRequest: (roomId: number, requestId: number) =>
+    request.post(`/rooms/${roomId}/join-requests/${requestId}/reject`),
   getMembers: (id: number) => request.get(`/rooms/${id}/members`),
   removeMember: (roomId: number, memberId: number) =>
     request.delete(`/rooms/${roomId}/members/${memberId}`),

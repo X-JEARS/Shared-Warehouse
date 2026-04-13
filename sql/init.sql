@@ -135,6 +135,18 @@ CREATE TABLE IF NOT EXISTS notifications (
     notification_create_time BIGINT NOT NULL
 );
 
+-- Room join requests table
+CREATE TABLE IF NOT EXISTS room_join_requests (
+    request_id SERIAL PRIMARY KEY,
+    request_user_id INT NOT NULL REFERENCES users(user_id),
+    request_room_id INT NOT NULL REFERENCES rooms(room_id),
+    request_member_name VARCHAR(16),
+    request_status VARCHAR(16) NOT NULL DEFAULT 'pending', -- pending, approved, rejected
+    request_create_time BIGINT NOT NULL,
+    request_process_time BIGINT,
+    UNIQUE(request_user_id, request_room_id)
+);
+
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_items_current_box ON items(item_current_box_id);
 CREATE INDEX IF NOT EXISTS idx_items_belong_user ON items(item_belong_user_id);
@@ -165,6 +177,10 @@ CREATE INDEX IF NOT EXISTS idx_reservations_time ON reservations(reservation_sta
 
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(notification_user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_read ON notifications(notification_is_read);
+
+CREATE INDEX IF NOT EXISTS idx_join_requests_room ON room_join_requests(request_room_id);
+CREATE INDEX IF NOT EXISTS idx_join_requests_user ON room_join_requests(request_user_id);
+CREATE INDEX IF NOT EXISTS idx_join_requests_status ON room_join_requests(request_status);
 
 -- Insert a default admin box (for users created before they get their personal box)
 -- INSERT INTO boxes (box_qrcode, box_create_time) VALUES ('system.default', 0);

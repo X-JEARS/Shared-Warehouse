@@ -11,7 +11,7 @@ import {
   Selector,
   Popup,
 } from 'antd-mobile';
-import { AddOutline } from 'antd-mobile-icons';
+import { AddOutline, CheckCircleOutline, CloseCircleOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { roomApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
@@ -89,6 +89,16 @@ interface Member {
   member_name?: string;
 }
 
+interface JoinRequest {
+  request_id: number;
+  request_user_id: number;
+  request_member_name?: string;
+  request_create_time: number;
+  user_nickname: string;
+  user_login_name: string;
+  user_avatar?: string;
+}
+
 export default function RoomSettings() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -99,6 +109,7 @@ export default function RoomSettings() {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
+  const [joinRequests, setJoinRequests] = useState<JoinRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteBoxPopup, setDeleteBoxPopup] = useState<{
     visible: boolean;
@@ -125,6 +136,15 @@ export default function RoomSettings() {
       setBoxes(boxesRes.data || []);
       setTags(tagsRes.data || []);
       setMembers(membersRes.data || []);
+
+      // 单独加载加入请求，失败不影响页面其他功能
+      try {
+        const requestsRes: any = await roomApi.getJoinRequests(parseInt(id));
+        setJoinRequests(requestsRes.data || []);
+      } catch (e) {
+        console.error('Failed to load join requests:', e);
+        setJoinRequests([]);
+      }
     } catch (error) {
       console.error('Failed to load room:', error);
       Toast.show({ icon: 'fail', content: '加载失败' });
@@ -284,6 +304,36 @@ export default function RoomSettings() {
     }
   };
 
+  const handleApproveRequest = async (request: JoinRequest) => {
+    try {
+      await roomApi.approveJoinRequest(parseInt(id!), request.request_id);
+      // 移除请求并刷新成员列表
+      setJoinRequests(joinRequests.filter((r) => r.request_id !== request.request_id));
+      // 重新加载成员列表
+      const membersRes: any = await roomApi.getMembers(parseInt(id!));
+      setMembers(membersRes.data || []);
+      Toast.show({ icon: 'success', content: '已通过申请' });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '操作失败' });
+    }
+  };
+
+  const handleRejectRequest = async (request: JoinRequest) => {
+    const result = await Dialog.confirm({
+      content: `确定要拒绝 ${request.user_nickname} 的加入申请吗？`,
+    });
+
+    if (result) {
+      try {
+        await roomApi.rejectJoinRequest(parseInt(id!), request.request_id);
+        setJoinRequests(joinRequests.filter((r) => r.request_id !== request.request_id));
+        Toast.show({ icon: 'success', content: '已拒绝申请' });
+      } catch (error: any) {
+        Toast.show({ icon: 'fail', content: error.message || '操作失败' });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <Container style={{ textAlign: 'center', paddingTop: 100 }}>
@@ -318,6 +368,48 @@ export default function RoomSettings() {
           </List.Item>
         </List>
       </Section>
+
+      {joinRequests.length > 0 && (
+        <>
+          <SectionHeader>
+            加入申请
+            <span style={{ fontWeight: 400, color: '#ff4d4f', fontSize: 13 }}>
+              ({joinRequests.length}个待处理)
+            </span>
+          </SectionHeader>
+          <Section>
+            {joinRequests.map((request) => (
+              <MemberItem key={request.request_id}>
+                <MemberInfo>
+                  <MemberName>
+                    {request.request_member_name || request.user_nickname}
+                  </MemberName>
+                  <MemberMeta>
+                    @{request.user_login_name} ·{' '}
+                    {new Date(request.request_create_time).toLocaleDateString()}
+                  </MemberMeta>
+                </MemberInfo>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button
+                    size="small"
+                    color="primary"
+                    onClick={() => handleApproveRequest(request)}
+                  >
+                    <CheckCircleOutline /> 通过
+                  </Button>
+                  <Button
+                    size="small"
+                    color="danger"
+                    onClick={() => handleRejectRequest(request)}
+                  >
+                    <CloseCircleOutline /> 拒绝
+                  </Button>
+                </div>
+              </MemberItem>
+            ))}
+          </Section>
+        </>
+      )}
 
       <SectionHeader>
         盒子管理
