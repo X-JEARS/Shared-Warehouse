@@ -102,6 +102,8 @@ export default function BoxDetail() {
   };
 
   const handleScanItem = async (qrcode: string): Promise<boolean> => {
+    if (pendingItem) return false; // 已有待确认物品，跳过重复扫描
+
     // 验证是否为物品码（非盒子码）
     if (qrcode.toLowerCase().startsWith('box.')) {
       Toast.show({ icon: 'fail', content: '请扫描物品二维码' });
@@ -169,14 +171,22 @@ export default function BoxDetail() {
           <BoxInfoContent>
             <BoxName>📦 {box?.box_name}</BoxName>
             <BoxMeta>所属仓库: {box?.room_name || '个人盒子'}</BoxMeta>
-            <BoxMeta>物品数量: {box?.items?.length || 0}</BoxMeta>
             {box?.box_notice && (
               <BoxMeta>备注: {box.box_notice}</BoxMeta>
             )}
           </BoxInfoContent>
         </BoxInfo>
 
-        <SectionTitle>物品列表</SectionTitle>
+        <Button
+          block
+          color="primary"
+          size="large"
+          onClick={() => setShowScanner(true)}
+        >
+          存入物品
+        </Button>
+
+        <SectionTitle style={{ marginTop: 24 }}>物品列表</SectionTitle>
         {box?.items?.length > 0 ? (
           <ItemList>
             {box.items.map((item: any) => (
@@ -190,16 +200,6 @@ export default function BoxDetail() {
         ) : (
           <EmptyText>盒子内暂无物品</EmptyText>
         )}
-
-        <Button
-          block
-          color="primary"
-          size="large"
-          style={{ marginTop: 24 }}
-          onClick={() => setShowScanner(true)}
-        >
-          存入物品
-        </Button>
       </Content>
 
       {/* 扫码弹窗 */}
@@ -212,10 +212,6 @@ export default function BoxDetail() {
             </ScanHint>
             <ScannerComponent
               onScan={handleScanItem}
-              onError={(error) => {
-                console.error('Scanner error:', error);
-                Toast.show({ icon: 'fail', content: '扫描失败' });
-              }}
             />
           </Content>
         </ScanModal>
