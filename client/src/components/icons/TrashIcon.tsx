@@ -17,7 +17,7 @@ const TrashIcon: React.FC<TrashIconProps> = ({ style, className, onClick }) => {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      style={style}
+      style={{ display: 'block', ...style }}
       className={className}
       onClick={onClick}
     >

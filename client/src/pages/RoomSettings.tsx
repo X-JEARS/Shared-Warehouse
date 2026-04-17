@@ -11,7 +11,7 @@ import {
   Selector,
   Popup,
 } from 'antd-mobile';
-import { AddOutline, CheckCircleOutline, CloseCircleOutline } from 'antd-mobile-icons';
+import { AddOutline, CheckCircleOutline, CloseCircleOutline, CloseOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { roomApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
@@ -69,6 +69,30 @@ const ItemCountBadge = styled.span`
   margin-left: 8px;
 `;
 
+const TagList = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+`;
+
+const TagBadge = styled.span<{ $selected?: boolean }>`
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: ${(props) => (props.$selected ? '#ff4d4f' : '#e6f4ff')};
+  color: ${(props) => (props.$selected ? '#fff' : '#1677ff')};
+`;
+
+const DeleteBar = styled.div`
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  border-top: 1px solid #f0f0f0;
+`;
+
 interface Box {
   box_id: number;
   box_name: string;
@@ -116,6 +140,8 @@ export default function RoomSettings() {
     box: Box | null;
     targetValue: string;
   }>({ visible: false, box: null, targetValue: '' });
+  const [tagDeleteMode, setTagDeleteMode] = useState(false);
+  const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadRoom();
@@ -272,20 +298,32 @@ export default function RoomSettings() {
     }
   };
 
-  const handleDeleteTag = async (tagId: number) => {
-    const result = await Dialog.confirm({
-      content: '确定要删除这个标签吗？',
-    });
-
-    if (result) {
-      try {
-        await tagApi.delete(tagId);
-        setTags(tags.filter((t) => t.tag_id !== tagId));
-        Toast.show({ icon: 'success', content: '删除成功' });
-      } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '删除失败' });
-      }
+  const handleConfirmDeleteTags = async () => {
+    if (selectedTagIds.size === 0) {
+      Toast.show({ content: '请选择要删除的标签' });
+      return;
     }
+    try {
+      await Promise.all(Array.from(selectedTagIds).map((id) => tagApi.delete(id)));
+      setTags(tags.filter((t) => !selectedTagIds.has(t.tag_id)));
+      setSelectedTagIds(new Set());
+      setTagDeleteMode(false);
+      Toast.show({ icon: 'success', content: '删除成功' });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+    }
+  };
+
+  const toggleTagSelection = (tagId: number) => {
+    setSelectedTagIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(tagId)) {
+        next.delete(tagId);
+      } else {
+        next.add(tagId);
+      }
+      return next;
+    });
   };
 
   const handleRemoveMember = async (memberId: number, memberName: string) => {
@@ -447,9 +485,28 @@ export default function RoomSettings() {
 
       <SectionHeader>
         标签管理
-        <Button size="small" onClick={handleAddTag}>
-          <AddOutline /> 添加
-        </Button>
+        {tagDeleteMode ? (
+          <Button
+            size="small"
+            onClick={() => {
+              setTagDeleteMode(false);
+              setSelectedTagIds(new Set());
+            }}
+          >
+            <CloseOutline /> 取消
+          </Button>
+        ) : (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button size="small" onClick={handleAddTag}>
+              <AddOutline />
+            </Button>
+            {tags.length > 0 && (
+              <Button size="small" onClick={() => setTagDeleteMode(true)}>
+                <TrashIcon style={{ color: '#ff4d4f' }} />
+              </Button>
+            )}
+          </div>
+        )}
       </SectionHeader>
       <Section>
         {tags.length === 0 ? (
@@ -457,17 +514,38 @@ export default function RoomSettings() {
             暂无标签
           </div>
         ) : (
-          tags.map((tag) => (
-            <MemberItem key={tag.tag_id}>
-              <MemberInfo>
-                <MemberName>{tag.tag_name}</MemberName>
-              </MemberInfo>
-              <TrashIcon
-                style={{ color: '#ff4d4f', cursor: 'pointer' }}
-                onClick={() => handleDeleteTag(tag.tag_id)}
-              />
-            </MemberItem>
-          ))
+          <TagList>
+            {tags.map((tag) => (
+              <TagBadge
+                key={tag.tag_id}
+                $selected={tagDeleteMode && selectedTagIds.has(tag.tag_id)}
+                onClick={() => tagDeleteMode && toggleTagSelection(tag.tag_id)}
+              >
+                {tag.tag_name}
+              </TagBadge>
+            ))}
+          </TagList>
+        )}
+        {tagDeleteMode && (
+          <DeleteBar>
+            <Button
+              block
+              onClick={() => {
+                setTagDeleteMode(false);
+                setSelectedTagIds(new Set());
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              block
+              color="danger"
+              onClick={handleConfirmDeleteTags}
+              disabled={selectedTagIds.size === 0}
+            >
+              确认删除{selectedTagIds.size > 0 ? ` (${selectedTagIds.size})` : ''}
+            </Button>
+          </DeleteBar>
         )}
       </Section>
 
