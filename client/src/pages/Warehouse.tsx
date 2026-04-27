@@ -168,6 +168,7 @@ export default function Warehouse() {
   const [detailVisible, setDetailVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const searchInputRef = useRef<InputRef>(null);
 
   // 加载仓库列表
@@ -205,6 +206,7 @@ export default function Warehouse() {
   useEffect(() => {
     if (currentRoom) {
       loadItems();
+      loadJoinRequestCount();
     }
   }, [currentRoom, filters]);
 
@@ -224,6 +226,19 @@ export default function Warehouse() {
       console.error('Failed to load items:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadJoinRequestCount = async () => {
+    if (!currentRoom || currentRoom.room_admin !== user?.user_id) {
+      setPendingRequestCount(0);
+      return;
+    }
+    try {
+      const res: any = await roomApi.getJoinRequests(currentRoom.room_id);
+      setPendingRequestCount(res.data?.length || 0);
+    } catch (error) {
+      console.error('Failed to load join requests:', error);
     }
   };
 
@@ -288,7 +303,32 @@ export default function Warehouse() {
           <WarehouseSelector />
           {currentRoom && currentRoom.room_admin === user?.user_id && (
             <IconButton onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}>
-              <SetOutline />
+              {pendingRequestCount > 0 ? (
+                <div style={{ position: 'relative' }}>
+                  <SetOutline />
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -6,
+                      background: '#ff4d4f',
+                      color: 'white',
+                      fontSize: 10,
+                      borderRadius: '50%',
+                      minWidth: 14,
+                      height: 14,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '0 2px',
+                    }}
+                  >
+                    {pendingRequestCount}
+                  </span>
+                </div>
+              ) : (
+                <SetOutline />
+              )}
             </IconButton>
           )}
         </div>

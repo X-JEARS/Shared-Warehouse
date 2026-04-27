@@ -94,6 +94,7 @@ Items → Reservations → Orders
 
 ### Room Settings Page
 - Located at `client/src/pages/RoomSettings.tsx`, only accessible by room admin
+- NavBar is sticky at top (position: sticky), stays fixed when scrolling page content
 - Uses card-based layout: each section (room info, join requests, boxes, tags, members) wrapped in a `Card` component (white background, 12px border-radius, `box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)`)
 - **Room info card**: Displays room name directly (no "仓库名称：" prefix), with a blue outline-style edit icon button (SVG pencil+square, same as Profile nickname edit) inline to the right. Room ID shown below in gray.
 - **Join requests card**: Shows pending requests in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name/date on the right, approve/reject buttons at card bottom
@@ -121,7 +122,7 @@ Items → Reservations → Orders
 - **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that starts scanner for continuous item insertion.
 
 ### Warehouse Page Header Layout
-- Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin)
+- Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin). When pending join requests exist, a red badge with the request count is shown on the gear icon.
 - Right side: Search button (magnifier icon) + Add item button (+ icon)
 - Search bar hidden by default, click search button to show with auto-focus
 - FAB (bottom right): Scan button, Cart button (only visible when cart has items)
