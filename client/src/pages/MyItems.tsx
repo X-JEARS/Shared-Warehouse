@@ -477,14 +477,14 @@ export default function MyItems() {
   };
 
   const handleEditName = (item: MyItem) => {
-    setEditName(item.item_name);
+    let currentEditName = item.item_name;
     Dialog.confirm({
       content: (
         <div>
           <div style={{ marginBottom: 12, fontWeight: 500 }}>修改物品名称</div>
           <Input
-            value={editName}
-            onChange={setEditName}
+            defaultValue={item.item_name}
+            onChange={(value) => { currentEditName = value; }}
             placeholder="请输入物品名称"
             style={{ '--text-align': 'left' }}
           />
@@ -493,15 +493,15 @@ export default function MyItems() {
       confirmText: '保存',
       cancelText: '取消',
       onConfirm: async () => {
-        if (!editName.trim()) {
+        if (!currentEditName.trim()) {
           Toast.show({ content: '物品名称不能为空' });
           return;
         }
         try {
-          await itemApi.update(item.item_id, { name: editName });
+          await itemApi.update(item.item_id, { name: currentEditName });
           setItems(items.map(i =>
             i.item_id === item.item_id
-              ? { ...i, item_name: editName }
+              ? { ...i, item_name: currentEditName }
               : i
           ));
           Toast.show({ icon: 'success', content: '名称已更新' });
