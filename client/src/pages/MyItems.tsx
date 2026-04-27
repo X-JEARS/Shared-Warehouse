@@ -300,7 +300,6 @@ export default function MyItems() {
   const [items, setItems] = useState<MyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
-  const [editName, setEditName] = useState('');
   const [scannerVisible, setScannerVisible] = useState(false);
   const [changingBelongBoxItem, setChangingBelongBoxItem] = useState<MyItem | null>(null);
   const [scannedBoxInfo, setScannedBoxInfo] = useState<BoxInfo | null>(null);
