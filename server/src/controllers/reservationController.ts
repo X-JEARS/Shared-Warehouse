@@ -605,6 +605,48 @@ export const deleteTag = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const updateTag = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return error(res, 'Tag name is required');
+    }
+
+    if (name.length > 12) {
+      return error(res, 'Tag name must be 12 characters or less');
+    }
+
+    const tagCheck = await query(
+      `SELECT t.tag_belong_room_id, r.room_admin
+       FROM tags t
+       JOIN rooms r ON t.tag_belong_room_id = r.room_id
+       WHERE t.tag_id = $1`,
+      [id]
+    );
+
+    if (tagCheck.rows.length === 0) {
+      return error(res, 'Tag not found', 404);
+    }
+
+    if (tagCheck.rows[0].room_admin !== userId) {
+      return error(res, 'Only admin can update tags', 403);
+    }
+
+    const result = await query(
+      'UPDATE tags SET tag_name = $1 WHERE tag_id = $2 RETURNING *',
+      [name, id]
+    );
+
+    return success(res, result.rows[0], 'Tag updated');
+  } catch (err) {
+    console.error('Update tag error:', err);
+    return error(res, 'Failed to update tag', 500);
+  }
+};
+
 // 批量检查物品预约冲突
 export const checkConflicts = async (req: AuthRequest, res: Response) => {
   try {

@@ -12,6 +12,7 @@ import {
   getTags,
   createTag,
   deleteTag,
+  updateTag,
   checkConflicts,
 } from '../controllers/reservationController';
 import { auth } from '../middlewares/auth';
@@ -34,5 +35,6 @@ router.get('/rooms/:roomId/orders', auth, getRoomOrders);
 router.get('/rooms/:roomId/tags', auth, getTags);
 router.post('/rooms/:roomId/tags', auth, createTag);
 router.delete('/tags/:id', auth, deleteTag);
+router.put('/tags/:id', auth, updateTag);
 
 export default router;

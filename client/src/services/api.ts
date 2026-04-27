@@ -132,6 +132,8 @@ export const tagApi = {
   getByRoom: (roomId: number) => request.get(`/reservations/rooms/${roomId}/tags`),
   create: (roomId: number, name: string) =>
     request.post(`/reservations/rooms/${roomId}/tags`, { name }),
+  update: (id: number, name: string) =>
+    request.put(`/reservations/tags/${id}`, { name }),
   delete: (id: number) => request.delete(`/reservations/tags/${id}`),
 };
 

@@ -60,13 +60,58 @@ const MemberMeta = styled.div`
   color: #999;
 `;
 
+const BoxGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 12px 16px;
+`;
+
+const BoxCard = styled.div`
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+
+  &:active {
+    background: #eee;
+  }
+`;
+
+const BoxCardInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const BoxCardName = styled.div`
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const BoxCardMeta = styled.div`
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+`;
+
+const BoxDeleteIcon = styled.div`
+  flex-shrink: 0;
+  margin-left: 8px;
+`;
+
 const ItemCountBadge = styled.span`
   background: #ff4d4f;
   color: white;
-  font-size: 12px;
-  padding: 2px 6px;
+  font-size: 11px;
+  padding: 1px 5px;
   border-radius: 10px;
-  margin-left: 8px;
+  margin-left: 4px;
 `;
 
 const TagList = styled.div`
@@ -214,6 +259,36 @@ export default function RoomSettings() {
     navigate(`/add-box/${id}`);
   };
 
+  const handleRenameBox = async (box: Box) => {
+    const result = await Dialog.confirm({
+      title: '修改盒子名称',
+      content: (
+        <Input
+          id="boxRenameInput"
+          placeholder="盒子名称"
+          defaultValue={box.box_name || ''}
+          style={{ marginTop: 8 }}
+        />
+      ),
+    });
+
+    if (result) {
+      const name = (document.getElementById('boxRenameInput') as HTMLInputElement)?.value;
+      if (!name) {
+        Toast.show({ content: '请输入名称' });
+        return;
+      }
+
+      try {
+        await boxApi.update(box.box_id, { name });
+        setBoxes(boxes.map((b) => b.box_id === box.box_id ? { ...b, box_name: name } : b));
+        Toast.show({ icon: 'success', content: '修改成功' });
+      } catch (error: any) {
+        Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+      }
+    }
+  };
+
   const handleDeleteBox = async (box: Box) => {
     const itemCount = box.item_count || 0;
     const isLastBox = boxes.length <= 1;
@@ -294,6 +369,41 @@ export default function RoomSettings() {
         Toast.show({ icon: 'success', content: '添加成功' });
       } catch (error: any) {
         Toast.show({ icon: 'fail', content: error.message || '添加失败' });
+      }
+    }
+  };
+
+  const handleRenameTag = async (tag: Tag) => {
+    if (tagDeleteMode) {
+      toggleTagSelection(tag.tag_id);
+      return;
+    }
+
+    const result = await Dialog.confirm({
+      title: '修改标签名称',
+      content: (
+        <Input
+          id="tagRenameInput"
+          placeholder="标签名称"
+          defaultValue={tag.tag_name}
+          style={{ marginTop: 8 }}
+        />
+      ),
+    });
+
+    if (result) {
+      const name = (document.getElementById('tagRenameInput') as HTMLInputElement)?.value;
+      if (!name) {
+        Toast.show({ content: '请输入标签名称' });
+        return;
+      }
+
+      try {
+        await tagApi.update(tag.tag_id, name);
+        setTags(tags.map((t) => t.tag_id === tag.tag_id ? { ...t, tag_name: name } : t));
+        Toast.show({ icon: 'success', content: '修改成功' });
+      } catch (error: any) {
+        Toast.show({ icon: 'fail', content: error.message || '修改失败' });
       }
     }
   };
@@ -461,25 +571,29 @@ export default function RoomSettings() {
             暂无盒子
           </div>
         ) : (
-          boxes.map((box) => (
-            <MemberItem key={box.box_id}>
-              <MemberInfo>
-                <MemberName>
-                  {box.box_name || `盒子 ${box.box_id}`}
-                  {(box.item_count || 0) > 0 && (
-                    <ItemCountBadge>{box.item_count}</ItemCountBadge>
+          <BoxGrid>
+            {boxes.map((box) => (
+              <BoxCard key={box.box_id} onClick={() => handleRenameBox(box)}>
+                <BoxCardInfo>
+                  <BoxCardName>
+                    {box.box_name || `盒子 ${box.box_id}`}
+                    {(box.item_count || 0) > 0 && (
+                      <ItemCountBadge>{box.item_count}</ItemCountBadge>
+                    )}
+                  </BoxCardName>
+                  {box.box_notice && (
+                    <BoxCardMeta>{box.box_notice}</BoxCardMeta>
                   )}
-                </MemberName>
-                {box.box_notice && (
-                  <MemberMeta>{box.box_notice}</MemberMeta>
-                )}
-              </MemberInfo>
-              <TrashIcon
-                style={{ color: '#ff4d4f', cursor: 'pointer' }}
-                onClick={() => handleDeleteBox(box)}
-              />
-            </MemberItem>
-          ))
+                </BoxCardInfo>
+                <BoxDeleteIcon onClick={(e) => e.stopPropagation()}>
+                  <TrashIcon
+                    style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 16 }}
+                    onClick={() => handleDeleteBox(box)}
+                  />
+                </BoxDeleteIcon>
+              </BoxCard>
+            ))}
+          </BoxGrid>
         )}
       </Section>
 
@@ -519,7 +633,7 @@ export default function RoomSettings() {
               <TagBadge
                 key={tag.tag_id}
                 $selected={tagDeleteMode && selectedTagIds.has(tag.tag_id)}
-                onClick={() => tagDeleteMode && toggleTagSelection(tag.tag_id)}
+                onClick={() => handleRenameTag(tag)}
               >
                 {tag.tag_name}
               </TagBadge>

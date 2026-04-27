@@ -94,11 +94,12 @@ Items → Reservations → Orders
 
 ### Box Management Flow
 - **Adding Box**: Requires QR code (must start with `box.`) and name. QR code can be scanned or manually entered.
-- **Deleting Box**: 
+- **Renaming Box**: Click box card in room settings to open center dialog for renaming. Uses `PUT /api/boxes/:id` with `{ name }`.
+- **Deleting Box**:
   - Cannot delete the last box in a room
   - If box has items, must select a target (another box or "user's hand") to move items before deletion
   - Moving items creates transfer history records automatically
-- Box item count is displayed as a badge in room settings
+- Boxes displayed in two-per-row grid layout in room settings
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`
