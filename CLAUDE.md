@@ -99,7 +99,7 @@ Items → Reservations → Orders
 - **Join requests card**: Shows pending requests in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name/date on the right, approve/reject buttons at card bottom
 - **Box management card**: Boxes in two-per-row grid, click to rename, trash icon to delete
 - **Tag management card**: Tags in wrap layout, click to rename, batch delete mode
-- **Member management card**: Members in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name on the right, trash icon for non-admins
+- **Member management card**: Members in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name on the right (wraps on long names). Member count shown inline next to title. Batch delete mode (same pattern as tag management): click trash icon to enter delete mode, select members to remove, confirm batch deletion. Admin cannot be selected for deletion.
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`
