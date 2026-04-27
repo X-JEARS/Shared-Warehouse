@@ -267,11 +267,11 @@ export default function CreateItem() {
             </Form.Item>
           )}
 
-          <Form.Item label="备注名">
+          <Form.Item label="备注">
             <TextArea
               value={formData.notice}
               onChange={(v) => setFormData({ ...formData, notice: v })}
-              placeholder="物品备注名（可选）"
+              placeholder="物品备注（可选）"
               maxLength={120}
               rows={3}
             />

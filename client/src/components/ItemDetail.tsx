@@ -130,6 +130,8 @@ export default function ItemDetail({
   const [showAllComments, setShowAllComments] = useState(false);
   const [editingRemark, setEditingRemark] = useState(false);
   const [editRemarkText, setEditRemarkText] = useState('');
+  const [editingNotice, setEditingNotice] = useState(false);
+  const [editNoticeText, setEditNoticeText] = useState('');
   const { addItem, items: cartItems } = useCartStore();
 
   const isInCart = cartItems.some((i) => i.itemId === itemId);
@@ -273,7 +275,19 @@ export default function ItemDetail({
       await itemApi.setRemark(itemId!, item.room_id, editRemarkText);
       setItem({ ...item, remark: editRemarkText || null });
       setEditingRemark(false);
-      Toast.show({ icon: 'success', content: '备注名已更新' });
+      Toast.show({ icon: 'success', content: '别名已更新' });
+      onUpdate?.();
+    } catch (error) {
+      Toast.show({ icon: 'fail', content: '更新失败' });
+    }
+  };
+
+  const handleSaveNotice = async () => {
+    try {
+      await itemApi.update(itemId!, { notice: editNoticeText });
+      setItem({ ...item, item_notice: editNoticeText || null });
+      setEditingNotice(false);
+      Toast.show({ icon: 'success', content: '备注已更新' });
       onUpdate?.();
     } catch (error) {
       Toast.show({ icon: 'fail', content: '更新失败' });
@@ -388,12 +402,15 @@ export default function ItemDetail({
               </ItemTitle>
             </ItemHeader>
 
-            {item.remark && (
-              <Section>
-                <SectionTitle>备注</SectionTitle>
-                <div style={{ fontSize: 14, color: '#666' }}>{item.remark}</div>
+            <Section>
+                <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  备注
+                  <Button size="mini" onClick={() => { setEditNoticeText(item.item_notice || ''); setEditingNotice(true); }}>
+                    编辑
+                  </Button>
+                </SectionTitle>
+                <div style={{ fontSize: 14, color: '#666' }}>{item.item_notice || '暂无备注'}</div>
               </Section>
-            )}
 
             <Section>
               <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -587,21 +604,21 @@ export default function ItemDetail({
         </div>
       </Popup>
 
-      {/* 备注名编辑弹窗 */}
+      {/* 别名编辑弹窗 */}
       <Popup
         visible={editingRemark}
         onMaskClick={() => setEditingRemark(false)}
         bodyStyle={{ borderRadius: '12px 12px 0 0' }}
       >
         <PopupContent>
-          <SectionTitle style={{ marginBottom: 16 }}>编辑备注名</SectionTitle>
+          <SectionTitle style={{ marginBottom: 16 }}>编辑别名</SectionTitle>
           <div style={{ marginBottom: 16, fontSize: 13, color: '#666' }}>
             原名称：{item?.item_name}
           </div>
           <Input
             value={editRemarkText}
             onChange={setEditRemarkText}
-            placeholder="输入备注名（留空则显示原名称）"
+            placeholder="输入别名（留空则显示原名称）"
             style={{ marginBottom: 16 }}
           />
           <div style={{ display: 'flex', gap: 8 }}>
@@ -609,6 +626,31 @@ export default function ItemDetail({
               保存
             </Button>
             <Button size="small" onClick={() => setEditingRemark(false)}>
+              取消
+            </Button>
+          </div>
+        </PopupContent>
+      </Popup>
+
+      {/* 备注编辑弹窗 */}
+      <Popup
+        visible={editingNotice}
+        onMaskClick={() => setEditingNotice(false)}
+        bodyStyle={{ borderRadius: '12px 12px 0 0' }}
+      >
+        <PopupContent>
+          <SectionTitle style={{ marginBottom: 16 }}>编辑备注</SectionTitle>
+          <Input
+            value={editNoticeText}
+            onChange={setEditNoticeText}
+            placeholder="输入备注（可选）"
+            style={{ marginBottom: 16 }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button color="primary" size="small" onClick={handleSaveNotice}>
+              保存
+            </Button>
+            <Button size="small" onClick={() => setEditingNotice(false)}>
               取消
             </Button>
           </div>
