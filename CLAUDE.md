@@ -96,10 +96,10 @@ Items → Reservations → Orders
 - Located at `client/src/pages/RoomSettings.tsx`, only accessible by room admin
 - Uses card-based layout: each section (room info, join requests, boxes, tags, members) wrapped in a `Card` component (white background, 12px border-radius, `box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)`)
 - **Room info card**: Displays room name directly (no "仓库名称：" prefix), with a blue outline-style edit icon button (SVG pencil+square, same as Profile nickname edit) inline to the right. Room ID shown below in gray.
-- **Join requests card**: Shows pending requests with approve/reject buttons
+- **Join requests card**: Shows pending requests in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name/date on the right, approve/reject buttons at card bottom
 - **Box management card**: Boxes in two-per-row grid, click to rename, trash icon to delete
 - **Tag management card**: Tags in wrap layout, click to rename, batch delete mode
-- **Member management card**: Member list with remove button for non-admins
+- **Member management card**: Members in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name on the right, trash icon for non-admins
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`

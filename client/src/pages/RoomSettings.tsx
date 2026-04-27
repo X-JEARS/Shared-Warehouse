@@ -93,25 +93,137 @@ const RoomId = styled.div`
   color: #999;
 `;
 
-const MemberItem = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+const RequestGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
   padding: 12px 16px;
-  border-bottom: 1px solid #f0f0f0;
 `;
 
-const MemberInfo = styled.div`
+const RequestCard = styled.div`
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 12px;
+`;
+
+const RequestCardTop = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+`;
+
+const RequestAvatar = styled.img`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px;
+  flex-shrink: 0;
+`;
+
+const RequestAvatarPlaceholder = styled.div`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  margin-right: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #999;
+`;
+
+const RequestCardInfo = styled.div`
   flex: 1;
+  min-width: 0;
 `;
 
-const MemberName = styled.div`
-  font-size: 15px;
+const RequestCardName = styled.div`
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
-const MemberMeta = styled.div`
+const RequestCardMeta = styled.div`
   font-size: 12px;
   color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const RequestCardButtons = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const MemberGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 12px 16px;
+`;
+
+const MemberCard = styled.div`
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const MemberCardLeft = styled.div`
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+`;
+
+const MemberAvatar = styled.img`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 8px;
+  flex-shrink: 0;
+`;
+
+const MemberAvatarPlaceholder = styled.div`
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  margin-right: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #999;
+`;
+
+const MemberCardInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const MemberCardName = styled.div`
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const MemberCardMeta = styled.div`
+  font-size: 12px;
+  color: #999;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const BoxGrid = styled.div`
@@ -210,6 +322,7 @@ interface Member {
   user_nickname: string;
   user_login_name: string;
   member_name?: string;
+  user_avatar?: string;
 }
 
 interface JoinRequest {
@@ -579,21 +692,31 @@ export default function RoomSettings() {
               ({joinRequests.length}个待处理)
             </span>
           </CardHeader>
-          {joinRequests.map((request) => (
-              <MemberItem key={request.request_id}>
-                <MemberInfo>
-                  <MemberName>
-                    {request.request_member_name || request.user_nickname}
-                  </MemberName>
-                  <MemberMeta>
-                    @{request.user_login_name} ·{' '}
-                    {new Date(request.request_create_time).toLocaleDateString()}
-                  </MemberMeta>
-                </MemberInfo>
-                <div style={{ display: 'flex', gap: 8 }}>
+          <RequestGrid>
+            {joinRequests.map((request) => (
+              <RequestCard key={request.request_id}>
+                <RequestCardTop>
+                  {request.user_avatar ? (
+                    <RequestAvatar src={request.user_avatar} alt="" />
+                  ) : (
+                    <RequestAvatarPlaceholder>
+                      {(request.request_member_name || request.user_nickname)?.charAt(0) || '?'}
+                    </RequestAvatarPlaceholder>
+                  )}
+                  <RequestCardInfo>
+                    <RequestCardName>
+                      {request.request_member_name || request.user_nickname}
+                    </RequestCardName>
+                    <RequestCardMeta>
+                      @{request.user_login_name} · {new Date(Number(request.request_create_time)).toLocaleDateString()}
+                    </RequestCardMeta>
+                  </RequestCardInfo>
+                </RequestCardTop>
+                <RequestCardButtons>
                   <Button
                     size="small"
                     color="primary"
+                    style={{ flex: 1 }}
                     onClick={() => handleApproveRequest(request)}
                   >
                     <CheckCircleOutline /> 通过
@@ -601,13 +724,15 @@ export default function RoomSettings() {
                   <Button
                     size="small"
                     color="danger"
+                    style={{ flex: 1 }}
                     onClick={() => handleRejectRequest(request)}
                   >
                     <CloseCircleOutline /> 拒绝
                   </Button>
-                </div>
-              </MemberItem>
+                </RequestCardButtons>
+              </RequestCard>
             ))}
+          </RequestGrid>
         </Card>
       )}
 
@@ -722,28 +847,45 @@ export default function RoomSettings() {
             ({members.length}人)
           </span>
         </CardHeader>
-        {members.map((member) => (
-          <MemberItem key={member.member_id}>
-            <MemberInfo>
-              <MemberName>
-                {member.member_name || member.user_nickname}
-                {member.member_user_id === room?.room_admin && ' (管理员)'}
-              </MemberName>
-              <MemberMeta>@{member.user_login_name}</MemberMeta>
-            </MemberInfo>
-            {member.member_user_id !== room?.room_admin && (
-              <TrashIcon
-                style={{ color: '#ff4d4f', cursor: 'pointer' }}
-                onClick={() =>
-                  handleRemoveMember(
-                    member.member_user_id,
-                    member.member_name || member.user_nickname
-                  )
-                }
-              />
-            )}
-          </MemberItem>
-        ))}
+        {members.length === 0 ? (
+          <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
+            暂无成员
+          </div>
+        ) : (
+          <MemberGrid>
+            {members.map((member) => (
+              <MemberCard key={member.member_id}>
+                <MemberCardLeft>
+                  {member.user_avatar ? (
+                    <MemberAvatar src={member.user_avatar} alt="" />
+                  ) : (
+                    <MemberAvatarPlaceholder>
+                      {(member.member_name || member.user_nickname)?.charAt(0) || '?'}
+                    </MemberAvatarPlaceholder>
+                  )}
+                  <MemberCardInfo>
+                    <MemberCardName>
+                      {member.member_name || member.user_nickname}
+                      {member.member_user_id === room?.room_admin && ' (管理员)'}
+                    </MemberCardName>
+                    <MemberCardMeta>@{member.user_login_name}</MemberCardMeta>
+                  </MemberCardInfo>
+                </MemberCardLeft>
+                {member.member_user_id !== room?.room_admin && (
+                  <TrashIcon
+                    style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 16, flexShrink: 0, marginLeft: 4 }}
+                    onClick={() =>
+                      handleRemoveMember(
+                        member.member_user_id,
+                        member.member_name || member.user_nickname
+                      )
+                    }
+                  />
+                )}
+              </MemberCard>
+            ))}
+          </MemberGrid>
+        )}
       </Card>
 
       {/* 删除盒子弹窗 */}
