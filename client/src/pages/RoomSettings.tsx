@@ -213,17 +213,13 @@ const MemberCardInfo = styled.div`
 
 const MemberCardName = styled.div`
   font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
 `;
 
 const MemberCardMeta = styled.div`
   font-size: 12px;
   color: #999;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
 `;
 
 const BoxGrid = styled.div`
@@ -354,6 +350,8 @@ export default function RoomSettings() {
   }>({ visible: false, box: null, targetValue: '' });
   const [tagDeleteMode, setTagDeleteMode] = useState(false);
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
+  const [memberDeleteMode, setMemberDeleteMode] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     loadRoom();
@@ -603,19 +601,33 @@ export default function RoomSettings() {
     });
   };
 
-  const handleRemoveMember = async (memberId: number, memberName: string) => {
-    const result = await Dialog.confirm({
-      content: `确定要移除成员 ${memberName} 吗？`,
-    });
-
-    if (result) {
-      try {
-        await roomApi.removeMember(parseInt(id!), memberId);
-        setMembers(members.filter((m) => m.member_user_id !== memberId));
-        Toast.show({ icon: 'success', content: '移除成功' });
-      } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '移除失败' });
+  const toggleMemberSelection = (userId: number) => {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
       }
+      return next;
+    });
+  };
+
+  const handleConfirmDeleteMembers = async () => {
+    if (selectedMemberIds.size === 0) {
+      Toast.show({ content: '请选择要移除的成员' });
+      return;
+    }
+    try {
+      await Promise.all(
+        Array.from(selectedMemberIds).map((userId) => roomApi.removeMember(parseInt(id!), userId))
+      );
+      setMembers(members.filter((m) => !selectedMemberIds.has(m.member_user_id)));
+      setSelectedMemberIds(new Set());
+      setMemberDeleteMode(false);
+      Toast.show({ icon: 'success', content: '移除成功' });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || '移除失败' });
     }
   };
 
@@ -842,10 +854,29 @@ export default function RoomSettings() {
 
       <Card>
         <CardHeader>
-          成员管理
-          <span style={{ fontWeight: 400, color: '#999', fontSize: 13 }}>
-            ({members.length}人)
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            成员管理
+            <span style={{ fontWeight: 400, color: '#999', fontSize: 13, marginLeft: 6 }}>
+              ({members.length}人)
+            </span>
+          </div>
+          {memberDeleteMode ? (
+            <Button
+              size="small"
+              onClick={() => {
+                setMemberDeleteMode(false);
+                setSelectedMemberIds(new Set());
+              }}
+            >
+              <CloseOutline /> 取消
+            </Button>
+          ) : (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <Button size="small" onClick={() => setMemberDeleteMode(true)}>
+                <TrashIcon style={{ color: '#ff4d4f' }} />
+              </Button>
+            </div>
+          )}
         </CardHeader>
         {members.length === 0 ? (
           <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
@@ -853,38 +884,69 @@ export default function RoomSettings() {
           </div>
         ) : (
           <MemberGrid>
-            {members.map((member) => (
-              <MemberCard key={member.member_id}>
-                <MemberCardLeft>
-                  {member.user_avatar ? (
-                    <MemberAvatar src={member.user_avatar} alt="" />
-                  ) : (
-                    <MemberAvatarPlaceholder>
-                      {(member.member_name || member.user_nickname)?.charAt(0) || '?'}
-                    </MemberAvatarPlaceholder>
-                  )}
-                  <MemberCardInfo>
-                    <MemberCardName>
-                      {member.member_name || member.user_nickname}
-                      {member.member_user_id === room?.room_admin && ' (管理员)'}
-                    </MemberCardName>
-                    <MemberCardMeta>@{member.user_login_name}</MemberCardMeta>
-                  </MemberCardInfo>
-                </MemberCardLeft>
-                {member.member_user_id !== room?.room_admin && (
-                  <TrashIcon
-                    style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 16, flexShrink: 0, marginLeft: 4 }}
-                    onClick={() =>
-                      handleRemoveMember(
-                        member.member_user_id,
-                        member.member_name || member.user_nickname
-                      )
+            {members.map((member) => {
+                const isSelected = memberDeleteMode && selectedMemberIds.has(member.member_user_id);
+                const isSelectable = memberDeleteMode && member.member_user_id !== room?.room_admin;
+                return (
+                  <MemberCard
+                    key={member.member_id}
+                    style={
+                      isSelectable
+                        ? {
+                            background: isSelected ? '#ff4d4f' : '#f8f8f8',
+                            cursor: 'pointer',
+                          }
+                        : undefined
                     }
-                  />
-                )}
-              </MemberCard>
-            ))}
+                    onClick={
+                      isSelectable
+                        ? () => toggleMemberSelection(member.member_user_id)
+                        : undefined
+                    }
+                  >
+                    <MemberCardLeft>
+                      {member.user_avatar ? (
+                        <MemberAvatar src={member.user_avatar} alt="" />
+                      ) : (
+                        <MemberAvatarPlaceholder style={isSelected ? { background: '#e0e0e0' } : undefined}>
+                          {(member.member_name || member.user_nickname)?.charAt(0) || '?'}
+                        </MemberAvatarPlaceholder>
+                      )}
+                      <MemberCardInfo>
+                        <MemberCardName style={isSelected ? { color: '#fff' } : undefined}>
+                          {member.member_name || member.user_nickname}
+                          {member.member_user_id === room?.room_admin && ' (管理员)'}
+                        </MemberCardName>
+                        <MemberCardMeta style={isSelected ? { color: '#fff' } : undefined}>
+                          @{member.user_login_name}
+                        </MemberCardMeta>
+                      </MemberCardInfo>
+                    </MemberCardLeft>
+                  </MemberCard>
+                );
+              })}
           </MemberGrid>
+        )}
+        {memberDeleteMode && (
+          <DeleteBar>
+            <Button
+              block
+              onClick={() => {
+                setMemberDeleteMode(false);
+                setSelectedMemberIds(new Set());
+              }}
+            >
+              取消
+            </Button>
+            <Button
+              block
+              color="danger"
+              onClick={handleConfirmDeleteMembers}
+              disabled={selectedMemberIds.size === 0}
+            >
+              确认删除{selectedMemberIds.size > 0 ? ` (${selectedMemberIds.size})` : ''}
+            </Button>
+          </DeleteBar>
         )}
       </Card>
 
