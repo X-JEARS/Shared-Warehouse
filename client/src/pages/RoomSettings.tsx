@@ -18,9 +18,16 @@ import { useAuthStore } from '../stores/authStore';
 import TrashIcon from '../components/icons/TrashIcon';
 
 const Container = styled.div`
-  min-height: 100%;
+  min-height: 100vh;
   background: #f5f5f5;
   padding: 12px 16px;
+`;
+
+const StickyNav = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #f5f5f5;
 `;
 
 const Card = styled.div`
@@ -673,7 +680,9 @@ export default function RoomSettings() {
   if (!room || room.room_admin !== user?.user_id) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
+        <StickyNav>
+          <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
+        </StickyNav>
         <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>
           您不是该仓库的管理员，无法访问此页面
         </div>
@@ -683,7 +692,9 @@ export default function RoomSettings() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
+      <StickyNav>
+        <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
+      </StickyNav>
       <div style={{ marginTop: 8 }} />
 
       <Card>
