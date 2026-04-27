@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
   NavBar,
-  List,
   Button,
   Dialog,
   Input,
@@ -21,22 +20,77 @@ import TrashIcon from '../components/icons/TrashIcon';
 const Container = styled.div`
   min-height: 100%;
   background: #f5f5f5;
-`;
-
-const Section = styled.div`
-  background: white;
-  margin-bottom: 12px;
-`;
-
-const SectionHeader = styled.div`
   padding: 12px 16px;
+`;
+
+const Card = styled.div`
+  background: white;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+`;
+
+const CardHeader = styled.div`
+  padding: 14px 16px 8px;
   font-size: 14px;
   font-weight: 600;
   color: #333;
-  background: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
+`;
+
+const RoomNameRow = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 16px;
+`;
+
+const RoomName = styled.div`
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+`;
+
+const EditIconButton = styled.button`
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #1677ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+function EditIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
+
+const RoomId = styled.div`
+  padding: 0 16px 16px;
+  font-size: 13px;
+  color: #999;
 `;
 
 const MemberItem = styled.div`
@@ -505,28 +559,27 @@ export default function RoomSettings() {
   return (
     <Container>
       <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
+      <div style={{ marginTop: 8 }} />
 
-      <Section>
-        <List>
-          <List.Item onClick={handleEditRoom}>
-            仓库名称: {room?.room_name}
-          </List.Item>
-          <List.Item>
-            仓库ID: {room?.room_id}
-          </List.Item>
-        </List>
-      </Section>
+      <Card>
+        <RoomNameRow>
+          <RoomName>{room?.room_name}</RoomName>
+          <EditIconButton onClick={handleEditRoom}>
+            <EditIcon size={16} />
+          </EditIconButton>
+        </RoomNameRow>
+        <RoomId>ID: {room?.room_id}</RoomId>
+      </Card>
 
       {joinRequests.length > 0 && (
-        <>
-          <SectionHeader>
+        <Card>
+          <CardHeader>
             加入申请
             <span style={{ fontWeight: 400, color: '#ff4d4f', fontSize: 13 }}>
               ({joinRequests.length}个待处理)
             </span>
-          </SectionHeader>
-          <Section>
-            {joinRequests.map((request) => (
+          </CardHeader>
+          {joinRequests.map((request) => (
               <MemberItem key={request.request_id}>
                 <MemberInfo>
                   <MemberName>
@@ -555,17 +608,16 @@ export default function RoomSettings() {
                 </div>
               </MemberItem>
             ))}
-          </Section>
-        </>
+        </Card>
       )}
 
-      <SectionHeader>
-        盒子管理
-        <Button size="small" onClick={handleAddBox}>
-          <AddOutline /> 添加
-        </Button>
-      </SectionHeader>
-      <Section>
+      <Card>
+        <CardHeader>
+          盒子管理
+          <Button size="small" onClick={handleAddBox}>
+            <AddOutline /> 添加
+          </Button>
+        </CardHeader>
         {boxes.length === 0 ? (
           <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
             暂无盒子
@@ -595,10 +647,11 @@ export default function RoomSettings() {
             ))}
           </BoxGrid>
         )}
-      </Section>
+      </Card>
 
-      <SectionHeader>
-        标签管理
+      <Card>
+        <CardHeader>
+          标签管理
         {tagDeleteMode ? (
           <Button
             size="small"
@@ -621,8 +674,7 @@ export default function RoomSettings() {
             )}
           </div>
         )}
-      </SectionHeader>
-      <Section>
+        </CardHeader>
         {tags.length === 0 ? (
           <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
             暂无标签
@@ -661,15 +713,15 @@ export default function RoomSettings() {
             </Button>
           </DeleteBar>
         )}
-      </Section>
+      </Card>
 
-      <SectionHeader>
-        成员管理
-        <span style={{ fontWeight: 400, color: '#999', fontSize: 13 }}>
-          ({members.length}人)
-        </span>
-      </SectionHeader>
-      <Section>
+      <Card>
+        <CardHeader>
+          成员管理
+          <span style={{ fontWeight: 400, color: '#999', fontSize: 13 }}>
+            ({members.length}人)
+          </span>
+        </CardHeader>
         {members.map((member) => (
           <MemberItem key={member.member_id}>
             <MemberInfo>
@@ -692,7 +744,7 @@ export default function RoomSettings() {
             )}
           </MemberItem>
         ))}
-      </Section>
+      </Card>
 
       {/* 删除盒子弹窗 */}
       <Popup

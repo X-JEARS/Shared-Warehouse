@@ -92,14 +92,14 @@ Items → Reservations → Orders
 - Confirm → `POST /api/scan/return` moves item to this box
 - Scanner continues for batch item insertion until user stops
 
-### Box Management Flow
-- **Adding Box**: Requires QR code (must start with `box.`) and name. QR code can be scanned or manually entered.
-- **Renaming Box**: Click box card in room settings to open center dialog for renaming. Uses `PUT /api/boxes/:id` with `{ name }`.
-- **Deleting Box**:
-  - Cannot delete the last box in a room
-  - If box has items, must select a target (another box or "user's hand") to move items before deletion
-  - Moving items creates transfer history records automatically
-- Boxes displayed in two-per-row grid layout in room settings
+### Room Settings Page
+- Located at `client/src/pages/RoomSettings.tsx`, only accessible by room admin
+- Uses card-based layout: each section (room info, join requests, boxes, tags, members) wrapped in a `Card` component (white background, 12px border-radius, `box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)`)
+- **Room info card**: Displays room name directly (no "仓库名称：" prefix), with a blue outline-style edit icon button (SVG pencil+square, same as Profile nickname edit) inline to the right. Room ID shown below in gray.
+- **Join requests card**: Shows pending requests with approve/reject buttons
+- **Box management card**: Boxes in two-per-row grid, click to rename, trash icon to delete
+- **Tag management card**: Tags in wrap layout, click to rename, batch delete mode
+- **Member management card**: Member list with remove button for non-admins
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`
