@@ -3,6 +3,20 @@ import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 
+export const getUnreadCount = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const result = await query(
+      'SELECT COUNT(*) FROM notifications WHERE notification_user_id = $1 AND notification_is_read = false',
+      [userId]
+    );
+    return success(res, { unreadCount: parseInt(result.rows[0].count) });
+  } catch (err) {
+    console.error('Get unread count error:', err);
+    return error(res, 'Failed to get unread count', 500);
+  }
+};
+
 export const getNotifications = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;

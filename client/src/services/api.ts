@@ -65,6 +65,7 @@ export const itemApi = {
   getAll: (params?: { roomId?: number; boxId?: number; tagId?: number; search?: string }) =>
     request.get('/items', { params }),
   getInHand: () => request.get('/items/in-hand'),
+  getInHandCount: () => request.get('/items/in-hand/count'),
   getMy: () => request.get('/items/my'),
   getById: (id: number, roomId?: number) =>
     request.get(`/items/${id}`, { params: { roomId } }),
@@ -151,6 +152,7 @@ export const cartApi = {
 export const notificationApi = {
   getAll: (page?: number, pageSize?: number) =>
     request.get('/notifications', { params: { page, pageSize } }),
+  getUnreadCount: () => request.get('/notifications/unread-count'),
   markAsRead: (id: number) => request.put(`/notifications/${id}/read`),
   markAllAsRead: () => request.put('/notifications/read-all'),
 };
