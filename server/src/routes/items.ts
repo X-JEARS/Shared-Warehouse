@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
   getItems,
   getInHandItems,
+  getInHandCount,
   getItemById,
   createItem,
   updateItem,
@@ -21,6 +22,7 @@ import { auth } from '../middlewares/auth';
 const router = Router();
 
 router.get('/', auth, getItems);
+router.get('/in-hand/count', auth, getInHandCount);
 router.get('/in-hand', auth, getInHandItems);
 router.get('/my', auth, getMyItems);
 router.get('/qrcode/:code', auth, getItemByQrcode);

@@ -83,6 +83,7 @@ Items → Reservations → Orders
 - `POST /api/scan/borrow` moves item to user's personal box
 - Items can flow freely between people (anyone can take an item)
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
+- In-hand item count shown as green badge on tab icon, fetched via `GET /api/items/in-hand/count`
 
 ### Item Return Flow
 - `POST /api/scan/return` moves item to a specified box, no requirement that user must hold the item
@@ -93,6 +94,7 @@ Items → Reservations → Orders
 - **取走（borrow）**: If operator ≠ item owner, notify the item owner with content like "张三 取走了 笔记本电脑". If operator = item owner, no notification.
 - **放入（return）**: If operator ≠ item owner, notify the item owner with content like "张三 将 笔记本电脑 放入了 盒子A". Also notify the target room's admin (if admin ≠ operator and admin ≠ item owner) with content including room name. If operator = item owner, no notification.
 - Notification data stored in `notifications` table with `notification_content` field for detailed info
+- Unread count shown as red badge on notification tab icon, fetched via `GET /api/notifications/unread-count`, managed in `notificationStore` (Zustand)
 
 ### Box Detail and Item Return Flow
 - Scan box QR code (starts with `box.`) → directly navigates to BoxDetail page `/box/:id`
@@ -131,7 +133,7 @@ Items → Reservations → Orders
 ### UI Components
 - **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at bottom-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at top-right corner (blue when not in cart, gray when added).
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
-- **MainLayout**: Responsive navigation - bottom tab bar on mobile, left sidebar (56px width) on desktop (≥768px). Sidebar shows icons and titles vertically.
+- **MainLayout**: Responsive navigation - bottom tab bar on mobile, left sidebar (56px width) on desktop (≥768px). Sidebar shows icons and titles vertically. Notification icon shows red badge with unread count, in-hand icon shows green badge with held item count.
 - **Warehouse page**: Items displayed in adaptive grid (`repeat(auto-fill, minmax(150px, 1fr))`). In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in adaptive grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
 - **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Automatically checks for reservation conflicts when time is set, displays conflicting time periods on affected items.

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Empty, SpinLoading, Badge } from 'antd-mobile';
 import styled from 'styled-components';
 import { notificationApi } from '../services/api';
+import { useNotificationStore } from '../stores/notificationStore';
 
 const Container = styled.div`
   min-height: 100%;
@@ -47,7 +48,7 @@ interface Notification {
 export default function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const { unreadCount, setUnreadCount, decrement, reset } = useNotificationStore();
 
   useEffect(() => {
     loadNotifications();
@@ -74,7 +75,7 @@ export default function Notifications() {
           n.notification_id === id ? { ...n, notification_is_read: true } : n
         )
       );
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      decrement();
     } catch (error) {
       console.error('Failed to mark as read:', error);
     }
@@ -86,7 +87,7 @@ export default function Notifications() {
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, notification_is_read: true }))
       );
-      setUnreadCount(0);
+      reset();
     } catch (error) {
       console.error('Failed to mark all as read:', error);
     }

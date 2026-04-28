@@ -139,6 +139,27 @@ export const getItems = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const getInHandCount = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const userResult = await query(
+      'SELECT user_box_id FROM users WHERE user_id = $1',
+      [userId]
+    );
+    if (!userResult.rows[0]?.user_box_id) {
+      return success(res, { count: 0 });
+    }
+    const result = await query(
+      'SELECT COUNT(*) FROM items WHERE item_current_box_id = $1',
+      [userResult.rows[0].user_box_id]
+    );
+    return success(res, { count: parseInt(result.rows[0].count) });
+  } catch (err) {
+    console.error('Get in-hand count error:', err);
+    return error(res, 'Failed to get in-hand count', 500);
+  }
+};
+
 export const getInHandItems = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
