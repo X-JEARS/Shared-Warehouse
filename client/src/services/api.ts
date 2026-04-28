@@ -104,8 +104,11 @@ export const itemApi = {
 export const scanApi = {
   scan: (qrcode: string) => request.post('/scan', { qrcode }),
   borrow: (itemId: number) => request.post('/scan/borrow', { itemId }),
+  borrowBatch: (itemIds: number[]) => request.post('/scan/borrow-batch', { itemIds }),
   returnItem: (itemId: number, boxId: number) =>
     request.post('/scan/return', { itemId, boxId }),
+  returnBatch: (items: Array<{ itemId: number; boxId: number }>) =>
+    request.post('/scan/return-batch', { items }),
 };
 
 // Reservation API

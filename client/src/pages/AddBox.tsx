@@ -152,6 +152,7 @@ export default function AddBox() {
               请扫描盒子二维码（以 box. 开头）
             </div>
             <Scanner
+              showStopButton
               onScan={handleScanQrcode}
               onError={(error) => {
                 console.error('Scanner error:', error);

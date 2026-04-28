@@ -296,6 +296,7 @@ export default function CreateItem() {
           <NavBar onBack={() => setShowScanner(false)}>扫描物品二维码</NavBar>
           <Content>
             <Scanner
+              showStopButton
               onScan={handleScanQrcode}
               onError={(error) => {
                 console.error('Scanner error:', error);

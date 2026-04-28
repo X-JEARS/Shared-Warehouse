@@ -162,6 +162,200 @@ export const borrowItem = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const borrowItemsBatch = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { itemIds } = req.body;
+
+    if (!itemIds || !Array.isArray(itemIds) || itemIds.length === 0) {
+      return error(res, 'Item IDs array is required');
+    }
+
+    // Get user's personal box
+    const userResult = await query(
+      'SELECT user_box_id, user_nickname FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const userBoxId = userResult.rows[0]?.user_box_id;
+    const borrowerName = userResult.rows[0]?.user_nickname || '未知用户';
+
+    if (!userBoxId) {
+      return error(res, 'User personal box not found');
+    }
+
+    const results: Array<{ itemId: number; success: boolean; message: string }> = [];
+    let totalSucceeded = 0;
+    let totalFailed = 0;
+
+    for (const itemId of itemIds) {
+      try {
+        const itemResult = await query(
+          `SELECT i.*, b.box_belong_room_id
+           FROM items i
+           JOIN boxes b ON i.item_current_box_id = b.box_id
+           WHERE i.item_id = $1`,
+          [itemId]
+        );
+
+        if (itemResult.rows.length === 0) {
+          results.push({ itemId, success: false, message: '物品不存在' });
+          totalFailed++;
+          continue;
+        }
+
+        const item = itemResult.rows[0];
+
+        // Skip items already in user's hand
+        if (item.item_current_box_id === userBoxId) {
+          results.push({ itemId, success: true, message: '物品已在手中' });
+          totalSucceeded++;
+          continue;
+        }
+
+        // Move item to user's personal box
+        await query(
+          'UPDATE items SET item_current_box_id = $1 WHERE item_id = $2',
+          [userBoxId, itemId]
+        );
+
+        // Record history
+        await query(
+          `INSERT INTO histories (history_item_id, history_user_id, history_box_id, history_time)
+           VALUES ($1, $2, $3, $4)`,
+          [itemId, userId, userBoxId, Date.now()]
+        );
+
+        // Notify item owner if borrower is not the owner
+        if (item.item_belong_user_id !== userId) {
+          await query(
+            `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
+             VALUES ($1, 'borrow', $2, $3, $4, $5)`,
+            [item.item_belong_user_id, '物品被取走', `${borrowerName} 取走了 ${item.item_name}`, itemId, Date.now()]
+          );
+        }
+
+        results.push({ itemId, success: true, message: '取走成功' });
+        totalSucceeded++;
+      } catch (err) {
+        console.error(`Borrow item ${itemId} error:`, err);
+        results.push({ itemId, success: false, message: '取走失败' });
+        totalFailed++;
+      }
+    }
+
+    return success(res, { results, totalSucceeded, totalFailed });
+  } catch (err) {
+    console.error('Borrow items batch error:', err);
+    return error(res, 'Failed to borrow items batch', 500);
+  }
+};
+
+export const returnItemsBatch = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return error(res, 'Items array is required');
+    }
+
+    const returnerResult = await query(
+      'SELECT user_nickname FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const returnerName = returnerResult.rows[0]?.user_nickname || '未知用户';
+
+    const results: Array<{ itemId: number; success: boolean; message: string }> = [];
+    let totalSucceeded = 0;
+    let totalFailed = 0;
+
+    for (const { itemId, boxId } of items) {
+      try {
+        if (!itemId || !boxId) {
+          results.push({ itemId: itemId || 0, success: false, message: '缺少 itemId 或 boxId' });
+          totalFailed++;
+          continue;
+        }
+
+        const itemResult = await query(
+          'SELECT * FROM items WHERE item_id = $1',
+          [itemId]
+        );
+
+        if (itemResult.rows.length === 0) {
+          results.push({ itemId, success: false, message: '物品不存在' });
+          totalFailed++;
+          continue;
+        }
+
+        const item = itemResult.rows[0];
+
+        // Verify target box exists
+        const boxCheck = await query(
+          `SELECT b.*, r.room_id, r.room_admin, r.room_name
+           FROM boxes b
+           LEFT JOIN rooms r ON b.box_belong_room_id = r.room_id
+           WHERE b.box_id = $1`,
+          [boxId]
+        );
+
+        if (boxCheck.rows.length === 0) {
+          results.push({ itemId, success: false, message: '目标盒子不存在' });
+          totalFailed++;
+          continue;
+        }
+
+        const targetBox = boxCheck.rows[0];
+
+        // Move item to target box
+        await query(
+          'UPDATE items SET item_current_box_id = $1 WHERE item_id = $2',
+          [boxId, itemId]
+        );
+
+        // Record history
+        await query(
+          `INSERT INTO histories (history_item_id, history_user_id, history_box_id, history_time)
+           VALUES ($1, $2, $3, $4)`,
+          [itemId, userId, boxId, Date.now()]
+        );
+
+        const createTime = Date.now();
+
+        // Notify item owner if returner is not the owner
+        if (item.item_belong_user_id !== userId) {
+          await query(
+            `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
+             VALUES ($1, 'return', $2, $3, $4, $5)`,
+            [item.item_belong_user_id, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}`, itemId, createTime]
+          );
+        }
+
+        // Notify room admin if returner is not the admin and not the owner (avoid duplicate)
+        if (targetBox.room_admin && targetBox.room_admin !== userId && targetBox.room_admin !== item.item_belong_user_id) {
+          await query(
+            `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
+             VALUES ($1, 'return', $2, $3, $4, $5)`,
+            [targetBox.room_admin, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}（${targetBox.room_name}）`, itemId, createTime]
+          );
+        }
+
+        results.push({ itemId, success: true, message: '放入成功' });
+        totalSucceeded++;
+      } catch (err) {
+        console.error(`Return item ${itemId} error:`, err);
+        results.push({ itemId, success: false, message: '放入失败' });
+        totalFailed++;
+      }
+    }
+
+    return success(res, { results, totalSucceeded, totalFailed });
+  } catch (err) {
+    console.error('Return items batch error:', err);
+    return error(res, 'Failed to return items batch', 500);
+  }
+};
+
 export const returnItem = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
