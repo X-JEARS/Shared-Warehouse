@@ -170,11 +170,15 @@ export default function Scanner() {
       return;
     }
 
+    scannerRef.current?.pause();
     const result = await Dialog.confirm({
       title: '确认取走',
       content: `确认取走 ${borrowableItems.length} 个物品？`,
     });
-    if (!result) return;
+    if (!result) {
+      scannerRef.current?.resume();
+      return;
+    }
 
     setActionLoading(true);
     try {
@@ -196,17 +200,22 @@ export default function Scanner() {
       Toast.show({ icon: 'fail', content: error.message || '批量取走失败' });
     } finally {
       setActionLoading(false);
+      scannerRef.current?.resume();
     }
   };
 
   const handleBatchReturn = async () => {
     if (!returnTargetBox || pendingItems.length === 0) return;
 
+    scannerRef.current?.pause();
     const result = await Dialog.confirm({
       title: '确认放入',
       content: `确认将 ${pendingItems.length} 个物品放入「${returnTargetBox.box_name}」？`,
     });
-    if (!result) return;
+    if (!result) {
+      scannerRef.current?.resume();
+      return;
+    }
 
     setActionLoading(true);
     try {
@@ -228,6 +237,7 @@ export default function Scanner() {
       Toast.show({ icon: 'fail', content: error.message || '批量放入失败' });
     } finally {
       setActionLoading(false);
+      scannerRef.current?.resume();
     }
   };
 
