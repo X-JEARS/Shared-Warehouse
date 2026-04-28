@@ -84,6 +84,12 @@ Items → Reservations → Orders
 - Items can flow freely between people (anyone can take an item)
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
 
+### Notification Flow
+- Notifications are per-user (each user has their own notification list with independent read status)
+- **取走（borrow）**: If operator ≠ item owner, notify the item owner with content like "张三 取走了 笔记本电脑". If operator = item owner, no notification.
+- **放入（return）**: If operator ≠ item owner, notify the item owner with content like "张三 将 笔记本电脑 放入了 盒子A". Also notify the target room's admin (if admin ≠ operator and admin ≠ item owner) with content including room name. If operator = item owner, no notification.
+- Notification data stored in `notifications` table with `notification_content` field for detailed info
+
 ### Box Detail and Item Return Flow
 - Scan box QR code (starts with `box.`) → directly navigates to BoxDetail page `/box/:id`
 - BoxDetail page shows box info and items inside

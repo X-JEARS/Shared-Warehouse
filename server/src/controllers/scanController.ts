@@ -141,12 +141,17 @@ export const borrowItem = async (req: AuthRequest, res: Response) => {
       [itemId, userId, userBoxId, Date.now()]
     );
 
-    // Create notification for owner
+    // Notify item owner if borrower is not the owner
     if (item.item_belong_user_id !== userId) {
+      const borrowerResult = await query(
+        'SELECT user_nickname FROM users WHERE user_id = $1',
+        [userId]
+      );
+      const borrowerName = borrowerResult.rows[0]?.user_nickname || '未知用户';
       await query(
-        `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_related_id, notification_create_time)
-         VALUES ($1, 'borrow', $2, $3, $4)`,
-        [item.item_belong_user_id, 'Item borrowed', itemId, Date.now()]
+        `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
+         VALUES ($1, 'borrow', $2, $3, $4, $5)`,
+        [item.item_belong_user_id, '物品被取走', `${borrowerName} 取走了 ${item.item_name}`, itemId, Date.now()]
       );
     }
 
@@ -193,7 +198,7 @@ export const returnItem = async (req: AuthRequest, res: Response) => {
 
     // Verify target box exists and user has access
     const boxCheck = await query(
-      `SELECT b.*, r.room_id
+      `SELECT b.*, r.room_id, r.room_admin, r.room_name
        FROM boxes b
        LEFT JOIN rooms r ON b.box_belong_room_id = r.room_id
        WHERE b.box_id = $1`,
@@ -219,12 +224,28 @@ export const returnItem = async (req: AuthRequest, res: Response) => {
       [itemId, userId, boxId, Date.now()]
     );
 
-    // Create notification for owner
+    const createTime = Date.now();
+    const returnerResult = await query(
+      'SELECT user_nickname FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const returnerName = returnerResult.rows[0]?.user_nickname || '未知用户';
+
+    // Notify item owner if returner is not the owner
     if (item.item_belong_user_id !== userId) {
       await query(
-        `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_related_id, notification_create_time)
-         VALUES ($1, 'return', $2, $3, $4)`,
-        [item.item_belong_user_id, 'Item returned', itemId, Date.now()]
+        `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
+         VALUES ($1, 'return', $2, $3, $4, $5)`,
+        [item.item_belong_user_id, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}`, itemId, createTime]
+      );
+    }
+
+    // Notify room admin if returner is not the admin and not the owner (avoid duplicate)
+    if (targetBox.room_admin && targetBox.room_admin !== userId && targetBox.room_admin !== item.item_belong_user_id) {
+      await query(
+        `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
+         VALUES ($1, 'return', $2, $3, $4, $5)`,
+        [targetBox.room_admin, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}（${targetBox.room_name}）`, itemId, createTime]
       );
     }
 
