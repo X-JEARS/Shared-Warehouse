@@ -37,6 +37,9 @@ temp/
 database.numbers
 databases/
 
+#frontend build and user data
+server/public/
+
 # User uploaded avatars
 server/public/avatars/
 
