@@ -170,11 +170,15 @@ export default function BoxDetail() {
   const handleBatchReturn = async () => {
     if (pendingItems.length === 0 || !box) return;
 
+    scannerRef.current?.pause();
     const result = await Dialog.confirm({
       title: '确认放入',
       content: `确认将 ${pendingItems.length} 个物品放入「${box.box_name}」？`,
     });
-    if (!result) return;
+    if (!result) {
+      scannerRef.current?.resume();
+      return;
+    }
 
     setReturnLoading(true);
     try {
@@ -198,6 +202,7 @@ export default function BoxDetail() {
       Toast.show({ icon: 'fail', content: error.message || '批量放入失败' });
     } finally {
       setReturnLoading(false);
+      scannerRef.current?.resume();
     }
   };
 

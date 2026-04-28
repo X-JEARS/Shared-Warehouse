@@ -127,13 +127,17 @@ Items → Reservations → Orders
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`
-- Uses `forwardRef` + `useImperativeHandle` to expose `restart()` method for restarting scanner after stop
+- Uses `forwardRef` + `useImperativeHandle` to expose `restart()`, `pause()`, `resume()` methods
+  - `restart()`: stop then start scanning (with 100ms delay)
+  - `pause()`: fully releases camera (stops all tracks, clears srcObject, resets zxing reader), shows PausedPlaceholder. Used before confirmation dialogs to eliminate GPU load during animation.
+  - `resume()`: calls `startScanning()` to re-acquire camera and restart decode loop
 - `onScan` callback receives scanned text, can return `boolean` or `Promise<boolean>`:
   - Return `true` to stop scanning
   - Return `false` to continue scanning (for batch mode / validation failures)
 - Uses refs (`onScanRef`, `onErrorRef`) internally to avoid stale closures in `decodeFromConstraints` callback
 - Stream/torch detection uses delayed `useEffect` (500ms after `isScanning` becomes true) since `decodeFromConstraints` promise does not resolve in continuous mode
 - `stopScanning()` stops camera tracks directly from `videoRef.current.srcObject` (not `streamRef`) to ensure camera is always released
+- `isPaused` state: when true, shows PausedPlaceholder instead of ScannerContainer (Video element removed from DOM to eliminate rendering overhead)
 - `showStopButton` prop (default `false`): shows built-in stop button for non-batch pages
 - Camera selection: Prioritizes back camera (main camera) by detecting device labels or using `facingMode: 'environment'` constraint
 - High resolution video stream (1920x1080) with continuous auto-focus for better QR code recognition

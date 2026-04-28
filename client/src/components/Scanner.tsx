@@ -40,6 +40,18 @@ const Hint = styled.div`
   font-size: 14px;
 `;
 
+const PausedPlaceholder = styled.div`
+  width: 100%;
+  height: 300px;
+  background: #000;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 14px;
+`;
+
 const TorchButton = styled.button<{ $active: boolean }>`
   position: absolute;
   top: 12px;
@@ -65,6 +77,8 @@ const TorchButton = styled.button<{ $active: boolean }>`
 
 export interface ScannerHandle {
   restart: () => void;
+  pause: () => void;
+  resume: () => void;
 }
 
 interface ScannerProps {
@@ -76,6 +90,7 @@ interface ScannerProps {
 const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, showStopButton = false }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [torchSupported, setTorchSupported] = useState(false);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
@@ -91,6 +106,29 @@ const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, show
     restart: () => {
       stopScanning();
       setTimeout(() => startScanning(), 100);
+    },
+    pause: () => {
+      // 暂停时彻底释放摄像头，消除所有 GPU/CPU 开销
+      const video = videoRef.current;
+      if (video?.srcObject) {
+        const stream = video.srcObject as MediaStream;
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+      streamRef.current = null;
+      if (readerRef.current) {
+        try { readerRef.current.reset(); } catch (e) {}
+        readerRef.current = null;
+      }
+      stoppedRef.current = true;
+      setIsScanning(false);
+      setIsPaused(true);
+      setTorchEnabled(false);
+      setTorchSupported(false);
+    },
+    resume: () => {
+      setIsPaused(false);
+      startScanning();
     },
   }));
 
@@ -210,6 +248,7 @@ const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, show
 
   const stopScanning = () => {
     stoppedRef.current = true;
+    setIsPaused(false);
     setTorchEnabled(false);
     setTorchSupported(false);
 
@@ -238,16 +277,20 @@ const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, show
 
   return (
     <div>
-      <ScannerContainer>
-        <Video ref={videoRef} />
-        {isScanning && <Overlay />}
-        {isScanning && <Hint>将二维码放入框内</Hint>}
-        {isScanning && torchSupported && (
-          <TorchButton $active={torchEnabled} onClick={toggleTorch}>
-            💡
-          </TorchButton>
-        )}
-      </ScannerContainer>
+      {isPaused ? (
+        <PausedPlaceholder>扫描已暂停</PausedPlaceholder>
+      ) : (
+        <ScannerContainer>
+          <Video ref={videoRef} />
+          {isScanning && <Overlay />}
+          {isScanning && <Hint>将二维码放入框内</Hint>}
+          {isScanning && torchSupported && (
+            <TorchButton $active={torchEnabled} onClick={toggleTorch}>
+              💡
+            </TorchButton>
+          )}
+        </ScannerContainer>
+      )}
 
       {isScanning && showStopButton && (
         <Button block style={{ marginTop: 12 }} onClick={stopScanning}>
