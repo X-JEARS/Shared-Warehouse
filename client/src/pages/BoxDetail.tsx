@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { NavBar, Button, Card, Toast, SpinLoading, Dialog } from 'antd-mobile';
 import styled from 'styled-components';
-import ScannerComponent from '../components/Scanner';
+import ScannerComponent, { ScannerHandle } from '../components/Scanner';
+import ScanResultList, { PendingItem } from '../components/ScanResultList';
 import { boxApi, scanApi } from '../services/api';
 import ItemCard from '../components/ItemCard';
 
@@ -61,6 +62,14 @@ const ScanModal = styled.div`
   bottom: 0;
   background: #f5f5f5;
   z-index: 1000;
+  display: flex;
+  flex-direction: column;
+`;
+
+const ScanModalContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
 `;
 
 const ScanHint = styled.div`
@@ -74,14 +83,25 @@ const ScanHint = styled.div`
   font-size: 14px;
 `;
 
+const BatchActionArea = styled.div`
+  margin-top: 16px;
+`;
+
+const ButtonRow = styled.div`
+  display: flex;
+  gap: 12px;
+`;
+
 export default function BoxDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [box, setBox] = useState<any>(null);
   const [showScanner, setShowScanner] = useState(false);
-  const [pendingItem, setPendingItem] = useState<any>(null);
+  const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [itemLoading, setItemLoading] = useState(false);
+  const [returnLoading, setReturnLoading] = useState(false);
+  const scannerRef = useRef<ScannerHandle>(null);
 
   useEffect(() => {
     loadBox();
@@ -102,11 +122,16 @@ export default function BoxDetail() {
   };
 
   const handleScanItem = async (qrcode: string): Promise<boolean> => {
-    if (pendingItem) return false; // 已有待确认物品，跳过重复扫描
-
     // 验证是否为物品码（非盒子码）
     if (qrcode.toLowerCase().startsWith('box.')) {
       Toast.show({ icon: 'fail', content: '请扫描物品二维码' });
+      return false;
+    }
+
+    // 去重检查
+    const exists = pendingItems.some(p => p.qrcode === qrcode);
+    if (exists) {
+      Toast.show({ content: '该物品已在列表中' });
       return false;
     }
 
@@ -119,9 +144,17 @@ export default function BoxDetail() {
         return false;
       }
 
-      // 弹出确认提示
-      setPendingItem(res.data.item);
-      return false; // 继续扫描，不关闭扫码器
+      const item = res.data.item;
+      setPendingItems(prev => [...prev, {
+        itemId: item.item_id,
+        itemName: item.item_name,
+        itemImage: item.item_image,
+        locationName: item.display_location_name || item.room_name || '未知位置',
+        isInHand: item.isInHand || false,
+        qrcode,
+      }]);
+      Toast.show({ content: `已添加「${item.item_name}」` });
+      return false; // 继续扫描
     } catch (error: any) {
       Toast.show({ icon: 'fail', content: error.message || '识别失败' });
       return false;
@@ -130,21 +163,45 @@ export default function BoxDetail() {
     }
   };
 
-  const confirmPutItem = async () => {
-    if (!pendingItem || !box) return;
+  const handleRemoveItem = (qrcode: string) => {
+    setPendingItems(prev => prev.filter(p => p.qrcode !== qrcode));
+  };
 
+  const handleBatchReturn = async () => {
+    if (pendingItems.length === 0 || !box) return;
+
+    const result = await Dialog.confirm({
+      title: '确认放入',
+      content: `确认将 ${pendingItems.length} 个物品放入「${box.box_name}」？`,
+    });
+    if (!result) return;
+
+    setReturnLoading(true);
     try {
-      await scanApi.returnItem(pendingItem.item_id, box.box_id);
-      Toast.show({ icon: 'success', content: '放入成功' });
-      setPendingItem(null);
-      loadBox(); // 刷新盒子物品列表
+      const items = pendingItems.map(p => ({ itemId: p.itemId, boxId: box.box_id }));
+      const res: any = await scanApi.returnBatch(items);
+      const { totalSucceeded, totalFailed } = res.data;
+
+      if (totalFailed > 0) {
+        Toast.show({ icon: 'fail', content: `放入 ${totalSucceeded} 个成功，${totalFailed} 个失败` });
+        // 移除成功的物品，保留失败的
+        const failedIds = res.data.results
+          .filter((r: any) => !r.success)
+          .map((r: any) => r.itemId);
+        setPendingItems(prev => prev.filter(p => failedIds.includes(p.itemId)));
+      } else {
+        Toast.show({ icon: 'success', content: `成功放入 ${totalSucceeded} 个物品` });
+        setPendingItems([]);
+        loadBox();
+      }
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '放入失败' });
+      Toast.show({ icon: 'fail', content: error.message || '批量放入失败' });
+    } finally {
+      setReturnLoading(false);
     }
   };
 
   const handleItemClick = (itemId: number) => {
-    // 可以跳转到物品详情或显示弹窗
     console.log('Item clicked:', itemId);
   };
 
@@ -181,7 +238,7 @@ export default function BoxDetail() {
           block
           color="primary"
           size="large"
-          onClick={() => setShowScanner(true)}
+          onClick={() => { setShowScanner(true); setPendingItems([]); }}
         >
           存入物品
         </Button>
@@ -205,61 +262,63 @@ export default function BoxDetail() {
       {/* 扫码弹窗 */}
       {showScanner && (
         <ScanModal>
-          <NavBar onBack={() => setShowScanner(false)}>扫描物品</NavBar>
-          <Content>
+          <NavBar onBack={() => { setShowScanner(false); setPendingItems([]); }}>扫描物品</NavBar>
+          <ScanModalContent>
             <ScanHint>
               请扫描要放入的物品二维码
             </ScanHint>
             <ScannerComponent
+              ref={scannerRef}
               onScan={handleScanItem}
             />
-          </Content>
-        </ScanModal>
-      )}
 
-      {/* 确认放入弹窗 */}
-      {pendingItem && (
-        <Dialog
-          visible={true}
-          title="确认放入"
-          content={
-            <div>
-              <p>是否将物品「{pendingItem.item_name}」放入盒子「{box?.box_name}」?</p>
+            <BatchActionArea>
+              <ButtonRow>
+                <Button
+                  block
+                  fill="outline"
+                  onClick={() => { setPendingItems([]); }}
+                  style={{ flex: 1 }}
+                >
+                  取消
+                </Button>
+                <Button
+                  block
+                  color="primary"
+                  disabled={pendingItems.length === 0}
+                  loading={returnLoading}
+                  onClick={handleBatchReturn}
+                  style={{ flex: 1 }}
+                >
+                  放入 ({pendingItems.length})
+                </Button>
+              </ButtonRow>
+
+              <ScanResultList
+                items={pendingItems}
+                onRemoveItem={handleRemoveItem}
+              />
+            </BatchActionArea>
+          </ScanModalContent>
+
+          {/* 加载中遮罩 */}
+          {itemLoading && (
+            <div style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'rgba(0,0,0,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 2000,
+            }}>
+              <SpinLoading />
             </div>
-          }
-          closeOnMaskClick={false}
-          actions={[
-            {
-              key: 'cancel',
-              text: '取消',
-              onClick: () => setPendingItem(null),
-            },
-            {
-              key: 'confirm',
-              text: '确认',
-              bold: true,
-              onClick: confirmPutItem,
-            },
-          ]}
-        />
-      )}
-
-      {/* 加载中遮罩 */}
-      {itemLoading && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.3)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000,
-        }}>
-          <SpinLoading />
-        </div>
+          )}
+        </ScanModal>
       )}
     </Container>
   );

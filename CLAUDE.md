@@ -80,13 +80,19 @@ Items → Reservations → Orders
 
 ### Item Taking Flow
 - Scan item QR code → `POST /api/scan` identifies item, returns `isInHand` flag
-- `POST /api/scan/borrow` moves item to user's personal box
+- Scanner page enters batch borrow mode: items accumulate in a pending list, scanner keeps running
+- `POST /api/scan/borrow` moves single item to user's personal box
+- `POST /api/scan/borrow-batch` moves multiple items to user's personal box (partial success supported)
+- Items already in user's hand are shown with "已在手中" badge and excluded from borrow request
 - Items can flow freely between people (anyone can take an item)
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
 - In-hand item count shown as green badge on tab icon, fetched via `GET /api/items/in-hand/count`
 
 ### Item Return Flow
-- `POST /api/scan/return` moves item to a specified box, no requirement that user must hold the item
+- Scanner page: scan box QR code → enters batch return mode (no longer navigates to BoxDetail). Target box name shown as clickable link.
+- `POST /api/scan/return` moves single item to a specified box
+- `POST /api/scan/return-batch` moves multiple items to specified boxes (partial success supported)
+- No requirement that user must hold the item to return it
 - Anyone can put an item into any box they have access to
 
 ### Notification Flow
@@ -97,12 +103,11 @@ Items → Reservations → Orders
 - Unread count shown as red badge on notification tab icon, fetched via `GET /api/notifications/unread-count`, managed in `notificationStore` (Zustand)
 
 ### Box Detail and Item Return Flow
-- Scan box QR code (starts with `box.`) → directly navigates to BoxDetail page `/box/:id`
 - BoxDetail page shows box info and items inside
-- Click "存入物品" button → starts scanner for item QR codes
-- Scan item QR code → shows confirmation dialog
-- Confirm → `POST /api/scan/return` moves item to this box (no requirement that user holds the item)
-- Scanner continues for batch item insertion until user stops
+- Click "存入物品" button → starts scanner for item QR codes in batch mode
+- Scanned items accumulate in pending list (two-column grid), scanner keeps running
+- Click "放入" button → confirmation dialog → `POST /api/scan/return-batch` moves all items to this box
+- Items can be removed from pending list individually before confirming
 
 ### Item History Display
 - History records show different text based on destination box type:
@@ -122,13 +127,35 @@ Items → Reservations → Orders
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`
+- Uses `forwardRef` + `useImperativeHandle` to expose `restart()` method for restarting scanner after stop
 - `onScan` callback receives scanned text, can return `boolean` or `Promise<boolean>`:
   - Return `true` to stop scanning
-  - Return `false` to continue scanning (for validation failures)
-- Used for both box QR codes (`box.` prefix) and item QR codes
+  - Return `false` to continue scanning (for batch mode / validation failures)
+- Uses refs (`onScanRef`, `onErrorRef`) internally to avoid stale closures in `decodeFromConstraints` callback
+- Stream/torch detection uses delayed `useEffect` (500ms after `isScanning` becomes true) since `decodeFromConstraints` promise does not resolve in continuous mode
+- `stopScanning()` stops camera tracks directly from `videoRef.current.srcObject` (not `streamRef`) to ensure camera is always released
+- `showStopButton` prop (default `false`): shows built-in stop button for non-batch pages
 - Camera selection: Prioritizes back camera (main camera) by detecting device labels or using `facingMode: 'environment'` constraint
 - High resolution video stream (1920x1080) with continuous auto-focus for better QR code recognition
 - Torch (flashlight) button in top-right corner, only visible when device supports it
+
+### Scanner Page Flow
+- Located at `client/src/pages/Scanner.tsx`
+- Mode-based state machine: `idle` → `borrow` | `return`
+- **idle**: First scan determines mode. Item QR → borrow mode. Box QR → return mode (sets `returnTargetBox`, shows clickable box name link). Always returns `false` to keep scanning.
+- **borrow**: Scans accumulate in `pendingItems` list. Box QR codes rejected with toast. "取走" button triggers batch borrow via `POST /api/scan/borrow-batch`. Items with `isInHand` excluded from request but shown with badge.
+- **return**: Scans accumulate in `pendingItems` list. Box QR codes rejected with toast. "放入" button triggers batch return via `POST /api/scan/return-batch`. Box name clickable to navigate to BoxDetail.
+- Uses `pendingItemsRef` to avoid stale closure in dedup check
+- Partial success: failed items remain in list, succeeded items removed
+- "取消" button resets mode and restarts scanner
+- UI layout: Scanner frame → hint → button row (取消 + 取走/放入) → ScanResultList (two-column grid)
+
+### ScanResultList Component
+- Located at `client/src/components/ScanResultList.tsx`
+- Displays pending items in two-column grid layout
+- Each card: item image (36x36) + name + location + "已在手中" badge + remove (X) button
+- `PendingItem` interface: `itemId`, `itemName`, `itemImage?`, `locationName`, `isInHand`, `qrcode` (for dedup)
+- Shared between Scanner page and BoxDetail page
 
 ### UI Components
 - **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at bottom-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at top-right corner (blue when not in cart, gray when added).
@@ -137,7 +164,7 @@ Items → Reservations → Orders
 - **Warehouse page**: Items displayed in adaptive grid (`repeat(auto-fill, minmax(150px, 1fr))`). In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in adaptive grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
 - **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Automatically checks for reservation conflicts when time is set, displays conflicting time periods on affected items.
-- **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that starts scanner for continuous item insertion.
+- **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that opens scanner modal in batch mode. Scanned items accumulate in pending list, "放入" button triggers batch return.
 
 ### Warehouse Page Header Layout
 - Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin). When pending join requests exist, a red badge with the request count is shown on the gear icon.

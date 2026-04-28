@@ -739,6 +739,7 @@ export default function MyItems() {
         <ScannerPopupContent>
           <PopupTitle>扫描新归属盒子</PopupTitle>
           <Scanner
+            showStopButton
             onScan={handleScan}
             onError={(e) => console.error('Scanner error:', e)}
           />

@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Button, Dialog } from 'antd-mobile';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { Dialog, Button } from 'antd-mobile';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import styled from 'styled-components';
 
@@ -63,12 +63,17 @@ const TorchButton = styled.button<{ $active: boolean }>`
   }
 `;
 
-interface ScannerProps {
-  onScan: (result: string) => boolean | void | Promise<boolean | void>; // 返回 false 表示继续扫描
-  onError?: (error: Error) => void;
+export interface ScannerHandle {
+  restart: () => void;
 }
 
-export default function Scanner({ onScan, onError }: ScannerProps) {
+interface ScannerProps {
+  onScan: (result: string) => boolean | void | Promise<boolean | void>;
+  onError?: (error: Error) => void;
+  showStopButton?: boolean; // 是否显示内置的停止扫描按钮，默认 false
+}
+
+const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, showStopButton = false }, ref) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
@@ -76,9 +81,20 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const stoppedRef = useRef(false);
   const streamRef = useRef<MediaStream | null>(null);
+  // 用 ref 持有最新的 onScan/onError，避免 decodeFromConstraints 回调中的闭包陈旧问题
+  const onScanRef = useRef(onScan);
+  const onErrorRef = useRef(onError);
+  onScanRef.current = onScan;
+  onErrorRef.current = onError;
+
+  useImperativeHandle(ref, () => ({
+    restart: () => {
+      stopScanning();
+      setTimeout(() => startScanning(), 100);
+    },
+  }));
 
   useEffect(() => {
-    // 等待 DOM 准备好后再启动扫描
     const timer = setTimeout(() => {
       startScanning();
     }, 100);
@@ -133,22 +149,36 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
           if (stoppedRef.current) return;
           if (result) {
             const text = result.getText();
-            const shouldStop = await Promise.resolve(onScan(text));
+            const shouldStop = await Promise.resolve(onScanRef.current(text));
             // 只有当 onScan 返回 false 以外的值时才停止扫描
             if (shouldStop !== false) {
               stopScanning();
             }
           }
           // 忽略 NotFoundException（正常扫描中未找到二维码）
-          if (error && error.name !== 'NotFoundException' && onError) {
-            onError(error);
+          if (error && error.name !== 'NotFoundException' && onErrorRef.current) {
+            onErrorRef.current(error);
           }
         }
       );
 
-      // 获取 stream 来检测手电筒支持
-      if (videoRef.current?.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      // decodeFromConstraints 连续模式下 promise 在 reset 后才 resolve
+      // 所以 stream/torch 检测不在这里做，而是通过延迟检测
+    } catch (error: any) {
+      console.error('Scanner error:', error);
+      Dialog.alert({ content: `启动摄像头失败: ${error.message}` });
+      setIsScanning(false);
+    }
+  };
+
+  // 延迟检测 stream 和手电筒支持，因为 decodeFromConstraints 连续模式下
+  // stream 赋值发生在 zxing 内部，不会触发 promise resolve
+  useEffect(() => {
+    if (!isScanning) return;
+    const timer = setTimeout(() => {
+      const video = videoRef.current;
+      if (video?.srcObject) {
+        const stream = video.srcObject as MediaStream;
         streamRef.current = stream;
         const videoTrack = stream.getVideoTracks()[0];
         if (videoTrack) {
@@ -158,12 +188,9 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
           }
         }
       }
-    } catch (error: any) {
-      console.error('Scanner error:', error);
-      Dialog.alert({ content: `启动摄像头失败: ${error.message}` });
-      setIsScanning(false);
-    }
-  };
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [isScanning]);
 
   const toggleTorch = async () => {
     if (!streamRef.current) return;
@@ -186,14 +213,15 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
     setTorchEnabled(false);
     setTorchSupported(false);
 
-    // 手动停止视频流（这是关键，因为 zxing 的 reset 可能不会立即停止）
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
+    // 从 video 元素直接获取 stream 并停止所有 track
+    // 不依赖 streamRef，因为 decodeFromConstraints 连续模式下 streamRef 可能未赋值
+    const video = videoRef.current;
+    if (video?.srcObject) {
+      const stream = video.srcObject as MediaStream;
+      stream.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
+    streamRef.current = null;
 
     // 调用 zxing 的 reset
     if (readerRef.current) {
@@ -221,11 +249,15 @@ export default function Scanner({ onScan, onError }: ScannerProps) {
         )}
       </ScannerContainer>
 
-      {isScanning && (
+      {isScanning && showStopButton && (
         <Button block style={{ marginTop: 12 }} onClick={stopScanning}>
           停止扫描
         </Button>
       )}
     </div>
   );
-}
+});
+
+Scanner.displayName = 'Scanner';
+
+export default Scanner;
