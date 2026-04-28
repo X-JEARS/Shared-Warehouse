@@ -167,7 +167,7 @@ warehouse/
 ### 扫描
 - `POST /api/scan` - 扫描二维码（返回物品或盒子信息）
 - `POST /api/scan/borrow` - 取走物品（移至用户个人盒子）
-- `POST /api/scan/return` - 放回物品（移至指定盒子）
+- `POST /api/scan/return` - 将物品放入指定盒子（无需持有物品即可操作）
 
 ### 预约
 - `GET /api/reservations` - 获取我的预约列表

@@ -84,6 +84,10 @@ Items → Reservations → Orders
 - Items can flow freely between people (anyone can take an item)
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
 
+### Item Return Flow
+- `POST /api/scan/return` moves item to a specified box, no requirement that user must hold the item
+- Anyone can put an item into any box they have access to
+
 ### Notification Flow
 - Notifications are per-user (each user has their own notification list with independent read status)
 - **取走（borrow）**: If operator ≠ item owner, notify the item owner with content like "张三 取走了 笔记本电脑". If operator = item owner, no notification.
@@ -95,8 +99,14 @@ Items → Reservations → Orders
 - BoxDetail page shows box info and items inside
 - Click "存入物品" button → starts scanner for item QR codes
 - Scan item QR code → shows confirmation dialog
-- Confirm → `POST /api/scan/return` moves item to this box
+- Confirm → `POST /api/scan/return` moves item to this box (no requirement that user holds the item)
 - Scanner continues for batch item insertion until user stops
+
+### Item History Display
+- History records show different text based on destination box type:
+  - User's personal box (is_user_box = true): "用户名 取走了物品"
+  - Regular box (is_user_box = false): "用户名 将物品放入了 盒子名"
+- Backend `getHistory` query returns `is_user_box` flag and `holder_nickname` via LEFT JOIN on users table
 
 ### Room Settings Page
 - Located at `client/src/pages/RoomSettings.tsx`, only accessible by room admin

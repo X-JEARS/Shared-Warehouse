@@ -393,10 +393,13 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      `SELECT h.*, u.user_nickname, b.box_name
+      `SELECT h.*, u.user_nickname, b.box_name, b.box_belong_room_id,
+       CASE WHEN b.box_belong_room_id IS NULL THEN true ELSE false END AS is_user_box,
+       ub.user_nickname AS holder_nickname
        FROM histories h
        JOIN users u ON h.history_user_id = u.user_id
        JOIN boxes b ON h.history_box_id = b.box_id
+       LEFT JOIN users ub ON ub.user_box_id = b.box_id
        WHERE h.history_item_id = $1
        ORDER BY h.history_time DESC
        LIMIT 50`,

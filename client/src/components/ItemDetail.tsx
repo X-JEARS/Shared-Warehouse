@@ -520,7 +520,7 @@ export default function ItemDetail({
                 {history.slice(0, 3).map((h) => (
                   <HistoryItem key={h.history_id}>
                     <div>
-                      {h.user_nickname} 移动到 {h.box_name}
+                      {h.is_user_box ? `${h.user_nickname} 取走了物品` : `${h.user_nickname} 将物品放入了 ${h.box_name}`}
                     </div>
                     <div style={{ color: '#999', fontSize: 12 }}>
                       {formatTime(h.history_time)}
@@ -574,7 +574,7 @@ export default function ItemDetail({
           {history.map((h) => (
             <HistoryItem key={h.history_id}>
               <div>
-                {h.user_nickname} 移动到 {h.box_name}
+                {h.is_user_box ? `${h.user_nickname} 取走了物品` : `${h.user_nickname} 将物品放入了 ${h.box_name}`}
               </div>
               <div style={{ color: '#999', fontSize: 12 }}>
                 {formatTime(h.history_time)}

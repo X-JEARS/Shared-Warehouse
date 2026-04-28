@@ -183,19 +183,6 @@ export const returnItem = async (req: AuthRequest, res: Response) => {
 
     const item = itemResult.rows[0];
 
-    // Get user's personal box
-    const userResult = await query(
-      'SELECT user_box_id FROM users WHERE user_id = $1',
-      [userId]
-    );
-
-    const userBoxId = userResult.rows[0].user_box_id;
-
-    // Check if user has this item
-    if (item.item_current_box_id !== userBoxId) {
-      return error(res, 'You do not have this item');
-    }
-
     // Verify target box exists and user has access
     const boxCheck = await query(
       `SELECT b.*, r.room_id, r.room_admin, r.room_name
