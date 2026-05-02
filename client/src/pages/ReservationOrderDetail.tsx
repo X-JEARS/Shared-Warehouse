@@ -1,18 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { NavBar, Button, Tag, SpinLoading, Dialog, Toast } from 'antd-mobile';
+import { Button, Tag, SpinLoading, Dialog, Toast } from 'antd-mobile';
 import styled from 'styled-components';
 import { reservationApi } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 
 const Container = styled.div`
-  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.span`
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 12px;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const Content = styled.div`
   padding: 16px;
   padding-bottom: 100px;
+  flex: 1;
+  overflow-y: auto;
 `;
 
 const OrderInfo = styled.div`
@@ -198,7 +221,10 @@ export default function ReservationOrderDetail() {
   if (loading) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>订单详情</NavBar>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>订单详情</HeaderTitle>
+        </Header>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
         </div>
@@ -209,7 +235,10 @@ export default function ReservationOrderDetail() {
   if (!data) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>订单详情</NavBar>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>订单详情</HeaderTitle>
+        </Header>
         <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>
           订单不存在
         </div>
@@ -223,7 +252,10 @@ export default function ReservationOrderDetail() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>订单详情</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>订单详情</HeaderTitle>
+      </Header>
 
       <Content>
         <OrderInfo>

@@ -100,7 +100,7 @@ Items → Reservations → Orders
 - **取走（borrow）**: If operator ≠ item owner, notify the item owner with content like "张三 取走了 笔记本电脑". If operator = item owner, no notification.
 - **放入（return）**: If operator ≠ item owner, notify the item owner with content like "张三 将 笔记本电脑 放入了 盒子A". Also notify the target room's admin (if admin ≠ operator and admin ≠ item owner) with content including room name. If operator = item owner, no notification.
 - Notification data stored in `notifications` table with `notification_content` field for detailed info
-- Unread count shown as red badge on notification bell icon in Profile page top-right corner, fetched via `GET /api/notifications/unread-count`, managed in `notificationStore` (Zustand). Notification page is a standalone route (not in tab bar), accessible from Profile page with NavBar back button.
+- Unread count shown as red badge on notification bell icon in Profile page top-right corner, fetched via `GET /api/notifications/unread-count`, managed in `notificationStore` (Zustand). Notification page is a standalone route (not in tab bar), accessible from Profile page with unified sub-page Header (sticky, with ← back button).
 
 ### Box Detail and Item Return Flow
 - BoxDetail page shows box info and items inside
@@ -115,9 +115,16 @@ Items → Reservations → Orders
   - Regular box (is_user_box = false): "用户名 将物品放入了 盒子名"
 - Backend `getHistory` query returns `is_user_box` flag and `holder_nickname` via LEFT JOIN on users table
 
+### Sub-Page Header Pattern
+- All sub-pages (MyItems, MyReservations, ReservationOrders, ReservationOrderDetail, RoomSettings, Notifications, etc.) use a unified custom Header style instead of antd-mobile NavBar
+- **Header**: `background: white; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center;`
+- **BackButton**: `←` arrow (font-size 20px, margin-right 12px), calls `navigate(-1)`. Tab-bar pages (e.g. ReservationOrders) omit BackButton since they're accessed directly from bottom tab bar.
+- **HeaderTitle**: `font-size: 16px; font-weight: 500`
+- Pages requiring sticky header (RoomSettings, Notifications) add `position: sticky; top: 0; z-index: 100`
+
 ### Room Settings Page
 - Located at `client/src/pages/RoomSettings.tsx`, only accessible by room admin
-- NavBar is sticky at top (position: sticky), stays fixed when scrolling page content
+- Header is sticky at top (position: sticky), stays fixed when scrolling page content
 - Uses card-based layout: each section (room info, join requests, boxes, tags, members) wrapped in a `Card` component (white background, 12px border-radius, `box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)`)
 - **Room info card**: Displays room name directly (no "仓库名称：" prefix), with a blue outline-style edit icon button (SVG pencil+square, same as Profile nickname edit) inline to the right. Room ID shown below in gray.
 - **Join requests card**: Shows pending requests in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name/date on the right, approve/reject buttons at card bottom
@@ -235,8 +242,9 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Conflict info stored in `cartStore` with `hasConflict` and `conflictingReservations` fields on each cart item
 
 ### Reservation Orders (预约订单)
-- **My Reservations (我的预约)**: Located at `client/src/pages/MyReservations.tsx`, accessible from Profile page. Shows current user's reservation orders.
-- **Room Reservations (仓库预约)**: Located at `client/src/pages/ReservationOrders.tsx`, shows all reservation orders for the current room.
+- **My Reservations (我的预约)**: Located at `client/src/pages/MyReservations.tsx`, accessible from Profile page. Shows current user's reservation orders. Uses unified sub-page Header with ← back button, and custom TabBar (white background, tabs aligned left, 20px margin between tabs, active tab blue with underline indicator) instead of antd-mobile Tabs.
+- **Room Reservations (仓库预约)**: Located at `client/src/pages/ReservationOrders.tsx`, accessed directly from bottom tab bar (no back button). Uses same custom TabBar pattern as My Reservations.
+- **Reservation Order Detail**: Located at `client/src/pages/ReservationOrderDetail.tsx`, uses unified sub-page Header with ← back button.
 - **API Endpoints**:
   - `GET /api/reservations/orders` - Get current user's orders
   - `GET /api/reservations/rooms/:roomId/orders` - Get all orders for a room (members only)
