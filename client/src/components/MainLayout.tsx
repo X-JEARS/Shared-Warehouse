@@ -189,7 +189,7 @@ const RegularTabTitle = styled.div`
 const ScanButton = styled.div`
   position: absolute;
   top: -10px;
-  left: 10%;
+  left: 11%;
   transform: translateX(-50%);
   width: 52px;
   height: 52px;
