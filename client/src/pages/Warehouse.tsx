@@ -408,6 +408,9 @@ export default function Warehouse() {
                 acc[boxKey].items.push(item);
                 return acc;
               }, {} as Record<string, { name: string; items: any[] }>);
+              Object.values(groupedItems).forEach(group => {
+                group.items.sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', 'zh'));
+              });
 
               return (Object.entries(groupedItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
                 <BoxGroup key={boxKey}>
@@ -431,7 +434,7 @@ export default function Warehouse() {
               <BoxGroup>
                 <BoxTitle>不在库中</BoxTitle>
                 <ItemGrid>
-                  {outOfStockItems.map((item) => (
+                  {[...outOfStockItems].sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', 'zh')).map((item) => (
                     <ItemCard
                       key={item.item_id}
                       item={item}
