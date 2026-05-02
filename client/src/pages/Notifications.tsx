@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Empty, SpinLoading, Badge, NavBar } from 'antd-mobile';
+import { Empty, SpinLoading, Badge } from 'antd-mobile';
 import styled from 'styled-components';
 import { notificationApi } from '../services/api';
 import { useNotificationStore } from '../stores/notificationStore';
@@ -8,6 +8,28 @@ import { useNotificationStore } from '../stores/notificationStore';
 const Container = styled.div`
   min-height: 100%;
   background: white;
+`;
+
+const Header = styled.div`
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.span`
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 12px;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const NotificationItem = styled.div<{ $isRead: boolean }>`
@@ -135,15 +157,24 @@ export default function Notifications() {
 
   if (loading) {
     return (
-      <Container style={{ textAlign: 'center', paddingTop: 60 }}>
-        <SpinLoading />
+      <Container>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>通知</HeaderTitle>
+        </Header>
+        <div style={{ textAlign: 'center', padding: 60 }}>
+          <SpinLoading />
+        </div>
       </Container>
     );
   }
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)} style={{ position: 'sticky', top: 0, zIndex: 100, background: 'white' }}>通知</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>通知</HeaderTitle>
+      </Header>
       {unreadCount > 0 && (
         <div
           style={{

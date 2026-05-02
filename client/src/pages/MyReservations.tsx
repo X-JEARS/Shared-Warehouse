@@ -1,16 +1,67 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Tag, SpinLoading, Tabs } from 'antd-mobile';
+import { Tag, SpinLoading } from 'antd-mobile';
 import styled from 'styled-components';
 import { reservationApi } from '../services/api';
 
 const Container = styled.div`
-  min-height: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.span`
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 12px;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
+`;
+
+const TabBar = styled.div`
+  background: white;
+  display: flex;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+`;
+
+const TabItem = styled.div<{ $active?: boolean }>`
+  padding: 10px 0 8px;
+  font-size: 14px;
+  color: ${(props) => (props.$active ? '#1677ff' : '#666')};
+  font-weight: ${(props) => (props.$active ? 500 : 400)};
+  position: relative;
+  cursor: pointer;
+  margin-right: 20px;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-radius: 1px;
+    background: ${(props) => (props.$active ? '#1677ff' : 'transparent')};
+  }
 `;
 
 const Content = styled.div`
   padding: 12px 16px;
+  flex: 1;
+  overflow-y: auto;
 `;
 
 const OrderCard = styled.div`
@@ -70,6 +121,7 @@ export default function MyReservations() {
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [pastOrders, setPastOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
 
   useEffect(() => {
     loadOrders();
@@ -151,7 +203,10 @@ export default function MyReservations() {
   if (loading) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>我的预约</NavBar>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>我的预约</HeaderTitle>
+        </Header>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
         </div>
@@ -161,15 +216,21 @@ export default function MyReservations() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>我的预约</NavBar>
-      <Tabs>
-        <Tabs.Tab title={`进行中 (${activeOrders.length})`} key="active">
-          <Content>{renderOrderList(activeOrders)}</Content>
-        </Tabs.Tab>
-        <Tabs.Tab title={`已结束 (${pastOrders.length})`} key="past">
-          <Content>{renderOrderList(pastOrders)}</Content>
-        </Tabs.Tab>
-      </Tabs>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>我的预约</HeaderTitle>
+      </Header>
+      <TabBar>
+        <TabItem $active={activeTab === 'active'} onClick={() => setActiveTab('active')}>
+          进行中 ({activeOrders.length})
+        </TabItem>
+        <TabItem $active={activeTab === 'past'} onClick={() => setActiveTab('past')}>
+          已结束 ({pastOrders.length})
+        </TabItem>
+      </TabBar>
+      <Content>
+        {activeTab === 'active' ? renderOrderList(activeOrders) : renderOrderList(pastOrders)}
+      </Content>
     </Container>
   );
 }

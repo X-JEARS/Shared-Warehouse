@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import {
-  NavBar,
   Button,
   Dialog,
   Input,
@@ -20,14 +19,32 @@ import TrashIcon from '../components/icons/TrashIcon';
 const Container = styled.div`
   min-height: 100vh;
   background: #f5f5f5;
-  padding: 12px 16px;
 `;
 
-const StickyNav = styled.div`
+const Header = styled.div`
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #f5f5f5;
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.span`
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 12px;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
+`;
+
+const Content = styled.div`
+  padding: 12px 16px;
 `;
 
 const Card = styled.div`
@@ -670,8 +687,14 @@ export default function RoomSettings() {
 
   if (loading) {
     return (
-      <Container style={{ textAlign: 'center', paddingTop: 100 }}>
-        <SpinLoading />
+      <Container>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>仓库设置</HeaderTitle>
+        </Header>
+        <div style={{ textAlign: 'center', padding: 60 }}>
+          <SpinLoading />
+        </div>
       </Container>
     );
   }
@@ -680,9 +703,10 @@ export default function RoomSettings() {
   if (!room || room.room_admin !== user?.user_id) {
     return (
       <Container>
-        <StickyNav>
-          <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
-        </StickyNav>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>仓库设置</HeaderTitle>
+        </Header>
         <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>
           您不是该仓库的管理员，无法访问此页面
         </div>
@@ -692,10 +716,11 @@ export default function RoomSettings() {
 
   return (
     <Container>
-      <StickyNav>
-        <NavBar onBack={() => navigate(-1)}>仓库设置</NavBar>
-      </StickyNav>
-      <div style={{ marginTop: 8 }} />
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>仓库设置</HeaderTitle>
+      </Header>
+      <Content>
 
       <Card>
         <RoomNameRow>
@@ -960,6 +985,7 @@ export default function RoomSettings() {
           </DeleteBar>
         )}
       </Card>
+      </Content>
 
       {/* 删除盒子弹窗 */}
       <Popup
