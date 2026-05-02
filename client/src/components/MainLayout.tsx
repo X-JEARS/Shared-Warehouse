@@ -7,7 +7,7 @@ import {
   ScanCodeOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useNotificationStore } from '../stores/notificationStore';
 import { itemApi } from '../services/api';
 
@@ -155,7 +155,7 @@ const CustomTabBar = styled.div`
   height: 50px;
   position: relative;
   background: white;
-  padding-left: 14%;
+  padding: 0;
 `;
 
 const RegularTabItem = styled.div<{ $active: boolean }>`
@@ -186,10 +186,25 @@ const RegularTabTitle = styled.div`
   margin-top: 2px;
 `;
 
+const ScanDome = styled.div`
+  position: absolute;
+  top: -19px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 70px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 50%;
+  box-sizing: border-box;
+  clip-path: inset(0 0 72.9% 0);
+  z-index: 5;
+`;
+
 const ScanButton = styled.div`
   position: absolute;
   top: -10px;
-  left: 11%;
+  left: 50%;
   transform: translateX(-50%);
   width: 52px;
   height: 52px;
@@ -210,6 +225,10 @@ const ScanButton = styled.div`
   }
 `;
 
+const ScanPlaceholder = styled.div`
+  flex: 1;
+`;
+
 const tabs = [
   {
     key: '/scanner',
@@ -223,14 +242,14 @@ const tabs = [
     icon: <AppOutline />,
   },
   {
-    key: '/in-hand',
-    title: '我手中的',
-    icon: <UnorderedListOutline />,
-  },
-  {
     key: '/reservation-orders',
     title: '预约',
     icon: <CalendarOutline />,
+  },
+  {
+    key: '/in-hand',
+    title: '我手中的',
+    icon: <UnorderedListOutline />,
   },
   {
     key: '/profile',
@@ -263,21 +282,24 @@ export default function MainLayout() {
         {/* 移动端底部自定义 TabBar */}
         <MobileTabBar>
           <CustomTabBar>
+            <ScanDome />
             <ScanButton onClick={() => navigate('/scanner')}>
               <ScanCodeOutline />
             </ScanButton>
-            {tabs.filter(t => t.type !== 'scan').map((item) => {
+            {tabs.filter(t => t.type !== 'scan').map((item, index) => {
               const isActive = pathname === item.key;
               const icon = item.key === '/in-hand' ? inHandIcon : item.icon;
               return (
-                <RegularTabItem
-                  key={item.key}
-                  $active={isActive}
-                  onClick={() => navigate(item.key)}
-                >
-                  <RegularTabIcon>{icon}</RegularTabIcon>
-                  <RegularTabTitle>{item.title}</RegularTabTitle>
-                </RegularTabItem>
+                <Fragment key={item.key}>
+                  {index === 2 && <ScanPlaceholder />}
+                  <RegularTabItem
+                    $active={isActive}
+                    onClick={() => navigate(item.key)}
+                  >
+                    <RegularTabIcon>{icon}</RegularTabIcon>
+                    <RegularTabTitle>{item.title}</RegularTabTitle>
+                  </RegularTabItem>
+                </Fragment>
               );
             })}
           </CustomTabBar>
