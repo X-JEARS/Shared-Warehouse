@@ -192,15 +192,16 @@ export default function Scanner() {
           .filter((r: any) => !r.success)
           .map((r: any) => r.itemId);
         setPendingItems(prev => prev.filter(p => failedIds.includes(p.itemId)));
+        scannerRef.current?.resume();
       } else {
         Toast.show({ icon: 'success', content: `成功取走 ${totalSucceeded} 个物品` });
         resetMode();
       }
     } catch (error: any) {
       Toast.show({ icon: 'fail', content: error.message || '批量取走失败' });
+      scannerRef.current?.resume();
     } finally {
       setActionLoading(false);
-      scannerRef.current?.resume();
     }
   };
 
@@ -229,15 +230,16 @@ export default function Scanner() {
           .filter((r: any) => !r.success)
           .map((r: any) => r.itemId);
         setPendingItems(prev => prev.filter(p => failedIds.includes(p.itemId)));
+        scannerRef.current?.resume();
       } else {
         Toast.show({ icon: 'success', content: `成功放入 ${totalSucceeded} 个物品` });
         resetMode();
       }
     } catch (error: any) {
       Toast.show({ icon: 'fail', content: error.message || '批量放入失败' });
+      scannerRef.current?.resume();
     } finally {
       setActionLoading(false);
-      scannerRef.current?.resume();
     }
   };
 
@@ -245,8 +247,7 @@ export default function Scanner() {
     setMode('idle');
     setPendingItems([]);
     setReturnTargetBox(null);
-    // 重启扫码器
-    scannerRef.current?.restart();
+    // 操作完成后不再重启扫码器，摄像头已释放
   };
 
   const navTitle = mode === 'borrow' ? '扫码取走' : mode === 'return' ? '扫码放入' : '扫描二维码';

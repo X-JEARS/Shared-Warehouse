@@ -1,6 +1,9 @@
 # Dependencies
 node_modules/
 
+# Build instruction
+build.md
+
 # Build outputs
 dist/
 build/
