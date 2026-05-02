@@ -39,7 +39,7 @@ const ItemImage = styled.div<{ $image?: string }>`
 const StockStatus = styled.span<{ $inStock: boolean }>`
   position: absolute;
   right: 8px;
-  bottom: 8px;
+  top: 8px;
   font-size: 10px;
   padding: 2px 5px;
   border-radius: 4px;
@@ -89,13 +89,17 @@ const Tag = styled.span`
 const CartButton = styled.button<{ $inCart: boolean }>`
   position: absolute;
   right: 8px;
-  top: 8px;
-  font-size: 12px;
-  padding: 4px 10px;
-  border-radius: 4px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 50%;
   border: none;
-  background: ${(props) => (props.$inCart ? '#d9d9d9' : '#1677ff')};
-  color: white;
+  background: ${(props) => (props.$inCart ? '#f0f0f0' : '#e6f7ff')};
+  color: ${(props) => (props.$inCart ? '#999' : '#1677ff')};
   cursor: pointer;
   transition: all 0.2s;
 
@@ -168,7 +172,10 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
       </ItemInfo>
       {showCartButton && (
         <CartButton $inCart={isInCart} onClick={handleCartClick}>
-          预约
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <line x1="12" y1="5" x2="12" y2="19" />
+          </svg>
         </CartButton>
       )}
       {showStockStatus && (
