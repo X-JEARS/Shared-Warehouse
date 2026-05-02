@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Empty, SpinLoading, Badge } from 'antd-mobile';
+import { useNavigate } from 'react-router-dom';
+import { Empty, SpinLoading, Badge, NavBar } from 'antd-mobile';
 import styled from 'styled-components';
 import { notificationApi } from '../services/api';
 import { useNotificationStore } from '../stores/notificationStore';
@@ -46,6 +47,7 @@ interface Notification {
 }
 
 export default function Notifications() {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const { unreadCount, setUnreadCount, decrement, reset } = useNotificationStore();
@@ -141,6 +143,7 @@ export default function Notifications() {
 
   return (
     <Container>
+      <NavBar onBack={() => navigate(-1)} style={{ position: 'sticky', top: 0, zIndex: 100, background: 'white' }}>通知</NavBar>
       {unreadCount > 0 && (
         <div
           style={{

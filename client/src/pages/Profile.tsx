@@ -1,14 +1,16 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, Toast, Popup, Input } from 'antd-mobile';
 import {
   InformationCircleOutline,
+  BellOutline,
 } from 'antd-mobile-icons';
 import ReactCrop from 'react-image-crop';
 import { makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styled from 'styled-components';
 import { useAuthStore } from '../stores/authStore';
+import { useNotificationStore } from '../stores/notificationStore';
 import { userApi } from '../services/api';
 
 const Container = styled.div`
@@ -21,6 +23,7 @@ const Header = styled.div`
   padding: 24px 16px;
   text-align: center;
   margin-bottom: 12px;
+  position: relative;
 `;
 
 const AvatarWrapper = styled.div`
@@ -100,6 +103,40 @@ const LoginName = styled.div`
   font-size: 14px;
   color: #999;
   margin-top: 4px;
+`;
+
+const NotificationBell = styled.div`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  font-size: 22px;
+  color: #333;
+
+  &:active {
+    opacity: 0.7;
+  }
+`;
+
+const NotificationBadge = styled.div`
+  position: absolute;
+  top: -2px;
+  right: -6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #ff3141;
+  color: white;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 8px;
+  z-index: 1;
 `;
 
 const Section = styled.div`
@@ -185,6 +222,8 @@ function EditIcon({ size = 16 }: { size?: number }) {
 export default function Profile() {
   const navigate = useNavigate();
   const { user, logout, updateUser } = useAuthStore();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cropPopupVisible, setCropPopupVisible] = useState(false);
   const [imageSrc, setImageSrc] = useState<string | null>(null);
@@ -192,6 +231,10 @@ export default function Profile() {
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
   const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
 
   // Get avatar URL with timestamp to avoid cache
   const avatarUrl = user?.user_avatar
@@ -417,6 +460,14 @@ export default function Profile() {
   return (
     <Container>
       <Header>
+        <NotificationBell onClick={() => navigate('/notifications')}>
+          <BellOutline />
+          {unreadCount > 0 && (
+            <NotificationBadge>
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </NotificationBadge>
+          )}
+        </NotificationBell>
         <AvatarWrapper onClick={handleAvatarClick}>
           <Avatar $avatar={avatarUrl}>
             {!avatarUrl && (user?.user_nickname?.charAt(0).toUpperCase() || 'U')}

@@ -43,7 +43,6 @@ function App() {
           <Route path="warehouse" element={<Warehouse />} />
           <Route path="in-hand" element={<InHand />} />
           <Route path="reservation-orders" element={<ReservationOrders />} />
-          <Route path="notifications" element={<Notifications />} />
           <Route path="profile" element={<Profile />} />
         </Route>
         <Route
@@ -83,6 +82,14 @@ function App() {
           element={
             <PrivateRoute>
               <Scanner />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <PrivateRoute>
+              <Notifications />
             </PrivateRoute>
           }
         />

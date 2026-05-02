@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, SearchBar, SpinLoading } from 'antd-mobile';
 import type { InputRef } from 'antd-mobile/es/components/input';
-import { AddOutline, ScanCodeOutline, SearchOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
+import { AddOutline, SearchOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useRoomStore } from '../stores/roomStore';
 import { useCartStore } from '../stores/cartStore';
@@ -85,12 +85,12 @@ const FAB = styled.div`
   }
 `;
 
-const FABButton = styled.div<{ $primary?: boolean }>`
+const FABButton = styled.div`
   position: relative;
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: ${(props) => (props.$primary ? '#1677ff' : '#52c41a')};
+  background: #52c41a;
   color: white;
   display: flex;
   align-items: center;
@@ -447,9 +447,6 @@ export default function Warehouse() {
       </Content>
 
       <FAB>
-        <FABButton onClick={() => navigate('/scanner')}>
-          <ScanCodeOutline />
-        </FABButton>
         {cartItems.length > 0 && (
           <FABButton onClick={() => setCartVisible(true)}>
             <ShopbagOutline />

@@ -1,11 +1,10 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { TabBar } from 'antd-mobile';
 import {
   AppOutline,
   UnorderedListOutline,
-  MessageOutline,
   UserOutline,
   CalendarOutline,
+  ScanCodeOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useEffect, useState } from 'react';
@@ -103,25 +102,29 @@ const SideTabTitle = styled.div`
   font-size: 10px;
 `;
 
+const SideScanButton = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #52c41a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  margin: 4px auto 8px;
+  transition: transform 0.2s;
+
+  &:active {
+    transform: scale(0.95);
+  }
+`;
+
 const BadgeWrapper = styled.div`
   position: relative;
   display: inline-flex;
-`;
-
-const UnreadBadge = styled.div`
-  position: absolute;
-  top: -2px;
-  right: -8px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 4px;
-  background: #ff3141;
-  color: white;
-  font-size: 10px;
-  line-height: 16px;
-  text-align: center;
-  border-radius: 8px;
-  z-index: 1;
 `;
 
 const InHandBadge = styled.div`
@@ -141,16 +144,79 @@ const InHandBadge = styled.div`
 `;
 
 const MobileTabBar = styled.div`
-  .adm-tab-bar-item-icon {
-    overflow: visible;
-  }
-
   @media (min-width: 768px) {
     display: none;
   }
 `;
 
+const CustomTabBar = styled.div`
+  display: flex;
+  align-items: center;
+  height: 50px;
+  position: relative;
+  background: white;
+  padding-left: 14%;
+`;
+
+const RegularTabItem = styled.div<{ $active: boolean }>`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 6px 0;
+  cursor: pointer;
+  color: ${(props) => (props.$active ? '#1677ff' : '#666')};
+  transition: color 0.2s;
+
+  &:active {
+    opacity: 0.7;
+  }
+`;
+
+const RegularTabIcon = styled.div`
+  font-size: 22px;
+  line-height: 1;
+  position: relative;
+`;
+
+const RegularTabTitle = styled.div`
+  font-size: 10px;
+  line-height: 15px;
+  margin-top: 2px;
+`;
+
+const ScanButton = styled.div`
+  position: absolute;
+  top: -10px;
+  left: 10%;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #52c41a;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.2s;
+  z-index: 10;
+
+  &:active {
+    transform: translateX(-50%) scale(0.95);
+  }
+`;
+
 const tabs = [
+  {
+    key: '/scanner',
+    title: '扫码',
+    icon: <ScanCodeOutline />,
+    type: 'scan',
+  },
   {
     key: '/warehouse',
     title: '仓库',
@@ -167,11 +233,6 @@ const tabs = [
     icon: <CalendarOutline />,
   },
   {
-    key: '/notifications',
-    title: '通知',
-    icon: 'notificationIcon',
-  },
-  {
     key: '/profile',
     title: '我的',
     icon: <UserOutline />,
@@ -182,7 +243,6 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { pathname } = location;
-  const unreadCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const [inHandCount, setInHandCount] = useState(0);
 
@@ -193,10 +253,6 @@ export default function MainLayout() {
     }).catch(() => {});
   }, [pathname]);
 
-  const notificationIcon = unreadCount > 0
-    ? <BadgeWrapper><MessageOutline /><UnreadBadge>{unreadCount > 99 ? '99+' : unreadCount}</UnreadBadge></BadgeWrapper>
-    : <MessageOutline />;
-
   const inHandIcon = inHandCount > 0
     ? <BadgeWrapper><UnorderedListOutline /><InHandBadge>{inHandCount > 99 ? '99+' : inHandCount}</InHandBadge></BadgeWrapper>
     : <UnorderedListOutline />;
@@ -204,27 +260,37 @@ export default function MainLayout() {
   return (
     <Container>
       <TabBarContainer>
-        {/* 移动端底部 TabBar */}
+        {/* 移动端底部自定义 TabBar */}
         <MobileTabBar>
-          <TabBar
-            activeKey={pathname}
-            onChange={(value) => navigate(value)}
-          >
-            {tabs.map((item) => (
-              <TabBar.Item
-                key={item.key}
-                icon={item.key === '/notifications' ? notificationIcon : item.key === '/in-hand' ? inHandIcon : item.icon}
-                title={item.title}
-              />
-            ))}
-          </TabBar>
+          <CustomTabBar>
+            <ScanButton onClick={() => navigate('/scanner')}>
+              <ScanCodeOutline />
+            </ScanButton>
+            {tabs.filter(t => t.type !== 'scan').map((item) => {
+              const isActive = pathname === item.key;
+              const icon = item.key === '/in-hand' ? inHandIcon : item.icon;
+              return (
+                <RegularTabItem
+                  key={item.key}
+                  $active={isActive}
+                  onClick={() => navigate(item.key)}
+                >
+                  <RegularTabIcon>{icon}</RegularTabIcon>
+                  <RegularTabTitle>{item.title}</RegularTabTitle>
+                </RegularTabItem>
+              );
+            })}
+          </CustomTabBar>
         </MobileTabBar>
 
         {/* 桌面端侧边栏 */}
         <SideTabBar>
-          {tabs.map((item) => {
+          <SideScanButton onClick={() => navigate('/scanner')}>
+            <ScanCodeOutline />
+          </SideScanButton>
+          {tabs.filter(t => t.type !== 'scan').map((item) => {
             const isActive = pathname === item.key;
-            const icon = item.key === '/notifications' ? notificationIcon : item.key === '/in-hand' ? inHandIcon : item.icon;
+            const icon = item.key === '/in-hand' ? inHandIcon : item.icon;
             return (
               <SideTabItem
                 key={item.key}

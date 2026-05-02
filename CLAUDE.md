@@ -100,7 +100,7 @@ Items → Reservations → Orders
 - **取走（borrow）**: If operator ≠ item owner, notify the item owner with content like "张三 取走了 笔记本电脑". If operator = item owner, no notification.
 - **放入（return）**: If operator ≠ item owner, notify the item owner with content like "张三 将 笔记本电脑 放入了 盒子A". Also notify the target room's admin (if admin ≠ operator and admin ≠ item owner) with content including room name. If operator = item owner, no notification.
 - Notification data stored in `notifications` table with `notification_content` field for detailed info
-- Unread count shown as red badge on notification tab icon, fetched via `GET /api/notifications/unread-count`, managed in `notificationStore` (Zustand)
+- Unread count shown as red badge on notification bell icon in Profile page top-right corner, fetched via `GET /api/notifications/unread-count`, managed in `notificationStore` (Zustand). Notification page is a standalone route (not in tab bar), accessible from Profile page with NavBar back button.
 
 ### Box Detail and Item Return Flow
 - BoxDetail page shows box info and items inside
@@ -164,7 +164,7 @@ Items → Reservations → Orders
 ### UI Components
 - **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at bottom-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "预约" button at top-right corner (blue when not in cart, gray when added).
 - **FilterBar**: Box/tag filters. When "全部" is selected for box, displays "全部" instead of "盒子".
-- **MainLayout**: Responsive navigation - bottom tab bar on mobile, left sidebar (56px width) on desktop (≥768px). Sidebar shows icons and titles vertically. Notification icon shows red badge with unread count, in-hand icon shows green badge with held item count.
+- **MainLayout**: Responsive navigation - bottom tab bar on mobile with scan button as prominent green circular button protruding above the bar at first position, regular tabs (仓库, 我手中的, 预约, 我的) on the right side; left sidebar (56px width) on desktop (≥768px) with green scan button at top, then regular items vertically. In-hand icon shows green badge with held item count.
 - **Warehouse page**: Items displayed in adaptive grid (`repeat(auto-fill, minmax(150px, 1fr))`). In-stock items grouped by `current_box`, out-of-stock items displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in adaptive grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
 - **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Automatically checks for reservation conflicts when time is set, displays conflicting time periods on affected items.
@@ -174,7 +174,7 @@ Items → Reservations → Orders
 - Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin). When pending join requests exist, a red badge with the request count is shown on the gear icon.
 - Right side: Search button (magnifier icon) + Add item button (+ icon)
 - Search bar hidden by default, click search button to show with auto-focus
-- FAB (bottom right): Scan button, Cart button (only visible when cart has items)
+- FAB (bottom right): Cart button (only visible when cart has items)
 - Warehouse creation/join moved to dropdown in WarehouseSelector
 
 ### Item Stock Status Logic
@@ -222,6 +222,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 ### Profile Page (我的)
 - Located at `client/src/pages/Profile.tsx`
 - Features:
+  - Notification bell icon in top-right corner of header, with red badge showing unread count. Click navigates to `/notifications` (standalone route without tab bar).
   - Avatar: Click to upload, supports cropping (react-image-crop), compressed to 200x200 JPEG
   - Nickname: Display with edit button below, click to modify via dialog
   - Avatar stored at `/avatars/{user_id}.jpg` on server
