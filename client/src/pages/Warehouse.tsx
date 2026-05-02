@@ -408,8 +408,8 @@ export default function Warehouse() {
                 acc[boxKey].items.push(item);
                 return acc;
               }, {} as Record<string, { name: string; items: any[] }>);
-              Object.values(groupedItems).forEach(group => {
-                group.items.sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', 'zh'));
+              (Object.values(groupedItems) as { name: string; items: any[] }[]).forEach(group => {
+                group.items.sort((a: any, b: any) => (a.item_name || '').localeCompare(b.item_name || '', 'zh'));
               });
 
               return (Object.entries(groupedItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
