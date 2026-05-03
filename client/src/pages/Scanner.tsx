@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Button, Toast, SpinLoading, Dialog } from 'antd-mobile';
+import { Button, Toast, SpinLoading, Dialog } from 'antd-mobile';
 import styled from 'styled-components';
 import ScannerComponent, { ScannerHandle } from '../components/Scanner';
 import ScanResultList, { PendingItem } from '../components/ScanResultList';
@@ -11,6 +11,25 @@ type ScanMode = 'idle' | 'borrow' | 'return';
 const Container = styled.div`
   min-height: 100%;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.span`
+  font-size: 20px;
+  cursor: pointer;
+  margin-right: 12px;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const Content = styled.div`
@@ -259,7 +278,10 @@ export default function Scanner() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>{navTitle}</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>{navTitle}</HeaderTitle>
+      </Header>
 
       <Content>
         <ScannerComponent
