@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Button, DatePicker, Dialog, Toast } from 'antd-mobile';
+import { Button, DatePicker, Dialog, Toast } from 'antd-mobile';
 import styled from 'styled-components';
 import { useCartStore } from '../stores/cartStore';
 import { reservationApi } from '../services/api';
@@ -9,6 +9,26 @@ import TrashIcon from '../components/icons/TrashIcon';
 const Container = styled.div`
   min-height: 100%;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.div`
+  font-size: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  color: #333;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const Content = styled.div`
@@ -168,7 +188,10 @@ export default function Cart() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>购物车</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>购物车</HeaderTitle>
+      </Header>
 
       <Content>
         {items.length === 0 ? (

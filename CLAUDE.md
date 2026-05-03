@@ -116,9 +116,10 @@ Items → Reservations → Orders
 - Backend `getHistory` query returns `is_user_box` flag and `holder_nickname` via LEFT JOIN on users table
 
 ### Sub-Page Header Pattern
-- All sub-pages (MyItems, MyReservations, ReservationOrders, ReservationOrderDetail, RoomSettings, Notifications, etc.) use a unified custom Header style instead of antd-mobile NavBar
+- All sub-pages use a unified custom Header style instead of antd-mobile NavBar. Do NOT import `NavBar` from antd-mobile for any page.
+- Pages using this pattern: MyItems, MyReservations, ReservationOrders, ReservationOrderDetail, RoomSettings, Notifications, MyProfile, AddBox, CreateItem, CreateRoom, JoinRoom, Cart, BoxDetail
 - **Header**: `background: white; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center;`
-- **BackButton**: `←` arrow (font-size 20px, margin-right 12px), calls `navigate(-1)`. Tab-bar pages (e.g. ReservationOrders) omit BackButton since they're accessed directly from bottom tab bar.
+- **BackButton**: `←` arrow (font-size 20px, margin-right 12px, color: #333, cursor: pointer), calls `navigate(-1)`. Tab-bar pages (e.g. ReservationOrders) omit BackButton since they're accessed directly from bottom tab bar. Scanner modals use BackButton to close modal instead of navigate(-1).
 - **HeaderTitle**: `font-size: 16px; font-weight: 500`
 - Pages requiring sticky header (RoomSettings, Notifications) add `position: sticky; top: 0; z-index: 100`
 
