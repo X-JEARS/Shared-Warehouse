@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, Toast, Popup, Input } from 'antd-mobile';
 import ReactCrop from 'react-image-crop';
-import { makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
+import { makeAspectCrop, centerCrop, convertToPixelCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styled from 'styled-components';
 import { useAuthStore } from '../stores/authStore';
@@ -137,12 +137,16 @@ function centerAspectCrop(
   mediaWidth: number,
   mediaHeight: number,
 ): Crop {
-  return makeAspectCrop(
-    {
-      unit: '%',
-      width: 90,
-    },
-    1,
+  return centerCrop(
+    makeAspectCrop(
+      {
+        unit: '%',
+        width: 100,
+      },
+      1,
+      mediaWidth,
+      mediaHeight,
+    ),
     mediaWidth,
     mediaHeight,
   );
@@ -188,10 +192,12 @@ export default function MyProfile() {
   };
 
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { width, height } = e.currentTarget;
+    const { naturalWidth: width, naturalHeight: height } = e.currentTarget;
+    const { width: renderWidth, height: renderHeight } = e.currentTarget;
     const newCrop = centerAspectCrop(width, height);
     setCrop(newCrop);
-    setCompletedCrop(undefined);
+    const pixelCrop = convertToPixelCrop(newCrop, renderWidth, renderHeight);
+    setCompletedCrop(pixelCrop);
   };
 
   const getCroppedImg = useCallback(async (): Promise<File | null> => {
@@ -455,7 +461,7 @@ export default function MyProfile() {
           {imageSrc && (
             <ReactCrop
               crop={crop}
-              onChange={(c) => setCrop(c)}
+              onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
               aspect={1}
               circularCrop

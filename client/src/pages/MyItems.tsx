@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { itemApi, scanApi, userApi } from '../services/api';
 import Scanner from '../components/Scanner';
 import ReactCrop from 'react-image-crop';
-import { makeAspectCrop, Crop, PixelCrop } from 'react-image-crop';
+import { makeAspectCrop, centerCrop, convertToPixelCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 
 const Container = styled.div`
@@ -365,18 +365,24 @@ export default function MyItems() {
   };
 
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    const { width, height } = e.currentTarget;
-    const newCrop = makeAspectCrop(
-      {
-        unit: '%',
-        width: 90,
-      },
-      1,
+    const { naturalWidth: width, naturalHeight: height } = e.currentTarget;
+    const { width: renderWidth, height: renderHeight } = e.currentTarget;
+    const newCrop = centerCrop(
+      makeAspectCrop(
+        {
+          unit: '%',
+          width: 100,
+        },
+        1,
+        width,
+        height,
+      ),
       width,
       height,
     );
     setCrop(newCrop);
-    setCompletedCrop(undefined);
+    const pixelCrop = convertToPixelCrop(newCrop, renderWidth, renderHeight);
+    setCompletedCrop(pixelCrop);
   };
 
   const getCroppedImg = useCallback(async (): Promise<File | null> => {
@@ -871,7 +877,7 @@ export default function MyItems() {
           {imageSrc && (
             <ReactCrop
               crop={crop}
-              onChange={(c) => setCrop(c)}
+              onChange={(_, percentCrop) => setCrop(percentCrop)}
               onComplete={(c) => setCompletedCrop(c)}
               aspect={1}
             >
