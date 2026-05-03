@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Form, Input, Button, TextArea, Toast, Selector } from 'antd-mobile';
+import { Form, Input, Button, TextArea, Toast, Selector } from 'antd-mobile';
 import styled from 'styled-components';
 import { itemApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
@@ -10,6 +10,26 @@ import Scanner from '../components/Scanner';
 const Container = styled.div`
   min-height: 100%;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.div`
+  font-size: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  color: #333;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const Content = styled.div`
@@ -150,7 +170,10 @@ export default function CreateItem() {
   if (!currentRoom) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>添加物品</NavBar>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>添加物品</HeaderTitle>
+        </Header>
         <Content>
           <WarningBox>
             <WarningTitle>请先选择仓库</WarningTitle>
@@ -168,7 +191,10 @@ export default function CreateItem() {
   if (loadingBoxes) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>添加物品</NavBar>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>添加物品</HeaderTitle>
+        </Header>
         <Content style={{ textAlign: 'center', paddingTop: 40 }}>
           加载中...
         </Content>
@@ -180,7 +206,10 @@ export default function CreateItem() {
   if (boxes.length === 0) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>添加物品</NavBar>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>添加物品</HeaderTitle>
+        </Header>
         <Content>
           <WarningBox>
             <WarningTitle>当前仓库没有盒子</WarningTitle>
@@ -203,7 +232,10 @@ export default function CreateItem() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>添加物品</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>添加物品</HeaderTitle>
+      </Header>
 
       <Content>
         <Form layout="horizontal">
@@ -293,7 +325,10 @@ export default function CreateItem() {
       {/* 扫码弹窗 */}
       {showScanner && (
         <ScanModal>
-          <NavBar onBack={() => setShowScanner(false)}>扫描物品二维码</NavBar>
+          <Header>
+            <BackButton onClick={() => setShowScanner(false)}>←</BackButton>
+            <HeaderTitle>扫描物品二维码</HeaderTitle>
+          </Header>
           <Content>
             <Scanner
               showStopButton

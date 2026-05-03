@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { NavBar, Form, Input, Button, Toast } from 'antd-mobile';
+import { Form, Input, Button, Toast } from 'antd-mobile';
 import styled from 'styled-components';
 import { boxApi } from '../services/api';
 import Scanner from '../components/Scanner';
@@ -8,6 +8,26 @@ import Scanner from '../components/Scanner';
 const Container = styled.div`
   min-height: 100%;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.div`
+  font-size: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  color: #333;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const Content = styled.div`
@@ -89,7 +109,10 @@ export default function AddBox() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>添加盒子</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>添加盒子</HeaderTitle>
+      </Header>
 
       <Content>
         <Form layout="horizontal">
@@ -137,7 +160,10 @@ export default function AddBox() {
       {/* 扫码弹窗 */}
       {showScanner && (
         <ScanModal>
-          <NavBar onBack={() => setShowScanner(false)}>扫描盒子二维码</NavBar>
+          <Header>
+            <BackButton onClick={() => setShowScanner(false)}>←</BackButton>
+            <HeaderTitle>扫描盒子二维码</HeaderTitle>
+          </Header>
           <Content>
             <div style={{
               background: '#fff7e6',

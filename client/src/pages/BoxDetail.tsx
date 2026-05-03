@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { NavBar, Button, Card, Toast, SpinLoading, Dialog } from 'antd-mobile';
+import { Button, Card, Toast, SpinLoading, Dialog } from 'antd-mobile';
 import styled from 'styled-components';
 import ScannerComponent, { ScannerHandle } from '../components/Scanner';
 import ScanResultList, { PendingItem } from '../components/ScanResultList';
@@ -10,6 +10,26 @@ import ItemCard from '../components/ItemCard';
 const Container = styled.div`
   min-height: 100%;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.div`
+  font-size: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  color: #333;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const Content = styled.div`
@@ -213,7 +233,10 @@ export default function BoxDetail() {
   if (loading) {
     return (
       <Container>
-        <NavBar onBack={() => navigate(-1)}>盒子详情</NavBar>
+        <Header>
+          <BackButton onClick={() => navigate(-1)}>←</BackButton>
+          <HeaderTitle>盒子详情</HeaderTitle>
+        </Header>
         <Content>
           <div style={{ textAlign: 'center', padding: 60 }}>
             <SpinLoading />
@@ -226,7 +249,10 @@ export default function BoxDetail() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>盒子详情</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>盒子详情</HeaderTitle>
+      </Header>
 
       <Content>
         <BoxInfo>
@@ -267,7 +293,10 @@ export default function BoxDetail() {
       {/* 扫码弹窗 */}
       {showScanner && (
         <ScanModal>
-          <NavBar onBack={() => { setShowScanner(false); setPendingItems([]); }}>扫描物品</NavBar>
+          <Header>
+            <BackButton onClick={() => { setShowScanner(false); setPendingItems([]); }}>←</BackButton>
+            <HeaderTitle>扫描物品</HeaderTitle>
+          </Header>
           <ScanModalContent>
             <ScanHint>
               请扫描要放入的物品二维码

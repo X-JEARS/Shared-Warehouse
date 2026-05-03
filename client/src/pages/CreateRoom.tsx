@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavBar, Form, Input, Button, TextArea, Toast } from 'antd-mobile';
+import { Form, Input, Button, TextArea, Toast } from 'antd-mobile';
 import styled from 'styled-components';
 import { roomApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
@@ -8,6 +8,26 @@ import { useRoomStore } from '../stores/roomStore';
 const Container = styled.div`
   min-height: 100%;
   background: #f5f5f5;
+`;
+
+const Header = styled.div`
+  background: white;
+  padding: 8px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  align-items: center;
+`;
+
+const BackButton = styled.div`
+  font-size: 20px;
+  margin-right: 12px;
+  cursor: pointer;
+  color: #333;
+`;
+
+const HeaderTitle = styled.div`
+  font-size: 16px;
+  font-weight: 500;
 `;
 
 const Content = styled.div`
@@ -47,7 +67,10 @@ export default function CreateRoom() {
 
   return (
     <Container>
-      <NavBar onBack={() => navigate(-1)}>创建仓库</NavBar>
+      <Header>
+        <BackButton onClick={() => navigate(-1)}>←</BackButton>
+        <HeaderTitle>创建仓库</HeaderTitle>
+      </Header>
 
       <Content>
         <Form layout="horizontal">
