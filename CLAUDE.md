@@ -230,10 +230,22 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Located at `client/src/pages/Profile.tsx`
 - Features:
   - Notification bell icon in top-right corner of header, with red badge showing unread count. Click navigates to `/notifications` (standalone route without tab bar).
+  - Avatar and nickname displayed in header (display-only, no inline editing)
+  - Menu items: 我的资料, 我的物品, 我的预约, 关于
+
+### My Profile Page (我的资料)
+- Located at `client/src/pages/MyProfile.tsx`, standalone route `/my-profile` (no tab bar)
+- Accessible from Profile page menu item "我的资料"
+- Unified sub-page Header with ← back button + title "我的资料"
+- Editable fields displayed as rows (label + value + arrow):
   - Avatar: Click to upload, supports cropping (react-image-crop), compressed to 200x200 JPEG
-  - Nickname: Display with edit button below, click to modify via dialog
-  - Avatar stored at `/avatars/{user_id}.jpg` on server
-- Uses `POST /api/upload/avatar` for avatar upload (multipart/form-data)
+  - Login name: Display-only (no arrow)
+  - Nickname: Click opens `Dialog.confirm` with Input
+  - Phone number (`user_tel`): Click opens `Dialog.confirm` with Input. Shows "未设置" if empty.
+  - Registration time: Display-only (no arrow), formatted via `new Date(Number(timestamp)).toLocaleDateString('zh-CN')`
+  - Change password: Click opens `Dialog.confirm` with current/new password inputs
+- Logout button: Red solid background with white text, at bottom of page
+- Uses `POST /api/upload/avatar` for avatar upload, `PUT /users/profile` for nickname/phone updates, `PUT /users/password` for password changes
 
 ### Reservation Conflict Detection
 - Backend checks time overlap in `reservationController.ts` before creating reservations

@@ -19,6 +19,7 @@ import JoinRoom from './pages/JoinRoom';
 import ReservationOrders from './pages/ReservationOrders';
 import ReservationOrderDetail from './pages/ReservationOrderDetail';
 import MyReservations from './pages/MyReservations';
+import MyProfile from './pages/MyProfile';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -138,6 +139,14 @@ function App() {
           element={
             <PrivateRoute>
               <MyReservations />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-profile"
+          element={
+            <PrivateRoute>
+              <MyProfile />
             </PrivateRoute>
           }
         />
