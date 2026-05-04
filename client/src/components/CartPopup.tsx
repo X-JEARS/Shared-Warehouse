@@ -72,48 +72,78 @@ const TimeButton = styled.div`
   }
 `;
 
+const CartGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+`;
+
 const CartItem = styled.div`
   background: white;
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 12px;
   border: 1px solid #f0f0f0;
-`;
-
-const ItemHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-`;
-
-const ItemName = styled.div`
-  font-size: 16px;
-  font-weight: 500;
   display: flex;
   align-items: center;
   gap: 8px;
 `;
 
+const ItemImage = styled.img`
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+`;
+
+const ItemPlaceholder = styled.div`
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  background: #f5f5f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #999;
+  flex-shrink: 0;
+`;
+
+const ItemInfo = styled.div`
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const ItemName = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+`;
+
 const ConflictBadge = styled.span`
   background: #fff2f0;
   color: #ff4d4f;
-  font-size: 12px;
-  padding: 2px 6px;
+  font-size: 11px;
+  padding: 1px 4px;
   border-radius: 4px;
   font-weight: normal;
-`;
-
-const ItemMeta = styled.div`
-  font-size: 13px;
-  color: #999;
-  margin-bottom: 4px;
+  flex-shrink: 0;
 `;
 
 const ItemCount = styled.div`
   font-size: 14px;
   color: #666;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 `;
 
 const ConflictInfo = styled.div`
@@ -320,7 +350,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
       <PopupContent>
         <ScrollContent>
           <PopupHeader>
-            <PopupTitle>🛒 购物车</PopupTitle>
+            <PopupTitle>&ensp;购物车</PopupTitle>
             {items.length > 0 && (
               <Button
                 size="small"
@@ -385,33 +415,36 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
 
               <ItemCount>共 {items.length} 个物品</ItemCount>
 
-              {items.map((item) => (
-                <CartItem key={item.itemId}>
-                  <ItemHeader>
-                    <ItemName>
-                      {item.itemName}
-                      {item.hasConflict && <ConflictBadge>冲突</ConflictBadge>}
-                    </ItemName>
+              <CartGrid>
+                {items.map((item) => (
+                  <CartItem key={item.itemId}>
+                    {item.itemImage
+                      ? <ItemImage src={item.itemImage} alt={item.itemName} />
+                      : <ItemPlaceholder>{item.itemName[0]}</ItemPlaceholder>
+                    }
+                    <ItemInfo>
+                      <ItemName>
+                        {item.itemName}
+                        {item.hasConflict && <ConflictBadge>冲突</ConflictBadge>}
+                      </ItemName>
+                    </ItemInfo>
                     <TrashIcon
-                      style={{ color: '#ff4d4f', cursor: 'pointer' }}
+                      style={{ color: '#ff4d4f', cursor: 'pointer', flexShrink: 0 }}
                       onClick={() => removeItem(item.itemId)}
                     />
-                  </ItemHeader>
-                  <ItemMeta>
-                    {item.roomName}
-                    {item.boxName && ` / ${item.boxName}`}
-                  </ItemMeta>
-                  {item.hasConflict && item.conflictingReservations && item.conflictingReservations.length > 0 && (
-                    <ConflictInfo>
-                      <div>已被 {item.conflictingReservations[0].userNickname} 预约：</div>
-                      {item.conflictingReservations.map((res) => (
-                        <ConflictTime key={res.reservationId}>
-                          • {formatConflictTime(res)}
-                        </ConflictTime>
-                      ))}
-                    </ConflictInfo>
-                  )}
-                </CartItem>
+                  </CartItem>
+                ))}
+              </CartGrid>
+
+              {items.filter(item => item.hasConflict && item.conflictingReservations && item.conflictingReservations.length > 0).map((item) => (
+                <ConflictInfo key={`conflict-${item.itemId}`}>
+                  <div>{item.itemName} 已被 {item.conflictingReservations!.length > 0 ? item.conflictingReservations![0].userNickname : ''} 预约：</div>
+                  {item.conflictingReservations!.map((res) => (
+                    <ConflictTime key={res.reservationId}>
+                      • {formatConflictTime(res)}
+                    </ConflictTime>
+                  ))}
+                </ConflictInfo>
               ))}
             </>
           )}
