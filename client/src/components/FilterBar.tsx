@@ -26,7 +26,7 @@ const FilterItem = styled.div`
 
 interface FilterBarProps {
   roomId: number | undefined;
-  onFilterChange: (filters: { boxId?: number; tagId?: number }) => void;
+  onFilterChange: (filters: { boxId?: number | 'out-of-stock'; tagId?: number }) => void;
 }
 
 interface Box {
@@ -42,7 +42,7 @@ interface Tag {
 export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedBox, setSelectedBox] = useState<number | undefined>();
+  const [selectedBox, setSelectedBox] = useState<number | 'out-of-stock' | undefined>();
   const [selectedTag, setSelectedTag] = useState<number | undefined>();
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
     }
   };
 
-  const handleBoxChange = (boxId: number | undefined) => {
+  const handleBoxChange = (boxId: number | 'out-of-stock' | undefined) => {
     setSelectedBox(boxId);
     onFilterChange({ boxId, tagId: selectedTag });
   };
@@ -87,9 +87,11 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
           key="box"
           title={
             <FilterItem>
-              {selectedBox
-                ? boxes.find((b) => b.box_id === selectedBox)?.box_name || '盒子'
-                : '全部'}
+              {selectedBox === 'out-of-stock'
+                ? '不在库中'
+                : selectedBox
+                  ? boxes.find((b) => b.box_id === selectedBox)?.box_name || '盒子'
+                  : '全部'}
             </FilterItem>
           }
         >
@@ -99,6 +101,16 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
               style={{ padding: '12px 0', color: !selectedBox ? '#1677ff' : undefined }}
             >
               全部
+            </div>
+            <div
+              onClick={() => handleBoxChange('out-of-stock')}
+              style={{
+                padding: '12px 0',
+                borderTop: '1px solid #f0f0f0',
+                color: selectedBox === 'out-of-stock' ? '#1677ff' : undefined,
+              }}
+            >
+              不在库中
             </div>
             {boxes.map((box) => (
               <div
