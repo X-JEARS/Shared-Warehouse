@@ -9,8 +9,11 @@ import { scanApi } from '../services/api';
 type ScanMode = 'idle' | 'borrow' | 'return';
 
 const Container = styled.div`
-  min-height: 100%;
+  height: 100dvh;
   background: #f5f5f5;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 const Header = styled.div`
@@ -19,6 +22,7 @@ const Header = styled.div`
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
+  flex-shrink: 0;
 `;
 
 const BackButton = styled.span`
@@ -33,7 +37,11 @@ const HeaderTitle = styled.div`
 `;
 
 const Content = styled.div`
+  flex: 1;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 const ScanHint = styled.div`
@@ -45,6 +53,7 @@ const ScanHint = styled.div`
   text-align: center;
   color: #0050b3;
   font-size: 14px;
+  flex-shrink: 0;
 `;
 
 const BoxLink = styled.span`
@@ -59,11 +68,22 @@ const BoxLink = styled.span`
 
 const BatchActionArea = styled.div`
   margin-top: 16px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 const ButtonRow = styled.div`
   display: flex;
   gap: 12px;
+  flex-shrink: 0;
+`;
+
+const ResultListWrapper = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 12px;
 `;
 
 const LoadingOverlay = styled.div`
@@ -329,10 +349,12 @@ export default function Scanner() {
               </Button>
             </ButtonRow>
 
-            <ScanResultList
-              items={pendingItems}
-              onRemoveItem={handleRemoveItem}
-            />
+            <ResultListWrapper>
+              <ScanResultList
+                items={pendingItems}
+                onRemoveItem={handleRemoveItem}
+              />
+            </ResultListWrapper>
           </BatchActionArea>
         )}
       </Content>

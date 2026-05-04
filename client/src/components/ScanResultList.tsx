@@ -16,12 +16,9 @@ interface ScanResultListProps {
 }
 
 const ListContainer = styled.div`
-  max-height: 40vh;
-  overflow-y: auto;
   background: #fff;
   border-radius: 12px;
   padding: 8px;
-  margin-top: 12px;
 `;
 
 const ItemGrid = styled.div`

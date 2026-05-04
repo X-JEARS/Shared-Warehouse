@@ -160,7 +160,7 @@ Items → Reservations → Orders
 - Uses `pendingItemsRef` to avoid stale closure in dedup check
 - Partial success: failed items remain in list, succeeded items removed
 - "取消" button resets mode and restarts scanner
-- UI layout: Scanner frame → hint → button row (取消 + 取走/放入) → ScanResultList (two-column grid)
+- UI layout: Fixed viewport height flex column (`height: 100dvh`). Header pinned at top (`flex-shrink: 0`). Scanner frame → hint → button row (取消 + 取走/放入) are fixed and non-scrolling. ScanResultList wrapped in `ResultListWrapper` (`flex: 1; overflow-y: auto`) scrolls independently within remaining space.
 
 ### ScanResultList Component
 - Located at `client/src/components/ScanResultList.tsx`
@@ -168,6 +168,7 @@ Items → Reservations → Orders
 - Each card: item image (36x36) + name + "已在手中" badge (below name, when applicable) + location + remove (X) button
 - `PendingItem` interface: `itemId`, `itemName`, `itemImage?`, `locationName`, `isInHand`, `qrcode` (for dedup)
 - Shared between Scanner page and BoxDetail page
+- Scrolling controlled by parent wrapper (Scanner page: `ResultListWrapper`; BoxDetail: scanner modal), no internal `max-height` constraint
 
 ### UI Components
 - **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at top-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "+" SVG icon button at bottom-right corner (22px circular button, light blue background + blue icon when not in cart, gray background + gray icon when added).
