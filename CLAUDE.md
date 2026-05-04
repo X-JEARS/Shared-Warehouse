@@ -165,7 +165,7 @@ Items → Reservations → Orders
 ### ScanResultList Component
 - Located at `client/src/components/ScanResultList.tsx`
 - Displays pending items in two-column grid layout
-- Each card: item image (36x36) + name + location + "已在手中" badge + remove (X) button
+- Each card: item image (36x36) + name + "已在手中" badge (below name, when applicable) + location + remove (X) button
 - `PendingItem` interface: `itemId`, `itemName`, `itemImage?`, `locationName`, `isInHand`, `qrcode` (for dedup)
 - Shared between Scanner page and BoxDetail page
 

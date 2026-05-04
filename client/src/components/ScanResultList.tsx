@@ -87,7 +87,8 @@ const InHandBadge = styled.span`
   background: #f0f0f0;
   padding: 1px 4px;
   border-radius: 3px;
-  margin-left: 4px;
+  display: inline-block;
+  margin-top: 2px;
 `;
 
 const RemoveButton = styled.div`
@@ -135,10 +136,8 @@ export default function ScanResultList({ items, onRemoveItem }: ScanResultListPr
               <ItemPlaceholder>📦</ItemPlaceholder>
             )}
             <ItemInfo>
-              <ItemName>
-                {item.itemName}
-                {item.isInHand && <InHandBadge>已在手中</InHandBadge>}
-              </ItemName>
+              <ItemName>{item.itemName}</ItemName>
+              {item.isInHand && <InHandBadge>已在手中</InHandBadge>}
               <ItemLocation>{item.locationName}</ItemLocation>
             </ItemInfo>
             <RemoveButton onClick={() => onRemoveItem(item.qrcode)}>
