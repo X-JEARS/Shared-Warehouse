@@ -163,7 +163,7 @@ export default function Warehouse() {
   const [loading, setLoading] = useState(false);
   const [roomsLoading, setRoomsLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
-  const [filters, setFilters] = useState<{ boxId?: number; tagId?: number }>({});
+  const [filters, setFilters] = useState<{ boxId?: number | 'out-of-stock'; tagId?: number }>({});
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
@@ -217,7 +217,8 @@ export default function Warehouse() {
       setLoading(true);
       const res: any = await itemApi.getAll({
         roomId: currentRoom.room_id,
-        ...filters,
+        boxId: filters.boxId === 'out-of-stock' ? undefined : filters.boxId,
+        tagId: filters.tagId,
         search: searchText || undefined,
       });
       setInStockItems(res.data?.inStock || []);
@@ -246,7 +247,7 @@ export default function Warehouse() {
     loadItems();
   };
 
-  const handleFilterChange = (newFilters: { boxId?: number; tagId?: number }) => {
+  const handleFilterChange = (newFilters: { boxId?: number | 'out-of-stock'; tagId?: number }) => {
     setFilters(newFilters);
   };
 
@@ -390,15 +391,19 @@ export default function Warehouse() {
           </div>
         ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
-            <p style={{ color: '#999', marginBottom: 16 }}>当前仓库暂无物品</p>
-            <Button color="primary" onClick={() => navigate('/create-item')}>
-              添加物品
-            </Button>
+            <p style={{ color: '#999', marginBottom: 16 }}>
+              {filters.boxId === 'out-of-stock' ? '当前没有不在库中的物品' : '当前仓库暂无物品'}
+            </p>
+            {filters.boxId !== 'out-of-stock' && (
+              <Button color="primary" onClick={() => navigate('/create-item')}>
+                添加物品
+              </Button>
+            )}
           </div>
         ) : (
           <ItemList>
-            {/* 在库物品：按当前所在盒子分组显示 */}
-            {(() => {
+            {/* 在库物品：按当前所在盒子分组显示（不在库筛选时不显示） */}
+            {filters.boxId !== 'out-of-stock' && (() => {
               const groupedItems = inStockItems.reduce((acc, item) => {
                 const boxKey = item.item_current_box_id || 'no-box';
                 const boxName = item.current_box_name || '未分配盒子';
@@ -429,8 +434,8 @@ export default function Warehouse() {
               ));
             })()}
 
-            {/* 不在库物品：统一显示在"不在库中" */}
-            {outOfStockItems.length > 0 && (
+            {/* 不在库物品 */}
+            {(filters.boxId === 'out-of-stock' ? outOfStockItems.length > 0 : outOfStockItems.length > 0) && (
               <BoxGroup>
                 <BoxTitle>不在库中</BoxTitle>
                 <ItemGrid>
