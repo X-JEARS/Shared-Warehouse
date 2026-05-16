@@ -90,8 +90,9 @@ const ItemMeta = styled.div`
 `;
 
 const TimeRange = styled.div`
-  font-size: 13px;
-  color: #666;
+  font-size: 14px;
+  color: #333;
+  font-weight: 600;
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid #f0f0f0;
@@ -263,10 +264,10 @@ export default function ReservationOrderDetail() {
             {data.order.order_title || `预约单 #${data.order.order_id}`}
           </OrderTitle>
           <OrderMeta>
-            创建时间：{formatTime(data.order.order_create_time)}
+            物品数量：{activeReservations.length} / {data.reservations.length} 个
           </OrderMeta>
           <OrderMeta>
-            物品数量：{activeReservations.length} / {data.reservations.length} 个
+            创建时间：{formatTime(data.order.order_create_time)}
           </OrderMeta>
           {data.order.order_is_canceled && (
             <Tag color="danger" style={{ marginTop: 8 }}>订单已取消</Tag>

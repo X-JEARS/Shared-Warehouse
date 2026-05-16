@@ -2,8 +2,27 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Popup, Button, DatePicker, Dialog, Toast } from 'antd-mobile';
 import styled from 'styled-components';
 import { useCartStore, ConflictingReservation } from '../stores/cartStore';
+import { useAuthStore } from '../stores/authStore';
 import { reservationApi } from '../services/api';
 import TrashIcon from './icons/TrashIcon';
+
+function EditIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  );
+}
 
 const PopupContent = styled.div`
   display: flex;
@@ -25,9 +44,30 @@ const PopupHeader = styled.div`
   margin-bottom: 16px;
 `;
 
+const PopupTitleRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
 const PopupTitle = styled.div`
   font-size: 18px;
   font-weight: 600;
+`;
+
+const EditIconButton = styled.button`
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #1677ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    opacity: 0.8;
+  }
 `;
 
 const TimeCard = styled.div`
@@ -194,9 +234,32 @@ interface CartPopupProps {
 }
 
 export default function CartPopup({ visible, onClose }: CartPopupProps) {
-  const { items, startTime, endTime, setTime, removeItem, clearCart, updateConflict, clearConflicts } = useCartStore();
+  const { user } = useAuthStore();
+  const { items, startTime, endTime, setTime, removeItem, clearCart, orderTitle, setOrderTitle, updateConflict, clearConflicts } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [checkingConflicts, setCheckingConflicts] = useState(false);
+
+  const defaultTitle = `${user?.user_nickname || '用户'}的预约单#${new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }).replace('/', '')}`;
+
+  const handleEditTitle = async () => {
+    const result = await Dialog.confirm({
+      title: '编辑预约单标题',
+      content: <input
+        id="order-title-input"
+        defaultValue={orderTitle || ''}
+        placeholder="请输入预约单标题"
+        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
+      />,
+      confirmText: '确定',
+      cancelText: '取消',
+    });
+
+    if (result) {
+      const input = document.getElementById('order-title-input') as HTMLInputElement;
+      const newTitle = input?.value?.trim() || '';
+      setOrderTitle(newTitle || undefined);
+    }
+  };
 
   // 用 ref 存储最新的 items，避免 checkConflicts 依赖 items 导致无限循环
   const itemsRef = useRef(items);
@@ -316,6 +379,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
       try {
         setLoading(true);
         await reservationApi.createOrder({
+          title: orderTitle || defaultTitle,
           items: items.map((item) => ({
             itemId: item.itemId,
             startTime: startTime,
@@ -350,7 +414,12 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
       <PopupContent>
         <ScrollContent>
           <PopupHeader>
-            <PopupTitle>&ensp;购物车</PopupTitle>
+            <PopupTitleRow>
+              <PopupTitle>{orderTitle || defaultTitle}</PopupTitle>
+              <EditIconButton onClick={handleEditTitle}>
+                <EditIcon size={16} />
+              </EditIconButton>
+            </PopupTitleRow>
             {items.length > 0 && (
               <Button
                 size="small"
