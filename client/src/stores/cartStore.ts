@@ -24,9 +24,11 @@ interface CartState {
   items: CartItem[];
   startTime?: number;
   endTime?: number;
+  orderTitle?: string;
   addItem: (item: CartItem) => void;
   removeItem: (itemId: number) => void;
   setTime: (start?: number, end?: number) => void;
+  setOrderTitle: (title?: string) => void;
   clearCart: () => void;
   itemCount: () => number;
   // 更新物品冲突信息
@@ -41,6 +43,7 @@ export const useCartStore = create<CartState>()(
         items: [],
         startTime: undefined,
         endTime: undefined,
+        orderTitle: undefined,
         addItem: (item) =>
           set((state) => {
             const exists = state.items.find((i) => i.itemId === item.itemId);
@@ -58,7 +61,8 @@ export const useCartStore = create<CartState>()(
             items: state.items.filter((i) => i.itemId !== itemId),
           })),
         setTime: (start, end) => set({ startTime: start, endTime: end }),
-        clearCart: () => set({ items: [], startTime: undefined, endTime: undefined }),
+        setOrderTitle: (title) => set({ orderTitle: title }),
+        clearCart: () => set({ items: [], startTime: undefined, endTime: undefined, orderTitle: undefined }),
         itemCount: () => get().items.length,
         updateConflict: (itemId, conflict) =>
           set((state) => ({

@@ -57,7 +57,7 @@ Items → Reservations → Orders
 - **Box (盒子)**: Storage container within a room, or user's personal box (user_box_id)
 - **Item (物品)**: Physical asset with QR code, can be taken by scanning its QR code
 - **Tags**: Room-specific, items have different tags in different rooms
-- **Cart**: Client-side only, persisted to localStorage via Zustand
+- **Cart**: Client-side only, persisted to localStorage via Zustand. Store includes `orderTitle` (editable order title, default generated as `用户名+的预约单#+日期简写`) and `setOrderTitle` action. `clearCart` resets `orderTitle` along with items and time.
 - **Room Persistence**: `currentRoom` is persisted to localStorage, so users return to their last visited room on login/app start. Warehouse page validates that the stored room is still accessible (user is still a member)
 - **Room Join Request**: Users request to join a room, admin approves/rejects in room settings
 
@@ -176,7 +176,7 @@ Items → Reservations → Orders
 - **MainLayout**: Responsive navigation - bottom tab bar on mobile with centered scan button (green circular, 52px, protruding above bar) flanked by tabs: 仓库 and 预约 on the left, 我手中的 and 我的 on the right, with ScanPlaceholder (flex:1) between 预约 and 我手中的 to reserve space. ScanDome (70px clipped circle, 9px radius diff from scan button, white bg, #eee border, clip-path showing only arc above tab bar) wraps around the scan button. Left sidebar (56px width) on desktop (≥768px) with green scan button at top, then regular items vertically. In-hand icon shows green badge with held item count.
 - **Warehouse page**: Items displayed in adaptive grid (`repeat(auto-fill, minmax(150px, 1fr))`). In-stock items grouped by `current_box`, items within each group sorted by name (`localeCompare` with `'zh'` locale for Chinese pinyin order). Out-of-stock items sorted by name and displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in adaptive grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
-- **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Items displayed in two-column grid layout (item image + item name + delete icon). Automatically checks for reservation conflicts when time is set, conflict info displayed below the grid with item name for identification.
+- **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Items displayed in two-column grid layout (item image + item name + delete icon). Automatically checks for reservation conflicts when time is set, conflict info displayed below the grid with item name for identification. Header shows editable order title (default: `用户名+的预约单#+日期简写`, e.g. `张三的预约单#0310`) with blue outline edit icon (SVG pencil+square) inline to the right. Click edit icon opens Dialog with input to modify title. Title submitted via `title` field in `createOrder` API; if user didn't edit, default title is used.
 - **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that opens scanner modal in batch mode. Scanned items accumulate in pending list, "放入" button triggers batch return.
 
 ### Warehouse Page Header Layout
@@ -259,6 +259,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - **My Reservations (我的预约)**: Located at `client/src/pages/MyReservations.tsx`, accessible from Profile page. Shows current user's reservation orders. Uses unified sub-page Header with ← back button, and custom TabBar (white background, tabs aligned left, 20px margin between tabs, active tab blue with underline indicator) instead of antd-mobile Tabs.
 - **Room Reservations (仓库预约)**: Located at `client/src/pages/ReservationOrders.tsx`, accessed directly from bottom tab bar (no back button). Uses same custom TabBar pattern as My Reservations.
 - **Reservation Order Detail**: Located at `client/src/pages/ReservationOrderDetail.tsx`, uses unified sub-page Header with ← back button.
+- **Order Card Layout**: Reservation time at top (bold, font-weight: 600, separated by border-bottom), then order title + status tag, then item count, then creation time. Title shows `order_title` if present, falls back to `预约单 #${order_id}`.
 - **API Endpoints**:
   - `GET /api/reservations/orders` - Get current user's orders
   - `GET /api/reservations/rooms/:roomId/orders` - Get all orders for a room (members only)
