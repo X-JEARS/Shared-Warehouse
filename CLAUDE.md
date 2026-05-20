@@ -14,6 +14,7 @@ npm install          # Install dependencies
 npm run dev          # Start development server with hot reload (port 3000)
 npm run build        # Compile TypeScript to dist/
 npm start            # Run production build
+npm run admin        # Run admin CLI tool (search users, modify nickname, reset password)
 
 # Frontend (from client/)
 npm install          # Install dependencies

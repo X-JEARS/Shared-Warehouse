@@ -99,6 +99,7 @@ warehouse/
 │   │   ├── controllers/   # 控制器
 │   │   ├── routes/        # 路由定义
 │   │   ├── middlewares/   # 中间件
+│   │   ├── tools/        # 管理工具
 │   │   └── app.ts         # 应用入口
 │   └── package.json
 │
@@ -208,6 +209,7 @@ cd server
 npm run dev    # 开发模式（热重载）
 npm run build  # 编译 TypeScript
 npm start      # 生产模式运行
+npm run admin  # 管理工具（搜索用户、修改昵称、重置密码）
 ```
 
 ### 前端开发
