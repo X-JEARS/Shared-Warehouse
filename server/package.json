@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/app.ts",
     "build": "tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "admin": "ts-node src/tools/admin.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
