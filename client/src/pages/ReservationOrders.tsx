@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, SpinLoading } from 'antd-mobile';
+import { Tag, SpinLoading, SearchBar } from 'antd-mobile';
+import type { InputRef } from 'antd-mobile/es/components/input';
+import { SearchOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { reservationApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
+import WarehouseSelector from '../components/WarehouseSelector';
 
 const Container = styled.div`
   height: 100%;
@@ -14,15 +17,38 @@ const Container = styled.div`
 
 const Header = styled.div`
   background: white;
-  padding: 8px 16px;
+  padding: 1px 6px;
   border-bottom: 1px solid #f0f0f0;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 `;
 
-const HeaderTitle = styled.div`
-  font-size: 16px;
-  font-weight: 500;
+const HeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-right: 2px;
+`;
+
+const IconButton = styled.div`
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  color: #333;
+
+  &:active {
+    opacity: 0.7;
+  }
+`;
+
+const SearchContainer = styled.div`
+  padding: 8px 12px;
+  background: white;
 `;
 
 const TabBar = styled.div`
@@ -109,12 +135,6 @@ const EmptyContainer = styled.div`
   color: #999;
 `;
 
-const NoRoomTip = styled.div`
-  text-align: center;
-  padding: 60px 20px;
-  color: #999;
-`;
-
 interface Order {
   order_id: number;
   order_create_time: number;
@@ -135,6 +155,9 @@ export default function ReservationOrders() {
   const [pastOrders, setPastOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'active' | 'past'>('active');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const searchInputRef = useRef<InputRef>(null);
 
   useEffect(() => {
     if (currentRoom) {
@@ -143,6 +166,20 @@ export default function ReservationOrders() {
       setLoading(false);
     }
   }, [currentRoom]);
+
+  useEffect(() => {
+    if (showSearch) {
+      setTimeout(() => searchInputRef.current?.focus(), 100);
+    }
+  }, [showSearch]);
+
+  const filterOrders = (orders: Order[]) => {
+    if (!searchText) return orders;
+    return orders.filter((order) => {
+      const title = order.order_title || `预约单 #${order.order_id}`;
+      return title.toLowerCase().includes(searchText.toLowerCase());
+    });
+  };
 
   const loadRoomOrders = async () => {
     if (!currentRoom) return;
@@ -225,7 +262,12 @@ export default function ReservationOrders() {
     return (
       <Container>
         <Header>
-          <HeaderTitle>仓库预约</HeaderTitle>
+          <WarehouseSelector />
+          <HeaderActions>
+            <IconButton onClick={() => setShowSearch(true)}>
+              <SearchOutline />
+            </IconButton>
+          </HeaderActions>
         </Header>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
@@ -234,32 +276,44 @@ export default function ReservationOrders() {
     );
   }
 
-  if (!currentRoom) {
-    return (
-      <Container>
-        <Header>
-          <HeaderTitle>仓库预约</HeaderTitle>
-        </Header>
-        <NoRoomTip>请先选择一个仓库</NoRoomTip>
-      </Container>
-    );
-  }
-
   return (
     <Container>
       <Header>
-        <HeaderTitle>仓库预约</HeaderTitle>
+        <WarehouseSelector />
+        {currentRoom && (
+          <HeaderActions>
+            <IconButton onClick={() => setShowSearch(true)}>
+              <SearchOutline />
+            </IconButton>
+          </HeaderActions>
+        )}
       </Header>
+      {showSearch && currentRoom && (
+        <SearchContainer>
+          <SearchBar
+            ref={searchInputRef}
+            placeholder="搜索预约标题"
+            value={searchText}
+            onChange={(val) => setSearchText(val)}
+            onSearch={(val) => setSearchText(val)}
+            onCancel={() => {
+              setSearchText('');
+              setShowSearch(false);
+            }}
+            onClear={() => setSearchText('')}
+          />
+        </SearchContainer>
+      )}
       <TabBar>
         <TabItem $active={activeTab === 'active'} onClick={() => setActiveTab('active')}>
-          进行中 ({activeOrders.length})
+          进行中 ({filterOrders(activeOrders).length})
         </TabItem>
         <TabItem $active={activeTab === 'past'} onClick={() => setActiveTab('past')}>
-          已结束 ({pastOrders.length})
+          已结束 ({filterOrders(pastOrders).length})
         </TabItem>
       </TabBar>
       <Content>
-        {activeTab === 'active' ? renderOrderList(activeOrders) : renderOrderList(pastOrders)}
+        {activeTab === 'active' ? renderOrderList(filterOrders(activeOrders)) : renderOrderList(filterOrders(pastOrders))}
       </Content>
     </Container>
   );

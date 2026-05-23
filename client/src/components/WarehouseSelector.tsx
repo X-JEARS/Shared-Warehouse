@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dropdown, Button } from 'antd-mobile';
 import { AddOutline } from 'antd-mobile-icons';
@@ -49,41 +49,32 @@ const ActionRow = styled.div`
   margin-top: 8px;
 `;
 
-interface WarehouseSelectorProps {
-  onSettingsClick?: () => void;
-}
-
-export default function WarehouseSelector(_props: WarehouseSelectorProps) {
+export default function WarehouseSelector() {
   const navigate = useNavigate();
   const { rooms, currentRoom, setCurrentRoom, setRooms } = useRoomStore();
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        const res: any = await roomApi.getAll();
+        const fetchedRooms = res.data || [];
+        setRooms(fetchedRooms);
+        if (fetchedRooms.length > 0) {
+          if (currentRoom) {
+            const isRoomValid = fetchedRooms.some((r: any) => r.room_id === currentRoom.room_id);
+            if (!isRoomValid) {
+              setCurrentRoom(fetchedRooms[0]);
+            }
+          } else {
+            setCurrentRoom(fetchedRooms[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load rooms:', error);
+      }
+    };
     loadRooms();
   }, []);
-
-  const loadRooms = async () => {
-    try {
-      setLoading(true);
-      const res: any = await roomApi.getAll();
-      setRooms(res.data || []);
-      if (res.data?.length > 0 && !currentRoom) {
-        setCurrentRoom(res.data[0]);
-      }
-    } catch (error) {
-      console.error('Failed to load rooms:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <SelectorContainer>
-        <RoomName>加载中...</RoomName>
-      </SelectorContainer>
-    );
-  }
 
   if (rooms.length === 0) {
     return (
