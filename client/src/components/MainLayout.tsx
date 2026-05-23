@@ -197,7 +197,7 @@ const ScanDome = styled.div`
   border: 1px solid #eee;
   border-radius: 50%;
   box-sizing: border-box;
-  clip-path: inset(0 0 72.9% 0);
+  clip-path: inset(0 0 51px 0);
   z-index: 5;
 `;
 
