@@ -27,6 +27,24 @@ const ItemImage = styled.div<{ $image?: string }>`
   align-items: center;
   justify-content: center;
   font-size: 32px;
+  ${(props) => props.$image && 'cursor: pointer;'}
+`;
+
+const ImageViewerOverlay = styled.div`
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+`;
+
+const ImageViewerImg = styled.img`
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
 `;
 
 const ItemTitle = styled.div`
@@ -117,6 +135,7 @@ export default function ItemDetail({
   onUpdate,
 }: ItemDetailProps) {
   const [item, setItem] = useState<any>(null);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [commentText, setCommentText] = useState('');
@@ -321,7 +340,7 @@ export default function ItemDetail({
               </Button>
             </div>
             <ItemHeader>
-              <ItemImage $image={item.item_image}>
+              <ItemImage $image={item.item_image} onClick={() => item.item_image && setShowImageViewer(true)}>
                 {!item.item_image && '📦'}
               </ItemImage>
               <ItemTitle>
@@ -561,7 +580,11 @@ export default function ItemDetail({
       </PopupContent>
     </Popup>
 
-      {/* 转移记录完整列表弹窗 */}
+    {showImageViewer && item?.item_image && (
+      <ImageViewerOverlay onClick={() => setShowImageViewer(false)}>
+        <ImageViewerImg src={item.item_image} alt={item.item_name} />
+      </ImageViewerOverlay>
+    )}
       <Popup
         visible={showAllHistory}
         onMaskClick={() => setShowAllHistory(false)}
