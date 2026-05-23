@@ -104,11 +104,16 @@ const SectionTitle = styled.div`
   color: #333;
 `;
 
+const ReservationGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+`;
+
 const ReservationCard = styled.div`
   background: white;
   border-radius: 8px;
   padding: 12px;
-  margin-bottom: 12px;
 `;
 
 const ReservationHeader = styled.div`
@@ -417,33 +422,35 @@ export default function ReservationOrderDetail() {
         </OrderInfo>
 
         <SectionTitle>预约物品</SectionTitle>
-        {data.reservations.map((r) => (
-          <ReservationCard key={r.reservation_id}>
-            <ReservationHeader>
-              <ItemName>{r.item_name}</ItemName>
-              {getReservationStatus(r)}
-            </ReservationHeader>
-            <ItemMeta>
-              {r.room_name}
-              {r.box_name && ` / ${r.box_name}`}
-            </ItemMeta>
-            <TimeRange>
-              📅 {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
-            </TimeRange>
-            {isOwner && !r.reservation_is_canceled && (
-              <div style={{ marginTop: 12, textAlign: 'right' }}>
-                <Button
-                  size="mini"
-                  fill="outline"
-                  color="danger"
-                  onClick={() => handleCancelReservation(r.reservation_id, r.item_name)}
-                >
-                  取消此预约
-                </Button>
-              </div>
-            )}
-          </ReservationCard>
-        ))}
+        <ReservationGrid>
+          {data.reservations.map((r) => (
+            <ReservationCard key={r.reservation_id}>
+              <ReservationHeader>
+                <ItemName>{r.item_name}</ItemName>
+                {getReservationStatus(r)}
+              </ReservationHeader>
+              <ItemMeta>
+                {r.room_name}
+                {r.box_name && ` / ${r.box_name}`}
+              </ItemMeta>
+              <TimeRange>
+                {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
+              </TimeRange>
+              {isOwner && !r.reservation_is_canceled && (
+                <div style={{ marginTop: 12, textAlign: 'right' }}>
+                  <Button
+                    size="mini"
+                    fill="outline"
+                    color="danger"
+                    onClick={() => handleCancelReservation(r.reservation_id, r.item_name)}
+                  >
+                    取消此预约
+                  </Button>
+                </div>
+              )}
+            </ReservationCard>
+          ))}
+        </ReservationGrid>
       </Content>
 
       {(canCancelOrder || canExtendOrder) && (
