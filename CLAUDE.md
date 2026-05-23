@@ -171,6 +171,11 @@ Items → Reservations → Orders
 - Shared between Scanner page and BoxDetail page
 - Scrolling controlled by parent wrapper (Scanner page: `ResultListWrapper`; BoxDetail: scanner modal), no internal `max-height` constraint
 
+### ItemDetail Component
+- Located at `client/src/components/ItemDetail.tsx`, Popup-style component sliding up from bottom
+- Shows item image (80x80px), name, location, stock status, tags, history, and comments
+- **Image Viewer**: Click item image to view fullscreen. Overlay with dark background (rgba 0,0,0,0.85, z-index 9999), image centered at max 90vw × 90vh. Click anywhere on overlay to close. Only active when item has an image (cursor: pointer on image thumbnail).
+
 ### UI Components
 - **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at top-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "+" SVG icon button at bottom-right corner (22px circular button, light blue background + blue icon when not in cart, gray background + gray icon when added).
 - **FilterBar**: Box/tag filters. Box dropdown includes "全部", "不在库中" (shows only out-of-stock items), and individual boxes. When "全部" is selected for box, displays "全部" instead of "盒子".
