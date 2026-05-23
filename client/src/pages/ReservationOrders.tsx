@@ -199,7 +199,7 @@ export default function ReservationOrders() {
       >
         {order.start_time && order.end_time && (
           <OrderTime>
-            {formatTime(order.start_time)} ~ {formatTime(order.end_time)}
+            📅 {formatTime(order.start_time)} ~ {formatTime(order.end_time)}
           </OrderTime>
         )}
         <OrderHeader>

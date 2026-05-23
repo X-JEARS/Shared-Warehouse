@@ -66,7 +66,6 @@ const OrderInfo = styled.div`
 const OrderTitle = styled.div`
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 12px;
 `;
 
 const OrderTitleRow = styled.div`
@@ -78,13 +77,14 @@ const OrderTitleRow = styled.div`
 const EditIconButton = styled.button`
   background: none;
   border: none;
-  padding: 4px;
+  padding: 0;
   cursor: pointer;
   color: #1677ff;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-left: 8px;
+  flex-shrink: 0;
 
   &:hover {
     opacity: 0.8;
@@ -135,9 +135,9 @@ const ItemMeta = styled.div`
 `;
 
 const TimeRange = styled.div`
-  font-size: 14px;
+  font-size: 12px;
   color: #333;
-  font-weight: 600;
+  font-weight: 500;
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px solid #f0f0f0;
