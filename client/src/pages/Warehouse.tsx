@@ -155,13 +155,12 @@ const ActionButtons = styled.div`
 
 export default function Warehouse() {
   const navigate = useNavigate();
-  const { currentRoom, rooms, setRooms, setCurrentRoom } = useRoomStore();
+  const { currentRoom, rooms } = useRoomStore();
   const { items: cartItems } = useCartStore();
   const { user } = useAuthStore();
   const [inStockItems, setInStockItems] = useState<any[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [roomsLoading, setRoomsLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [filters, setFilters] = useState<{ boxId?: number | 'out-of-stock'; tagId?: number }>({});
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
@@ -170,38 +169,6 @@ export default function Warehouse() {
   const [showSearch, setShowSearch] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const searchInputRef = useRef<InputRef>(null);
-
-  // 加载仓库列表
-  useEffect(() => {
-    const loadRooms = async () => {
-      try {
-        setRoomsLoading(true);
-        const res: any = await roomApi.getAll();
-        setRooms(res.data || []);
-
-        // 如果有仓库
-        if (res.data?.length > 0) {
-          // 检查 currentRoom 是否仍在仓库列表中（验证用户是否仍是该仓库成员）
-          if (currentRoom) {
-            const isRoomValid = res.data.some((r: any) => r.room_id === currentRoom.room_id);
-            if (!isRoomValid) {
-              // 如果之前的仓库已不可访问，则选择第一个
-              setCurrentRoom(res.data[0]);
-            }
-            // 如果有效，保持 currentRoom 不变
-          } else {
-            // 没有 currentRoom 时，选择第一个
-            setCurrentRoom(res.data[0]);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to load rooms:', error);
-      } finally {
-        setRoomsLoading(false);
-      }
-    };
-    loadRooms();
-  }, []);
 
   useEffect(() => {
     if (currentRoom) {
@@ -256,28 +223,12 @@ export default function Warehouse() {
     setDetailVisible(true);
   };
 
-  // 加载中
-  if (roomsLoading) {
-    return (
-      <Container>
-        <Header>
-          <div style={{ fontSize: 16, fontWeight: 500 }}>仓库</div>
-        </Header>
-        <Content>
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <SpinLoading />
-          </div>
-        </Content>
-      </Container>
-    );
-  }
-
   // 没有仓库时的提示
   if (rooms.length === 0) {
     return (
       <Container>
         <Header>
-          <div style={{ fontSize: 16, fontWeight: 500 }}>仓库</div>
+          <WarehouseSelector />
         </Header>
         <Content>
           <NoRoomContainer>

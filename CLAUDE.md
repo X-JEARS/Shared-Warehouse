@@ -186,6 +186,7 @@ Items → Reservations → Orders
 - Search bar hidden by default, click search button to show with auto-focus
 - FAB (bottom right): Cart button (only visible when cart has items)
 - Warehouse creation/join moved to dropdown in WarehouseSelector
+- **WarehouseSelector** component renders immediately using roomStore data (no loading state). Fetches rooms asynchronously on mount to refresh data and validate that `currentRoom` is still accessible (user is still a member). If current room is invalid, switches to first room. Shared between Warehouse and ReservationOrders pages.
 
 ### Item Stock Status Logic
 - **In Stock (在库)**: Item's `current_box` is in the viewing room (`is_in_stock = true`, `is_foreign = false`)
@@ -258,7 +259,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 
 ### Reservation Orders (预约订单)
 - **My Reservations (我的预约)**: Located at `client/src/pages/MyReservations.tsx`, accessible from Profile page. Shows current user's reservation orders. Uses unified sub-page Header with ← back button, and custom TabBar (white background, tabs aligned left, 20px margin between tabs, active tab blue with underline indicator) instead of antd-mobile Tabs.
-- **Room Reservations (仓库预约)**: Located at `client/src/pages/ReservationOrders.tsx`, accessed directly from bottom tab bar (no back button). Uses same custom TabBar pattern as My Reservations.
+- **Room Reservations (仓库预约)**: Located at `client/src/pages/ReservationOrders.tsx`, accessed directly from bottom tab bar (no back button). Header uses WarehouseSelector dropdown (same as Warehouse page) for switching rooms, plus search button on right side. Search bar filters orders by title (matches `order_title` and fallback `预约单 #${order_id}`). Uses same custom TabBar pattern as My Reservations, with tab counts reflecting filtered results.
 - **Reservation Order Detail**: Located at `client/src/pages/ReservationOrderDetail.tsx`, uses unified sub-page Header with ← back button.
   - **Edit Order Title**: When `isOwner` (order_user_id === current user), shows blue outline-style edit icon (SVG pencil+square) inline next to the order title. Click opens `Dialog.confirm` with Input (maxLength=24). Calls `PUT /api/reservations/orders/:id/title`. Canceled orders also allow editing title (informational, not functional).
   - **Extend Order**: "延长订单" button in footer (alongside "取消整个订单"), visible only when `isOwner && !order_is_canceled && extendableReservations.length > 0`. Uses DatePicker (precision="minute", min = currentMaxEndTime + 60s) wrapped around Button via children-as-function pattern. After selecting new end time, shows confirmation dialog, then calls `PUT /api/reservations/orders/:id/extend`. Backend updates all reservations where `reservation_is_canceled = false AND reservation_end_time >= Date.now()` (includes both "即将开始" and "进行中"), checks for time conflicts in extended tail `[original_end_time, newEndTime]` for each item, sends notification to order owner.
