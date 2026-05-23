@@ -114,24 +114,41 @@ const ReservationCard = styled.div`
   background: white;
   border-radius: 8px;
   padding: 12px;
+  position: relative;
 `;
 
-const ReservationHeader = styled.div`
+const CancelBtn = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ff3141;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  font-size: 12px;
+  line-height: 1;
 `;
 
 const ItemName = styled.div`
   font-size: 15px;
   font-weight: 500;
+  margin-top: 4px;
+  word-break: break-all;
 `;
 
 const ItemMeta = styled.div`
   font-size: 13px;
   color: #999;
   margin-bottom: 4px;
+
+  &.in-hand {
+    color: #00b578;
+  }
 `;
 
 const TimeRange = styled.div`
@@ -150,6 +167,7 @@ const Footer = styled.div`
   right: 0;
   background: white;
   padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   gap: 12px;
@@ -166,6 +184,9 @@ interface Reservation {
   item_image?: string;
   box_name?: string;
   room_name?: string;
+  is_user_box?: boolean;
+  holder_nickname?: string;
+  holder_user_id?: number;
 }
 
 interface OrderDetail {
@@ -425,28 +446,19 @@ export default function ReservationOrderDetail() {
         <ReservationGrid>
           {data.reservations.map((r) => (
             <ReservationCard key={r.reservation_id}>
-              <ReservationHeader>
-                <ItemName>{r.item_name}</ItemName>
-                {getReservationStatus(r)}
-              </ReservationHeader>
-              <ItemMeta>
-                {r.room_name}
-                {r.box_name && ` / ${r.box_name}`}
+              {getReservationStatus(r)}
+              <ItemName>{r.item_name}</ItemName>
+              <ItemMeta className={r.is_user_box && r.holder_user_id === user?.user_id ? 'in-hand' : ''}>
+                {r.is_user_box
+                  ? r.holder_user_id === user?.user_id ? '在我手中' : `${r.holder_nickname || '未知用户'}手中`
+                  : `${r.room_name || ''}${r.box_name ? ` / ${r.box_name}` : ''}`
+                }
               </ItemMeta>
               <TimeRange>
                 {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
               </TimeRange>
               {isOwner && !r.reservation_is_canceled && (
-                <div style={{ marginTop: 12, textAlign: 'right' }}>
-                  <Button
-                    size="mini"
-                    fill="outline"
-                    color="danger"
-                    onClick={() => handleCancelReservation(r.reservation_id, r.item_name)}
-                  >
-                    取消此预约
-                  </Button>
-                </div>
+                <CancelBtn onClick={() => handleCancelReservation(r.reservation_id, r.item_name)}>✕</CancelBtn>
               )}
             </ReservationCard>
           ))}
@@ -466,7 +478,7 @@ export default function ReservationOrderDetail() {
                 <Button
                   block
                   color="primary"
-                  fill="outline"
+                  fill="solid"
                   loading={extendLoading}
                   onClick={open}
                 >
@@ -479,7 +491,7 @@ export default function ReservationOrderDetail() {
             <Button
               block
               color="danger"
-              fill="outline"
+              fill="solid"
               onClick={handleCancelOrder}
             >
               取消整个订单

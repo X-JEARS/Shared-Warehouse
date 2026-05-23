@@ -197,11 +197,15 @@ export const getOrderDetail = async (req: AuthRequest, res: Response) => {
         i.item_qrcode,
         i.item_image,
         b.box_name,
-        rm.room_name
+        rm.room_name,
+        CASE WHEN b.box_belong_room_id IS NULL THEN true ELSE false END AS is_user_box,
+        ub.user_nickname AS holder_nickname,
+        ub.user_id AS holder_user_id
       FROM reservations r
       JOIN items i ON r.reservation_item_id = i.item_id
       LEFT JOIN boxes b ON i.item_current_box_id = b.box_id
       LEFT JOIN rooms rm ON b.box_belong_room_id = rm.room_id
+      LEFT JOIN users ub ON ub.user_box_id = b.box_id
       WHERE r.reservation_order_id = $1
       ORDER BY r.reservation_start_time ASC`,
       [id]
