@@ -713,3 +713,157 @@ export const checkConflicts = async (req: AuthRequest, res: Response) => {
     return error(res, 'Failed to check conflicts', 500);
   }
 };
+
+// 更新订单标题
+export const updateOrderTitle = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+    const { title } = req.body;
+
+    if (!title || title.trim().length === 0) {
+      return error(res, '标题不能为空');
+    }
+
+    if (title.trim().length > 24) {
+      return error(res, '标题最多24个字符');
+    }
+
+    const orderResult = await query(
+      'SELECT * FROM orders WHERE order_id = $1 AND order_user_id = $2',
+      [id, userId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return error(res, 'Order not found or you do not have permission', 404);
+    }
+
+    const result = await query(
+      'UPDATE orders SET order_title = $1 WHERE order_id = $2 RETURNING *',
+      [title.trim(), id]
+    );
+
+    return success(res, result.rows[0], 'Title updated');
+  } catch (err) {
+    console.error('Update order title error:', err);
+    return error(res, 'Failed to update order title', 500);
+  }
+};
+
+// 延长订单
+export const extendOrder = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+    const { newEndTime } = req.body;
+
+    if (!newEndTime) {
+      return error(res, '新的结束时间不能为空');
+    }
+
+    const orderResult = await query(
+      'SELECT * FROM orders WHERE order_id = $1 AND order_user_id = $2',
+      [id, userId]
+    );
+
+    if (orderResult.rows.length === 0) {
+      return error(res, 'Order not found or you do not have permission', 404);
+    }
+
+    if (orderResult.rows[0].order_is_canceled) {
+      return error(res, '订单已取消，无法延长');
+    }
+
+    const now = Date.now();
+    const reservationsResult = await query(
+      `SELECT * FROM reservations
+       WHERE reservation_order_id = $1
+         AND reservation_is_canceled = false
+         AND reservation_end_time >= $2`,
+      [id, now]
+    );
+
+    if (reservationsResult.rows.length === 0) {
+      return error(res, '没有可以延长的预约');
+    }
+
+    const currentMaxEndTime = Math.max(
+      ...reservationsResult.rows.map((r: any) =>
+        typeof r.reservation_end_time === 'string'
+          ? parseInt(r.reservation_end_time, 10)
+          : r.reservation_end_time
+      )
+    );
+
+    if (newEndTime <= currentMaxEndTime) {
+      return error(res, '新的结束时间必须晚于当前最晚的结束时间');
+    }
+
+    // 检查每个预约的扩展区间是否有时间冲突
+    const conflicts: string[] = [];
+
+    for (const reservation of reservationsResult.rows) {
+      const conflictCheck = await query(
+        `SELECT r.*, i.item_name
+         FROM reservations r
+         JOIN items i ON r.reservation_item_id = i.item_id
+         WHERE r.reservation_item_id = $1
+           AND r.reservation_is_canceled = false
+           AND r.reservation_id != $2
+           AND (
+             (r.reservation_start_time <= $3 AND r.reservation_end_time >= $3)
+             OR (r.reservation_start_time <= $4 AND r.reservation_end_time >= $4)
+             OR (r.reservation_start_time >= $3 AND r.reservation_end_time <= $4)
+           )`,
+        [
+          reservation.reservation_item_id,
+          reservation.reservation_id,
+          reservation.reservation_end_time,
+          newEndTime,
+        ]
+      );
+
+      if (conflictCheck.rows.length > 0) {
+        conflicts.push(conflictCheck.rows[0].item_name);
+      }
+    }
+
+    if (conflicts.length > 0) {
+      return error(res, `以下物品在延长的时间段存在冲突：${conflicts.join('、')}`);
+    }
+
+    const reservationIds = reservationsResult.rows.map((r: any) => r.reservation_id);
+    await query(
+      `UPDATE reservations
+       SET reservation_end_time = $1
+       WHERE reservation_id = ANY($2::int[])`,
+      [newEndTime, reservationIds]
+    );
+
+    const formatDate = (timestamp: number) => {
+      const date = new Date(timestamp);
+      return `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    };
+
+    const itemNames: string[] = [];
+    for (const reservation of reservationsResult.rows) {
+      const itemResult = await query(
+        'SELECT item_name FROM items WHERE item_id = $1',
+        [reservation.reservation_item_id]
+      );
+      if (itemResult.rows.length > 0) {
+        itemNames.push(itemResult.rows[0].item_name);
+      }
+    }
+
+    const content = `预约时间已延长至 ${formatDate(newEndTime)}\n涉及物品：${itemNames.join('、')}`;
+    if (userId) {
+      await createNotification(userId, 'reservation', '订单已延长', content, parseInt(id));
+    }
+
+    return success(res, { updatedCount: reservationIds.length, newEndTime }, 'Order extended');
+  } catch (err) {
+    console.error('Extend order error:', err);
+    return error(res, 'Failed to extend order', 500);
+  }
+};

@@ -127,6 +127,10 @@ export const reservationApi = {
     request.get(`/reservations/rooms/${roomId}/orders`, { params: { status } }),
   getOrderDetail: (id: number) => request.get(`/reservations/orders/${id}`),
   cancelOrder: (id: number) => request.delete(`/reservations/orders/${id}`),
+  updateOrderTitle: (id: number, title: string) =>
+    request.put(`/reservations/orders/${id}/title`, { title }),
+  extendOrder: (id: number, newEndTime: number) =>
+    request.put(`/reservations/orders/${id}/extend`, { newEndTime }),
   checkConflicts: (data: { itemIds: number[]; startTime: number; endTime: number }) =>
     request.post('/reservations/check-conflicts', data),
 };

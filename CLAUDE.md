@@ -260,15 +260,20 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - **My Reservations (我的预约)**: Located at `client/src/pages/MyReservations.tsx`, accessible from Profile page. Shows current user's reservation orders. Uses unified sub-page Header with ← back button, and custom TabBar (white background, tabs aligned left, 20px margin between tabs, active tab blue with underline indicator) instead of antd-mobile Tabs.
 - **Room Reservations (仓库预约)**: Located at `client/src/pages/ReservationOrders.tsx`, accessed directly from bottom tab bar (no back button). Uses same custom TabBar pattern as My Reservations.
 - **Reservation Order Detail**: Located at `client/src/pages/ReservationOrderDetail.tsx`, uses unified sub-page Header with ← back button.
+  - **Edit Order Title**: When `isOwner` (order_user_id === current user), shows blue outline-style edit icon (SVG pencil+square) inline next to the order title. Click opens `Dialog.confirm` with Input (maxLength=24). Calls `PUT /api/reservations/orders/:id/title`. Canceled orders also allow editing title (informational, not functional).
+  - **Extend Order**: "延长订单" button in footer (alongside "取消整个订单"), visible only when `isOwner && !order_is_canceled && extendableReservations.length > 0`. Uses DatePicker (precision="minute", min = currentMaxEndTime + 60s) wrapped around Button via children-as-function pattern. After selecting new end time, shows confirmation dialog, then calls `PUT /api/reservations/orders/:id/extend`. Backend updates all reservations where `reservation_is_canceled = false AND reservation_end_time >= Date.now()` (includes both "即将开始" and "进行中"), checks for time conflicts in extended tail `[original_end_time, newEndTime]` for each item, sends notification to order owner.
+  - Footer shown when `canCancelOrder || canExtendOrder`. Both buttons use `fill="outline"`.
 - **Order Card Layout**: Reservation time at top (bold, font-weight: 600, separated by border-bottom), then order title + status tag, then item count, then creation time. Title shows `order_title` if present, falls back to `预约单 #${order_id}`.
 - **API Endpoints**:
   - `GET /api/reservations/orders` - Get current user's orders
   - `GET /api/reservations/rooms/:roomId/orders` - Get all orders for a room (members only)
   - `GET /api/reservations/orders/:id` - Get order detail (owner or room members can view)
   - `DELETE /api/reservations/orders/:id` - Cancel order (owner only)
+  - `PUT /api/reservations/orders/:id/title` - Update order title (owner only)
+  - `PUT /api/reservations/orders/:id/extend` - Extend order end time for all active reservations (owner only, checks time conflicts)
 - **Permission Logic**:
-  - Order detail: Owner can view and cancel; room members can view but cannot cancel
-  - Frontend checks `order_user_id` against current user to show/hide cancel buttons
+  - Order detail: Owner can view, cancel, edit title, and extend; room members can view but cannot cancel, edit, or extend
+  - Frontend checks `order_user_id` against current user to show/hide action buttons
 
 ## Environment Variables
 
