@@ -124,9 +124,10 @@ const OrderTime = styled.div`
   font-size: 15px;
   color: #333;
   font-weight: 600;
+  margin-top: 8px;
+  padding-top: 12px;
   margin-bottom: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-top: 1px solid #f0f0f0;
 `;
 
 const EmptyContainer = styled.div`
@@ -234,11 +235,6 @@ export default function ReservationOrders() {
         key={order.order_id}
         onClick={() => navigate(`/reservation-orders/${order.order_id}`)}
       >
-        {order.start_time && order.end_time && (
-          <OrderTime>
-            📅 {formatTime(order.start_time)} ~ {formatTime(order.end_time)}
-          </OrderTime>
-        )}
         <OrderHeader>
           <OrderTitle>
             {order.order_title || `预约单 #${order.order_id}`}
@@ -248,11 +244,13 @@ export default function ReservationOrders() {
           </OrderTitle>
           {getStatusTag(order.order_status)}
         </OrderHeader>
+        {order.start_time && order.end_time && (
+          <OrderTime>
+            📅 {formatTime(order.start_time)} ~ {formatTime(order.end_time)}
+          </OrderTime>
+        )}
         <OrderMeta>
           物品数量：{order.active_items} / {order.total_items} 个
-        </OrderMeta>
-        <OrderMeta>
-          创建时间：{formatTime(order.order_create_time)}
         </OrderMeta>
       </OrderCard>
     ));

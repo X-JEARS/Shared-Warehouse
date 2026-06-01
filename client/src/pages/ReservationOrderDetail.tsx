@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Tag, SpinLoading, Dialog, Toast, DatePicker, Input } from 'antd-mobile';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { reservationApi } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 
@@ -102,12 +102,84 @@ const SectionTitle = styled.div`
   font-weight: 500;
   margin-bottom: 12px;
   color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
 
-const ReservationGrid = styled.div`
+const ViewToggle = styled.div`
+  display: flex;
+  gap: 4px;
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 2px;
+`;
+
+const ViewToggleBtn = styled.div<{ $active?: boolean }>`
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: ${props => props.$active ? '#1677ff' : '#999'};
+  background: ${props => props.$active ? 'white' : 'transparent'};
+  box-shadow: ${props => props.$active ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'};
+  transition: all 0.2s;
+
+  &:active {
+    opacity: 0.7;
+  }
+`;
+
+const ReservationGrid = styled.div<{ $view?: 'card' | 'list' }>`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
+
+  ${props => props.$view === 'list' && css`
+    grid-template-columns: 1fr;
+    gap: 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+  `}
+`;
+
+const ListItem = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  gap: 10px;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: #f0f0f0;
+  }
+
+  &:last-child::after {
+    display: none;
+  }
+`;
+
+const Dot = styled.div<{ $inHand?: boolean }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: ${props => props.$inHand ? '#00b578' : '#ccc'};
+  flex-shrink: 0;
+`;
+
+const ListItemName = styled.div`
+  font-size: 14px;
+  color: #333;
+  flex: 1;
 `;
 
 const ReservationCard = styled.div`
@@ -207,6 +279,7 @@ export default function ReservationOrderDetail() {
   const [data, setData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [extendLoading, setExtendLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   useEffect(() => {
     loadDetail();
@@ -442,26 +515,54 @@ export default function ReservationOrderDetail() {
           )}
         </OrderInfo>
 
-        <SectionTitle>预约物品</SectionTitle>
-        <ReservationGrid>
-          {data.reservations.map((r) => (
-            <ReservationCard key={r.reservation_id}>
-              {getReservationStatus(r)}
-              <ItemName>{r.item_name}</ItemName>
-              <ItemMeta className={r.is_user_box && r.holder_user_id === user?.user_id ? 'in-hand' : ''}>
-                {r.is_user_box
-                  ? r.holder_user_id === user?.user_id ? '在我手中' : `${r.holder_nickname || '未知用户'}手中`
-                  : `${r.room_name || ''}${r.box_name ? ` / ${r.box_name}` : ''}`
-                }
-              </ItemMeta>
-              <TimeRange>
-                {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
-              </TimeRange>
-              {isOwner && !r.reservation_is_canceled && (
-                <CancelBtn onClick={() => handleCancelReservation(r.reservation_id, r.item_name)}>✕</CancelBtn>
-              )}
-            </ReservationCard>
-          ))}
+        <SectionTitle>
+          预约物品
+          <ViewToggle>
+            <ViewToggleBtn $active={viewMode === 'card'} onClick={() => setViewMode('card')}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <rect x="3" y="3" width="8" height="8" rx="1.5" />
+                <rect x="13" y="3" width="8" height="8" rx="1.5" />
+                <rect x="3" y="13" width="8" height="8" rx="1.5" />
+                <rect x="13" y="13" width="8" height="8" rx="1.5" />
+              </svg>
+            </ViewToggleBtn>
+            <ViewToggleBtn $active={viewMode === 'list'} onClick={() => setViewMode('list')}>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <rect x="3" y="4" width="18" height="3" rx="1" />
+                <rect x="3" y="10.5" width="18" height="3" rx="1" />
+                <rect x="3" y="17" width="18" height="3" rx="1" />
+              </svg>
+            </ViewToggleBtn>
+          </ViewToggle>
+        </SectionTitle>
+        <ReservationGrid $view={viewMode}>
+          {viewMode === 'card' ? (
+            data.reservations.map((r) => (
+              <ReservationCard key={r.reservation_id}>
+                {getReservationStatus(r)}
+                <ItemName>{r.item_name}</ItemName>
+                <ItemMeta className={r.is_user_box && r.holder_user_id === user?.user_id ? 'in-hand' : ''}>
+                  {r.is_user_box
+                    ? r.holder_user_id === user?.user_id ? '在我手中' : `${r.holder_nickname || '未知用户'}手中`
+                    : `${r.room_name || ''}${r.box_name ? ` / ${r.box_name}` : ''}`
+                  }
+                </ItemMeta>
+                <TimeRange>
+                  {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
+                </TimeRange>
+                {isOwner && !r.reservation_is_canceled && (
+                  <CancelBtn onClick={() => handleCancelReservation(r.reservation_id, r.item_name)}>✕</CancelBtn>
+                )}
+              </ReservationCard>
+            ))
+          ) : (
+            data.reservations.map((r) => (
+              <ListItem key={r.reservation_id}>
+                <Dot $inHand={r.is_user_box && r.holder_user_id === user?.user_id} />
+                <ListItemName>{r.item_name}</ListItemName>
+              </ListItem>
+            ))
+          )}
         </ReservationGrid>
       </Content>
 
