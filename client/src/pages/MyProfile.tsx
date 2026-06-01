@@ -10,13 +10,13 @@ import { userApi } from '../services/api';
 
 const Container = styled.div`
   min-height: 100%;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -25,7 +25,7 @@ const BackButton = styled.div`
   font-size: 20px;
   margin-right: 12px;
   cursor: pointer;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const HeaderTitle = styled.div`
@@ -34,7 +34,7 @@ const HeaderTitle = styled.div`
 `;
 
 const Section = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   margin-top: 12px;
 `;
 
@@ -43,7 +43,7 @@ const ProfileRow = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   cursor: pointer;
 
   &:last-child {
@@ -51,26 +51,26 @@ const ProfileRow = styled.div`
   }
 
   &:active {
-    background: #f9f9f9;
+    background: var(--app-color-hover);
   }
 `;
 
 const RowLabel = styled.div`
   font-size: 14px;
-  color: #333;
+  color: var(--app-color-text);
   min-width: 60px;
 `;
 
 const RowValue = styled.div`
   font-size: 14px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   flex: 1;
   text-align: right;
   margin-right: 8px;
 `;
 
 const RowArrow = styled.div`
-  color: #ccc;
+  color: var(--app-color-placeholder);
   font-size: 14px;
 `;
 
@@ -82,9 +82,9 @@ const AvatarWrapper = styled.div`
 const Avatar = styled.div<{ $avatar?: string }>`
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-avatar);
   background: ${(props) =>
-    props.$avatar ? `url(${props.$avatar}) center/cover` : '#1677ff'};
+    props.$avatar ? `url(${props.$avatar}) center/cover` : 'var(--app-color-avatar-default)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -109,10 +109,10 @@ const CropActions = styled.div`
 const CropButton = styled.button<{ $primary?: boolean }>`
   flex: 1;
   padding: 12px;
-  border: ${(props) => (props.$primary ? 'none' : '1px solid #ddd')};
-  border-radius: 8px;
-  background: ${(props) => (props.$primary ? '#1677ff' : 'white')};
-  color: ${(props) => (props.$primary ? 'white' : '#333')};
+  border: ${(props) => (props.$primary ? 'none' : '1px solid var(--app-color-border)')};
+  border-radius: var(--app-radius-m);
+  background: ${(props) => (props.$primary ? 'var(--app-color-primary)' : 'var(--app-color-surface)')};
+  color: ${(props) => (props.$primary ? 'white' : 'var(--app-color-text)')};
   font-size: 16px;
   cursor: pointer;
 `;
@@ -126,8 +126,8 @@ const LogoutButton = styled.button`
   width: calc(100% - 32px);
   padding: 12px;
   border: none;
-  border-radius: 8px;
-  background: #ff4d4f;
+  border-radius: var(--app-radius-m);
+  background: var(--app-color-danger);
   color: white;
   font-size: 16px;
   cursor: pointer;
@@ -349,8 +349,8 @@ export default function MyProfile() {
               width: '100%',
               padding: '12px 8px',
               margin: '8px 0',
-              border: '1px solid #ddd',
-              borderRadius: 4,
+              border: '1px solid var(--app-color-border)',
+              borderRadius: 'var(--app-radius-s)',
             }}
           />
           <input
@@ -361,8 +361,8 @@ export default function MyProfile() {
               width: '100%',
               padding: '12px 8px',
               margin: '8px 0',
-              border: '1px solid #ddd',
-              borderRadius: 4,
+              border: '1px solid var(--app-color-border)',
+              borderRadius: 'var(--app-radius-s)',
             }}
           />
         </div>

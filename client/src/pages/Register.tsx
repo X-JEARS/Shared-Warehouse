@@ -6,7 +6,7 @@ import { authApi } from '../services/api';
 
 const Container = styled.div`
   min-height: 100%;
-  background: white;
+  background: var(--app-color-surface);
   padding: 40px 24px;
 `;
 
@@ -17,24 +17,24 @@ const Logo = styled.div`
 
 const LogoText = styled.h1`
   font-size: 28px;
-  color: #1677ff;
+  color: var(--app-color-primary);
   margin-bottom: 8px;
 `;
 
 const LogoSubtext = styled.p`
   font-size: 14px;
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 const Footer = styled.div`
   text-align: center;
   margin-top: 24px;
   font-size: 14px;
-  color: #666;
+  color: var(--app-color-text-weak);
 `;
 
 const LinkText = styled.span`
-  color: #1677ff;
+  color: var(--app-color-primary);
 `;
 
 export default function Register() {

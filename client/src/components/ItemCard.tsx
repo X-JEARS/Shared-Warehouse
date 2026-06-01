@@ -2,13 +2,13 @@ import styled from 'styled-components';
 import { useCartStore } from '../stores/cartStore';
 
 const CardContainer = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--app-shadow-card);
   cursor: pointer;
   transition: transform 0.2s;
   position: relative;
@@ -26,13 +26,13 @@ const ImageSection = styled.div`
 const ItemImage = styled.div<{ $image?: string }>`
   width: 56px;
   height: 56px;
-  border-radius: 6px;
+  border-radius: var(--app-radius-s);
   background: ${(props) =>
-    props.$image ? `url(${props.$image}) center/cover` : '#f0f0f0'};
+    props.$image ? `url(${props.$image}) center/cover` : 'var(--app-color-img-placeholder)'};
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #999;
+  color: var(--app-color-text-secondary);
   font-size: 24px;
 `;
 
@@ -42,9 +42,9 @@ const StockStatus = styled.span<{ $inStock: boolean }>`
   top: 8px;
   font-size: 10px;
   padding: 2px 5px;
-  border-radius: 4px;
-  background: ${(props) => (props.$inStock ? '#e6f7e6' : '#fff0f0')};
-  color: ${(props) => (props.$inStock ? '#52c41a' : '#ff4d4f')};
+  border-radius: var(--app-radius-s);
+  background: ${(props) => (props.$inStock ? 'var(--app-color-badge-instock-bg)' : 'var(--app-color-badge-outstock-bg)')};
+  color: ${(props) => (props.$inStock ? 'var(--app-color-badge-instock-text)' : 'var(--app-color-badge-outstock-text)')};
   white-space: nowrap;
 `;
 
@@ -58,7 +58,7 @@ const ItemInfo = styled.div`
 const ItemName = styled.div`
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: var(--app-color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -66,7 +66,7 @@ const ItemName = styled.div`
 
 const ItemMeta = styled.div`
   font-size: 12px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -81,9 +81,9 @@ const ItemTags = styled.div`
 const Tag = styled.span`
   font-size: 11px;
   padding: 2px 6px;
-  background: #e6f4ff;
-  color: #1677ff;
-  border-radius: 4px;
+  background: var(--app-color-badge-foreign-bg);
+  color: var(--app-color-badge-foreign-text);
+  border-radius: var(--app-radius-s);
 `;
 
 const CartButton = styled.button<{ $inCart: boolean }>`
@@ -98,8 +98,8 @@ const CartButton = styled.button<{ $inCart: boolean }>`
   padding: 0;
   border-radius: 50%;
   border: none;
-  background: ${(props) => (props.$inCart ? '#f0f0f0' : '#e6f7ff')};
-  color: ${(props) => (props.$inCart ? '#999' : '#1677ff')};
+  background: ${(props) => (props.$inCart ? 'var(--app-color-cart-btn-default-bg)' : 'var(--app-color-cart-btn-added-bg)')};
+  color: ${(props) => (props.$inCart ? 'var(--app-color-cart-btn-default-icon)' : 'var(--app-color-cart-btn-added-icon)')};
   cursor: pointer;
   transition: all 0.2s;
 

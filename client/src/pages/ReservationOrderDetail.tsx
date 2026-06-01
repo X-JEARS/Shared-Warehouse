@@ -27,13 +27,13 @@ const Container = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -57,8 +57,8 @@ const Content = styled.div`
 `;
 
 const OrderInfo = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 16px;
   margin-bottom: 16px;
 `;
@@ -79,7 +79,7 @@ const EditIconButton = styled.button`
   border: none;
   padding: 0;
   cursor: pointer;
-  color: #1677ff;
+  color: var(--app-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -93,7 +93,7 @@ const EditIconButton = styled.button`
 
 const OrderMeta = styled.div`
   font-size: 14px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 8px;
 `;
 
@@ -101,7 +101,7 @@ const SectionTitle = styled.div`
   font-size: 15px;
   font-weight: 500;
   margin-bottom: 12px;
-  color: #333;
+  color: var(--app-color-text);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -110,21 +110,21 @@ const SectionTitle = styled.div`
 const ViewToggle = styled.div`
   display: flex;
   gap: 4px;
-  background: #f0f0f0;
+  background: var(--app-color-border);
   border-radius: 6px;
   padding: 2px;
 `;
 
 const ViewToggleBtn = styled.div<{ $active?: boolean }>`
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--app-radius-s);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: ${props => props.$active ? '#1677ff' : '#999'};
-  background: ${props => props.$active ? 'white' : 'transparent'};
-  box-shadow: ${props => props.$active ? '0 1px 2px rgba(0,0,0,0.1)' : 'none'};
+  color: ${props => props.$active ? 'var(--app-color-primary)' : 'var(--app-color-text-secondary)'};
+  background: ${props => props.$active ? 'var(--app-color-surface)' : 'transparent'};
+  box-shadow: ${props => props.$active ? 'var(--app-shadow-card)' : 'none'};
   transition: all 0.2s;
 
   &:active {
@@ -140,8 +140,8 @@ const ReservationGrid = styled.div<{ $view?: 'card' | 'list' }>`
   ${props => props.$view === 'list' && css`
     grid-template-columns: 1fr;
     gap: 0;
-    background: white;
-    border-radius: 8px;
+    background: var(--app-color-surface);
+    border-radius: var(--app-radius-m);
     overflow: hidden;
   `}
 `;
@@ -160,7 +160,7 @@ const ListItem = styled.div`
     left: 12px;
     right: 12px;
     height: 1px;
-    background: #f0f0f0;
+    background: var(--app-color-border);
   }
 
   &:last-child::after {
@@ -171,20 +171,20 @@ const ListItem = styled.div`
 const Dot = styled.div<{ $inHand?: boolean }>`
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  background: ${props => props.$inHand ? '#00b578' : '#ccc'};
+  border-radius: var(--app-radius-avatar);
+  background: ${props => props.$inHand ? 'var(--app-color-success)' : 'var(--app-color-placeholder)'};
   flex-shrink: 0;
 `;
 
 const ListItemName = styled.div`
   font-size: 14px;
-  color: #333;
+  color: var(--app-color-text);
   flex: 1;
 `;
 
 const ReservationCard = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 12px;
   position: relative;
 `;
@@ -195,13 +195,13 @@ const CancelBtn = styled.div`
   right: 8px;
   width: 20px;
   height: 20px;
-  border-radius: 50%;
-  background: #ff3141;
+  border-radius: var(--app-radius-avatar);
+  background: var(--app-color-danger);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: white;
+  color: var(--app-color-surface);
   font-size: 12px;
   line-height: 1;
 `;
@@ -215,21 +215,21 @@ const ItemName = styled.div`
 
 const ItemMeta = styled.div`
   font-size: 13px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   margin-bottom: 4px;
 
   &.in-hand {
-    color: #00b578;
+    color: var(--app-color-success);
   }
 `;
 
 const TimeRange = styled.div`
   font-size: 12px;
-  color: #333;
+  color: var(--app-color-text);
   font-weight: 500;
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--app-color-border);
 `;
 
 const Footer = styled.div`
@@ -237,10 +237,10 @@ const Footer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
+  background: var(--app-color-surface);
   padding: 12px 16px;
   padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--app-shadow-card);
   display: flex;
   gap: 12px;
 `;
@@ -467,7 +467,7 @@ export default function ReservationOrderDetail() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>订单详情</HeaderTitle>
         </Header>
-        <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>
+        <div style={{ textAlign: 'center', padding: 60, color: 'var(--app-color-text-secondary)' }}>
           订单不存在
         </div>
       </Container>

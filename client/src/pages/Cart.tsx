@@ -27,13 +27,13 @@ function EditIcon({ size = 16 }: { size?: number }) {
 
 const Container = styled.div`
   min-height: 100%;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -42,7 +42,7 @@ const BackButton = styled.div`
   font-size: 20px;
   margin-right: 12px;
   cursor: pointer;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const HeaderTitleRow = styled.div`
@@ -61,7 +61,7 @@ const EditIconButton = styled.button`
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #1677ff;
+  color: var(--app-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,8 +77,8 @@ const Content = styled.div`
 `;
 
 const TimeCard = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 16px;
   margin-bottom: 16px;
 `;
@@ -100,27 +100,27 @@ const TimeField = styled.div`
 
 const TimeLabel = styled.div`
   font-size: 12px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 8px;
 `;
 
 const TimeButton = styled.div`
   padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--app-color-border);
+  border-radius: var(--app-radius-s);
   font-size: 14px;
   text-align: center;
-  background: white;
+  background: var(--app-color-surface);
   cursor: pointer;
 
   &:active {
-    background: #f5f5f5;
+    background: var(--app-color-bg);
   }
 `;
 
 const CartItem = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 12px;
   margin-bottom: 12px;
 `;
@@ -139,7 +139,7 @@ const ItemName = styled.div`
 
 const ItemMeta = styled.div`
   font-size: 13px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   margin-bottom: 4px;
 `;
 
@@ -148,11 +148,11 @@ const Footer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
+  background: var(--app-color-surface);
   padding: 12px 16px;
   display: flex;
   gap: 12px;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 -2px 8px var(--app-shadow-card);
 `;
 
 const EmptyContainer = styled.div`
@@ -175,7 +175,7 @@ export default function Cart() {
         id="order-title-input"
         defaultValue={orderTitle || ''}
         placeholder="请输入预约单标题"
-        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
+        style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--app-color-border)', borderRadius: 'var(--app-radius-s)', fontSize: '14px', outline: 'none' }}
       />,
       confirmText: '确定',
       cancelText: '取消',
@@ -265,7 +265,7 @@ export default function Cart() {
       <Content>
         {items.length === 0 ? (
           <EmptyContainer>
-            <p style={{ color: '#999', marginBottom: 16 }}>购物车为空</p>
+            <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>购物车为空</p>
             <Button color="primary" onClick={() => navigate('/warehouse')}>
               去添加物品
             </Button>
@@ -313,7 +313,7 @@ export default function Cart() {
 
             {/* 物品列表 */}
             <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#666', fontSize: 14 }}>共 {items.length} 个物品</span>
+              <span style={{ color: 'var(--app-color-text-weak)', fontSize: 14 }}>共 {items.length} 个物品</span>
               <Button
                 size="small"
                 fill="outline"
@@ -328,7 +328,7 @@ export default function Cart() {
                 <ItemHeader>
                   <ItemName>{item.itemName}</ItemName>
                   <TrashIcon
-                    style={{ color: '#ff4d4f', cursor: 'pointer' }}
+                    style={{ color: 'var(--app-color-danger)', cursor: 'pointer' }}
                     onClick={() => removeItem(item.itemId)}
                   />
                 </ItemHeader>
@@ -350,7 +350,7 @@ export default function Cart() {
                 预约时间：{formatTime(startTime)} ~ {formatTime(endTime)}
               </span>
             ) : (
-              <span style={{ color: '#ff4d4f' }}>请设置预约时间</span>
+              <span style={{ color: 'var(--app-color-danger)' }}>请设置预约时间</span>
             )}
           </div>
           <Button

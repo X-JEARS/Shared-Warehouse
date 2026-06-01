@@ -4,6 +4,7 @@ import { Dialog } from 'antd-mobile';
 import {
   InformationCircleOutline,
   BellOutline,
+  SetOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useAuthStore } from '../stores/authStore';
@@ -11,11 +12,11 @@ import { useNotificationStore } from '../stores/notificationStore';
 
 const Container = styled.div`
   min-height: 100%;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 24px 16px;
   text-align: center;
   margin-bottom: 12px;
@@ -25,27 +26,27 @@ const Header = styled.div`
 const Avatar = styled.div<{ $avatar?: string }>`
   width: 80px;
   height: 80px;
-  border-radius: 50%;
+  border-radius: var(--app-radius-avatar);
   background: ${(props) =>
-    props.$avatar ? `url(${props.$avatar}) center/cover` : '#1677ff'};
+    props.$avatar ? `url(${props.$avatar}) center/cover` : 'var(--app-color-avatar-default)'};
   margin: 0 auto 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--app-color-white);
   font-size: 32px;
 `;
 
 const Nickname = styled.span`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--app-color-text);
   text-align: center;
 `;
 
 const LoginName = styled.div`
   font-size: 14px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   margin-top: 4px;
 `;
 
@@ -61,7 +62,7 @@ const NotificationBell = styled.div`
   width: 32px;
   height: 32px;
   font-size: 22px;
-  color: #333;
+  color: var(--app-color-text);
 
   &:active {
     opacity: 0.7;
@@ -75,17 +76,17 @@ const NotificationBadge = styled.div`
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  background: #ff3141;
-  color: white;
+  background: var(--app-color-badge);
+  color: var(--app-color-white);
   font-size: 10px;
   line-height: 16px;
   text-align: center;
-  border-radius: 8px;
+  border-radius: var(--app-radius-m);
   z-index: 1;
 `;
 
 const Section = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   margin-bottom: 12px;
 `;
 
@@ -122,7 +123,8 @@ export default function Profile() {
       <Section>
         <MenuItem icon="👤" text="我的资料" onClick={() => navigate('/my-profile')} showBorder />
         <MenuItem icon="📦" text="我的物品" onClick={() => window.location.href = '/my-items'} showBorder />
-        <MenuItem icon="📋" text="我的预约" onClick={() => navigate('/my-reservations')} />
+        <MenuItem icon="📋" text="我的预约" onClick={() => navigate('/my-reservations')} showBorder />
+        <MenuItem icon={<SetOutline fontSize={18} />} text="系统设置" onClick={() => navigate('/system-settings')} />
       </Section>
 
       <Section>
@@ -159,7 +161,7 @@ function MenuItem({
         padding: '12px 16px',
         display: 'flex',
         alignItems: 'center',
-        borderBottom: showBorder ? '1px solid #f0f0f0' : 'none',
+        borderBottom: showBorder ? '1px solid var(--app-color-border)' : 'none',
       }}
       onClick={onClick}
     >

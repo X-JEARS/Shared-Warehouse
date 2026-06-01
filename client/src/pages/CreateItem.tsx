@@ -9,13 +9,13 @@ import Scanner from '../components/Scanner';
 
 const Container = styled.div`
   min-height: 100%;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -24,7 +24,7 @@ const BackButton = styled.div`
   font-size: 20px;
   margin-right: 12px;
   cursor: pointer;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const HeaderTitle = styled.div`
@@ -37,9 +37,9 @@ const Content = styled.div`
 `;
 
 const WarningBox = styled.div`
-  background: #fff7e6;
-  border: 1px solid #ffd591;
-  border-radius: 8px;
+  background: var(--app-color-warning-bg);
+  border: 1px solid var(--app-color-warning-border);
+  border-radius: var(--app-radius-m);
   padding: 16px;
   margin-bottom: 16px;
   text-align: center;
@@ -48,13 +48,13 @@ const WarningBox = styled.div`
 const WarningTitle = styled.div`
   font-size: 16px;
   font-weight: 500;
-  color: #d46b08;
+  color: var(--app-color-warning-text);
   margin-bottom: 8px;
 `;
 
 const WarningText = styled.div`
   font-size: 14px;
-  color: #873800;
+  color: var(--app-color-warning-text);
   margin-bottom: 12px;
 `;
 
@@ -64,7 +64,7 @@ const ScanModal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
   z-index: 1000;
 `;
 

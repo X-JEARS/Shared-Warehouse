@@ -18,16 +18,16 @@ import TrashIcon from '../components/icons/TrashIcon';
 
 const Container = styled.div`
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
   position: sticky;
   top: 0;
   z-index: 100;
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -48,18 +48,18 @@ const Content = styled.div`
 `;
 
 const Card = styled.div`
-  background: white;
-  border-radius: 12px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-l);
   margin-bottom: 12px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--app-shadow-card);
 `;
 
 const CardHeader = styled.div`
   padding: 14px 16px 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--app-color-text);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -74,7 +74,7 @@ const RoomNameRow = styled.div`
 const RoomName = styled.div`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const EditIconButton = styled.button`
@@ -82,7 +82,7 @@ const EditIconButton = styled.button`
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #1677ff;
+  color: var(--app-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -114,7 +114,7 @@ function EditIcon({ size = 16 }: { size?: number }) {
 const RoomId = styled.div`
   padding: 0 16px 16px;
   font-size: 13px;
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 const RequestGrid = styled.div`
@@ -125,8 +125,8 @@ const RequestGrid = styled.div`
 `;
 
 const RequestCard = styled.div`
-  background: #f8f8f8;
-  border-radius: 8px;
+  background: var(--app-color-hover);
+  border-radius: var(--app-radius-m);
   padding: 12px;
 `;
 
@@ -149,14 +149,14 @@ const RequestAvatarPlaceholder = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #e0e0e0;
+  background: var(--app-color-placeholder);
   margin-right: 8px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 const RequestCardInfo = styled.div`
@@ -173,7 +173,7 @@ const RequestCardName = styled.div`
 
 const RequestCardMeta = styled.div`
   font-size: 12px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -192,8 +192,8 @@ const MemberGrid = styled.div`
 `;
 
 const MemberCard = styled.div`
-  background: #f8f8f8;
-  border-radius: 8px;
+  background: var(--app-color-hover);
+  border-radius: var(--app-radius-m);
   padding: 12px;
   display: flex;
   align-items: center;
@@ -220,14 +220,14 @@ const MemberAvatarPlaceholder = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: #e0e0e0;
+  background: var(--app-color-placeholder);
   margin-right: 8px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 const MemberCardInfo = styled.div`
@@ -242,7 +242,7 @@ const MemberCardName = styled.div`
 
 const MemberCardMeta = styled.div`
   font-size: 12px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   word-break: break-all;
 `;
 
@@ -254,8 +254,8 @@ const BoxGrid = styled.div`
 `;
 
 const BoxCard = styled.div`
-  background: #f8f8f8;
-  border-radius: 8px;
+  background: var(--app-color-hover);
+  border-radius: var(--app-radius-m);
   padding: 12px;
   cursor: pointer;
   display: flex;
@@ -264,7 +264,7 @@ const BoxCard = styled.div`
   transition: background 0.2s;
 
   &:active {
-    background: #eee;
+    background: var(--app-color-border);
   }
 `;
 
@@ -282,7 +282,7 @@ const BoxCardName = styled.div`
 
 const BoxCardMeta = styled.div`
   font-size: 12px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   margin-top: 4px;
 `;
 
@@ -292,8 +292,8 @@ const BoxDeleteIcon = styled.div`
 `;
 
 const ItemCountBadge = styled.span`
-  background: #ff4d4f;
-  color: white;
+  background: var(--app-color-danger);
+  color: var(--app-color-surface);
   font-size: 11px;
   padding: 1px 5px;
   border-radius: 10px;
@@ -310,18 +310,18 @@ const TagList = styled.div`
 const TagBadge = styled.span<{ $selected?: boolean }>`
   font-size: 13px;
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--app-radius-s);
   cursor: pointer;
   transition: all 0.2s;
-  background: ${(props) => (props.$selected ? '#ff4d4f' : '#e6f4ff')};
-  color: ${(props) => (props.$selected ? '#fff' : '#1677ff')};
+  background: ${(props) => (props.$selected ? 'var(--app-color-danger)' : 'var(--app-color-info-bg)')};
+  color: ${(props) => (props.$selected ? 'var(--app-color-surface)' : 'var(--app-color-primary)')};
 `;
 
 const DeleteBar = styled.div`
   display: flex;
   gap: 12px;
   padding: 8px 16px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--app-color-border);
 `;
 
 interface Box {
@@ -707,7 +707,7 @@ export default function RoomSettings() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>仓库设置</HeaderTitle>
         </Header>
-        <div style={{ padding: 40, textAlign: 'center', color: '#999' }}>
+        <div style={{ padding: 40, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
           您不是该仓库的管理员，无法访问此页面
         </div>
       </Container>
@@ -736,7 +736,7 @@ export default function RoomSettings() {
         <Card>
           <CardHeader>
             加入申请
-            <span style={{ fontWeight: 400, color: '#ff4d4f', fontSize: 13 }}>
+            <span style={{ fontWeight: 400, color: 'var(--app-color-danger)', fontSize: 13 }}>
               ({joinRequests.length}个待处理)
             </span>
           </CardHeader>
@@ -792,7 +792,7 @@ export default function RoomSettings() {
           </Button>
         </CardHeader>
         {boxes.length === 0 ? (
-          <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
+          <div style={{ padding: 20, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
             暂无盒子
           </div>
         ) : (
@@ -812,7 +812,7 @@ export default function RoomSettings() {
                 </BoxCardInfo>
                 <BoxDeleteIcon onClick={(e) => e.stopPropagation()}>
                   <TrashIcon
-                    style={{ color: '#ff4d4f', cursor: 'pointer', fontSize: 16 }}
+                    style={{ color: 'var(--app-color-danger)', cursor: 'pointer', fontSize: 16 }}
                     onClick={() => handleDeleteBox(box)}
                   />
                 </BoxDeleteIcon>
@@ -842,14 +842,14 @@ export default function RoomSettings() {
             </Button>
             {tags.length > 0 && (
               <Button size="small" onClick={() => setTagDeleteMode(true)}>
-                <TrashIcon style={{ color: '#ff4d4f' }} />
+                <TrashIcon style={{ color: 'var(--app-color-danger)' }} />
               </Button>
             )}
           </div>
         )}
         </CardHeader>
         {tags.length === 0 ? (
-          <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
+          <div style={{ padding: 20, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
             暂无标签
           </div>
         ) : (
@@ -892,7 +892,7 @@ export default function RoomSettings() {
         <CardHeader>
           <div style={{ display: 'flex', alignItems: 'center' }}>
             成员管理
-            <span style={{ fontWeight: 400, color: '#999', fontSize: 13, marginLeft: 6 }}>
+            <span style={{ fontWeight: 400, color: 'var(--app-color-text-secondary)', fontSize: 13, marginLeft: 6 }}>
               ({members.length}人)
             </span>
           </div>
@@ -909,13 +909,13 @@ export default function RoomSettings() {
           ) : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <Button size="small" onClick={() => setMemberDeleteMode(true)}>
-                <TrashIcon style={{ color: '#ff4d4f' }} />
+                <TrashIcon style={{ color: 'var(--app-color-danger)' }} />
               </Button>
             </div>
           )}
         </CardHeader>
         {members.length === 0 ? (
-          <div style={{ padding: 20, textAlign: 'center', color: '#999' }}>
+          <div style={{ padding: 20, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
             暂无成员
           </div>
         ) : (
@@ -929,7 +929,7 @@ export default function RoomSettings() {
                     style={
                       isSelectable
                         ? {
-                            background: isSelected ? '#ff4d4f' : '#f8f8f8',
+                            background: isSelected ? 'var(--app-color-danger)' : 'var(--app-color-hover)',
                             cursor: 'pointer',
                           }
                         : undefined
@@ -944,16 +944,16 @@ export default function RoomSettings() {
                       {member.user_avatar ? (
                         <MemberAvatar src={member.user_avatar} alt="" />
                       ) : (
-                        <MemberAvatarPlaceholder style={isSelected ? { background: '#e0e0e0' } : undefined}>
+                        <MemberAvatarPlaceholder style={isSelected ? { background: 'var(--app-color-placeholder)' } : undefined}>
                           {(member.member_name || member.user_nickname)?.charAt(0) || '?'}
                         </MemberAvatarPlaceholder>
                       )}
                       <MemberCardInfo>
-                        <MemberCardName style={isSelected ? { color: '#fff' } : undefined}>
+                        <MemberCardName style={isSelected ? { color: 'var(--app-color-surface)' } : undefined}>
                           {member.member_name || member.user_nickname}
                           {member.member_user_id === room?.room_admin && ' (管理员)'}
                         </MemberCardName>
-                        <MemberCardMeta style={isSelected ? { color: '#fff' } : undefined}>
+                        <MemberCardMeta style={isSelected ? { color: 'var(--app-color-surface)' } : undefined}>
                           @{member.user_login_name}
                         </MemberCardMeta>
                       </MemberCardInfo>
@@ -997,7 +997,7 @@ export default function RoomSettings() {
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
             删除盒子
           </div>
-          <div style={{ marginBottom: 12, color: '#666' }}>
+          <div style={{ marginBottom: 12, color: 'var(--app-color-text-weak)' }}>
             盒子「{deleteBoxPopup.box?.box_name || `盒子 ${deleteBoxPopup.box?.box_id}`}」中有{' '}
             {deleteBoxPopup.box?.item_count || 0} 个物品，请选择移动目标：
           </div>

@@ -39,6 +39,7 @@ psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 - **React + TypeScript + Vite** on port 5173
 - **Ant Design Mobile** for UI components with outline icons from `antd-mobile-icons`. New icons must be declared in `client/src/vite-env.d.ts`.
 - **Zustand** for state management with localStorage persistence (stores in `src/stores/`)
+- **Theme system**: CSS variables defined in `src/styles/theme.css`, managed by `themeStore`. Supports light/dark/system color modes and default/rounded/compact style variants. Applied via `html[data-theme]` and `html[data-style]` attributes. All UI must use `var(--app-color-*)` / `var(--app-radius-*)` instead of hardcoded hex values.
 - **API layer**: Centralized in `src/services/api.ts`, uses axios wrapper in `src/utils/request.ts`
 - **Routing**: Protected routes use `PrivateRoute` wrapper checking `useAuthStore`
 
@@ -118,16 +119,16 @@ Items → Reservations → Orders
 
 ### Sub-Page Header Pattern
 - All sub-pages use a unified custom Header style instead of antd-mobile NavBar. Do NOT import `NavBar` from antd-mobile for any page.
-- Pages using this pattern: MyItems, MyReservations, ReservationOrders, ReservationOrderDetail, RoomSettings, Notifications, MyProfile, AddBox, CreateItem, CreateRoom, JoinRoom, Cart, BoxDetail
-- **Header**: `background: white; padding: 8px 16px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center;`
-- **BackButton**: `←` arrow (font-size 20px, margin-right 12px, color: #333, cursor: pointer), calls `navigate(-1)`. Tab-bar pages (e.g. ReservationOrders) omit BackButton since they're accessed directly from bottom tab bar. Scanner modals use BackButton to close modal instead of navigate(-1).
+- Pages using this pattern: MyItems, MyReservations, ReservationOrders, ReservationOrderDetail, RoomSettings, Notifications, MyProfile, AddBox, CreateItem, CreateRoom, JoinRoom, Cart, BoxDetail, SystemSettings
+- **Header**: `background: var(--app-color-surface); padding: 8px 16px; border-bottom: 1px solid var(--app-color-border); display: flex; align-items: center;`
+- **BackButton**: `←` arrow (font-size 20px, margin-right 12px, color: var(--app-color-text), cursor: pointer), calls `navigate(-1)`. Tab-bar pages (e.g. ReservationOrders) omit BackButton since they're accessed directly from bottom tab bar. Scanner modals use BackButton to close modal instead of navigate(-1).
 - **HeaderTitle**: `font-size: 16px; font-weight: 500`
 - Pages requiring sticky header (RoomSettings, Notifications) add `position: sticky; top: 0; z-index: 100`
 
 ### Room Settings Page
 - Located at `client/src/pages/RoomSettings.tsx`, only accessible by room admin
 - Header is sticky at top (position: sticky), stays fixed when scrolling page content
-- Uses card-based layout: each section (room info, join requests, boxes, tags, members) wrapped in a `Card` component (white background, 12px border-radius, `box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1)`)
+- Uses card-based layout: each section (room info, join requests, boxes, tags, members) wrapped in a `Card` component (background: var(--app-color-surface), border-radius: var(--app-radius-l), box-shadow: var(--app-shadow-card))
 - **Room info card**: Displays room name directly (no "仓库名称：" prefix), with a blue outline-style edit icon button (SVG pencil+square, same as Profile nickname edit) inline to the right. Room ID shown below in gray.
 - **Join requests card**: Shows pending requests in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name/date on the right, approve/reject buttons at card bottom
 - **Box management card**: Boxes in two-per-row grid, click to rename, trash icon to delete
@@ -240,7 +241,25 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Features:
   - Notification bell icon in top-right corner of header, with red badge showing unread count. Click navigates to `/notifications` (standalone route without tab bar).
   - Avatar and nickname displayed in header (display-only, no inline editing)
-  - Menu items: 我的资料, 我的物品, 我的预约, 关于
+  - Menu items: 我的资料, 我的物品, 我的预约, 系统设置, 关于
+
+### Theme System
+- Located at `client/src/stores/themeStore.ts` (Zustand store with localStorage persistence)
+- CSS variables defined in `client/src/styles/theme.css`, imported in `main.tsx`
+- Theme is applied via `html[data-theme]` attribute (light/dark) and `html[data-style]` attribute (default/rounded/compact)
+- Store initialized in `main.tsx` before React renders to prevent flash of wrong theme
+- **Theme modes** (`ThemeMode`): `light`, `dark`, `system` (follows OS `prefers-color-scheme` media query, auto-updates on system change)
+- **Style variants** (`StyleVariant`): `default` (standard antd-mobile), `rounded` (large border-radius, cartoon/playful feel), `compact` (small border-radius, minimal feel)
+- CSS variables cover: colors (`--app-color-*`), semantic backgrounds (`--app-color-info/warning/success/danger-*`), shadows (`--app-shadow-*`), border-radius (`--app-radius-*`), tab bar (`--app-color-tab-bar-*`), badges (`--app-color-badge-*`), and overrides for antd-mobile's `--adm-*` variables
+- All pages and components use CSS variables instead of hardcoded colors. When adding new UI elements, always use `var(--app-color-*)` and `var(--app-radius-*)` instead of hex values.
+
+### System Settings Page (系统设置)
+- Located at `client/src/pages/SystemSettings.tsx`, standalone route `/system-settings` (no tab bar)
+- Accessible from Profile page menu item "系统设置" (uses `SetOutline` gear icon)
+- Unified sub-page Header with ← back button + title "系统设置", sticky at top
+- **System language**: Shows "简体中文", click shows Toast "暂未开放，敬请期待" (placeholder, not implemented)
+- **Theme mode**: Three card-style options (浅色模式 ☀️ / 深色模式 🌙 / 跟随系统 💻), active option has blue border + blue text. "跟随系统" option shows current effective theme (浅色/深色) below label
+- **Visual style**: Three card-style options (标准 / 圆润 / 紧凑) with preview rectangles showing border-radius differences. Active option has blue border + blue text
 
 ### My Profile Page (我的资料)
 - Located at `client/src/pages/MyProfile.tsx`, standalone route `/my-profile` (no tab bar)

@@ -20,6 +20,7 @@ import ReservationOrders from './pages/ReservationOrders';
 import ReservationOrderDetail from './pages/ReservationOrderDetail';
 import MyReservations from './pages/MyReservations';
 import MyProfile from './pages/MyProfile';
+import SystemSettings from './pages/SystemSettings';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -147,6 +148,14 @@ function App() {
           element={
             <PrivateRoute>
               <MyProfile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/system-settings"
+          element={
+            <PrivateRoute>
+              <SystemSettings />
             </PrivateRoute>
           }
         />

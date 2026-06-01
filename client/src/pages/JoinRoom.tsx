@@ -6,13 +6,13 @@ import { roomApi } from '../services/api';
 
 const Container = styled.div`
   min-height: 100%;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -21,7 +21,7 @@ const BackButton = styled.div`
   font-size: 20px;
   margin-right: 12px;
   cursor: pointer;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const HeaderTitle = styled.div`
@@ -34,18 +34,18 @@ const Content = styled.div`
 `;
 
 const Tip = styled.div`
-  background: #fff3cd;
-  border: 1px solid #ffc107;
-  border-radius: 8px;
+  background: var(--app-color-warning-bg);
+  border: 1px solid var(--app-color-warning-border);
+  border-radius: var(--app-radius-m);
   padding: 12px;
   margin-bottom: 16px;
   font-size: 14px;
-  color: #856404;
+  color: var(--app-color-warning-text);
 `;
 
 const StatusCard = styled.div`
-  background: #fff;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 16px;
   margin-bottom: 16px;
 `;
@@ -58,20 +58,20 @@ const StatusTitle = styled.div`
 
 const StatusText = styled.div`
   font-size: 14px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 4px;
 `;
 
 const StatusPending = styled.span`
-  color: #faad14;
+  color: var(--app-color-warning-text);
 `;
 
 const StatusApproved = styled.span`
-  color: #52c41a;
+  color: var(--app-color-success);
 `;
 
 const StatusRejected = styled.span`
-  color: #ff4d4f;
+  color: var(--app-color-danger);
 `;
 
 interface JoinRequestStatus {

@@ -15,7 +15,7 @@ const Container = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #f5f5f5;
+  background-color: var(--app-color-bg);
 
   @media (min-width: 768px) {
     flex-direction: row;
@@ -38,8 +38,8 @@ const TabBarContainer = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background: white;
-  border-top: 1px solid #eee;
+  background: var(--app-color-tab-bar-bg);
+  border-top: 1px solid var(--app-color-tab-bar-border);
   z-index: 1000;
   padding-bottom: env(safe-area-inset-bottom, 0px);
   overflow: visible;
@@ -52,7 +52,7 @@ const TabBarContainer = styled.div`
     width: 56px;
     flex-shrink: 0;
     border-top: none;
-    border-right: 1px solid #eee;
+    border-right: 1px solid var(--app-color-tab-bar-border);
     padding-bottom: 0;
     display: flex;
     flex-direction: column;
@@ -78,14 +78,14 @@ const SideTabItem = styled.div<{ $active: boolean }>`
   align-items: center;
   justify-content: center;
   padding: 8px 2px;
-  border-radius: 6px;
+  border-radius: var(--app-radius-s);
   cursor: pointer;
-  color: ${(props) => (props.$active ? '#1677ff' : '#666')};
-  background: ${(props) => (props.$active ? '#e6f4ff' : 'transparent')};
+  color: ${(props) => (props.$active ? 'var(--app-color-tab-bar-active)' : 'var(--app-color-tab-bar-inactive)')};
+  background: ${(props) => (props.$active ? 'var(--app-color-info-bg)' : 'transparent')};
   transition: all 0.2s;
 
   &:hover {
-    background: #f5f5f5;
+    background: var(--app-color-hover);
   }
 
   &:active {
@@ -106,13 +106,13 @@ const SideScanButton = styled.div`
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #52c41a;
-  color: white;
+  background: var(--app-color-scan-btn-bg);
+  color: var(--app-color-white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--app-shadow-tab);
   cursor: pointer;
   margin: 4px auto 8px;
   transition: transform 0.2s;
@@ -134,8 +134,8 @@ const InHandBadge = styled.div`
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  background: #52c41a;
-  color: white;
+  background: var(--app-color-badge-instock-text);
+  color: var(--app-color-white);
   font-size: 10px;
   line-height: 16px;
   text-align: center;
@@ -154,7 +154,7 @@ const CustomTabBar = styled.div`
   align-items: center;
   height: 50px;
   position: relative;
-  background: white;
+  background: var(--app-color-tab-bar-bg);
   padding: 0;
 `;
 
@@ -166,7 +166,7 @@ const RegularTabItem = styled.div<{ $active: boolean }>`
   flex: 1;
   padding: 6px 0;
   cursor: pointer;
-  color: ${(props) => (props.$active ? '#1677ff' : '#666')};
+  color: ${(props) => (props.$active ? 'var(--app-color-tab-bar-active)' : 'var(--app-color-tab-bar-inactive)')};
   transition: color 0.2s;
 
   &:active {
@@ -193,8 +193,8 @@ const ScanDome = styled.div`
   transform: translateX(-50%);
   width: 70px;
   height: 70px;
-  background: white;
-  border: 1px solid #eee;
+  background: var(--app-color-tab-bar-bg);
+  border: 1px solid var(--app-color-tab-bar-border);
   border-radius: 50%;
   box-sizing: border-box;
   clip-path: inset(0 0 51px 0);
@@ -209,13 +209,13 @@ const ScanButton = styled.div`
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  background: #52c41a;
-  color: white;
+  background: var(--app-color-scan-btn-bg);
+  color: var(--app-color-white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 26px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--app-shadow-fab);
   cursor: pointer;
   transition: transform 0.2s;
   z-index: 10;

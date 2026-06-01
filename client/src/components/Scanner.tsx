@@ -8,7 +8,7 @@ const ScannerContainer = styled.div`
   width: 100%;
   height: 300px;
   background: #000;
-  border-radius: 12px;
+  border-radius: var(--app-radius-l);
   overflow: hidden;
 `;
 
@@ -25,8 +25,8 @@ const Overlay = styled.div`
   transform: translate(-50%, -50%);
   width: 200px;
   height: 200px;
-  border: 2px solid #1677ff;
-  border-radius: 12px;
+  border: 2px solid var(--app-color-primary);
+  border-radius: var(--app-radius-l);
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
 `;
 
@@ -36,7 +36,7 @@ const Hint = styled.div`
   left: 0;
   right: 0;
   text-align: center;
-  color: white;
+  color: var(--app-color-white);
   font-size: 14px;
 `;
 
@@ -44,11 +44,11 @@ const PausedPlaceholder = styled.div`
   width: 100%;
   height: 300px;
   background: #000;
-  border-radius: 12px;
+  border-radius: var(--app-radius-l);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--app-color-white);
   font-size: 14px;
 `;
 
@@ -60,8 +60,8 @@ const TorchButton = styled.button<{ $active: boolean }>`
   height: 40px;
   border-radius: 50%;
   border: none;
-  background: ${(props) => (props.$active ? '#1677ff' : 'rgba(0, 0, 0, 0.5)')};
-  color: white;
+  background: ${(props) => (props.$active ? 'var(--app-color-primary)' : 'rgba(0, 0, 0, 0.5)')};
+  color: var(--app-color-white);
   font-size: 20px;
   display: flex;
   align-items: center;

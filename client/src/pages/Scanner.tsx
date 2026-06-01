@@ -10,16 +10,16 @@ type ScanMode = 'idle' | 'borrow' | 'return';
 
 const Container = styled.div`
   height: 100dvh;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -45,19 +45,19 @@ const Content = styled.div`
 `;
 
 const ScanHint = styled.div`
-  background: #e6f7ff;
-  border: 1px solid #91d5ff;
-  border-radius: 8px;
+  background: var(--app-color-info-bg);
+  border: 1px solid var(--app-color-info-border);
+  border-radius: var(--app-radius-m);
   padding: 12px;
   margin-top: 16px;
   text-align: center;
-  color: #0050b3;
+  color: var(--app-color-info-text);
   font-size: 14px;
   flex-shrink: 0;
 `;
 
 const BoxLink = styled.span`
-  color: #1677ff;
+  color: var(--app-color-primary);
   cursor: pointer;
   font-weight: 500;
 
@@ -92,7 +92,7 @@ const LoadingOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--app-color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
