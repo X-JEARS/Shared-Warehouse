@@ -14,9 +14,9 @@ const Container = styled.div`
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -34,7 +34,7 @@ const HeaderTitle = styled.div`
 
 const SearchContainer = styled.div`
   padding: 12px 16px;
-  background: white;
+  background: var(--app-color-surface);
 `;
 
 const Content = styled.div`
@@ -44,11 +44,11 @@ const Content = styled.div`
 `;
 
 const ItemCard = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px var(--app-shadow-card);
 `;
 
 const ItemRow = styled.div`
@@ -60,9 +60,9 @@ const ItemRow = styled.div`
 const ItemImage = styled.div<{ $image?: string }>`
   width: 60px;
   height: 60px;
-  border-radius: 8px;
+  border-radius: var(--app-radius-m);
   background: ${(props) =>
-    props.$image ? `url(${props.$image}) center/cover` : '#f0f0f0'};
+    props.$image ? `url(${props.$image}) center/cover` : 'var(--app-color-border)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,7 +86,7 @@ const ItemName = styled.div`
 
 const ItemMeta = styled.div`
   font-size: 13px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 2px;
   display: flex;
   align-items: center;
@@ -94,7 +94,7 @@ const ItemMeta = styled.div`
 `;
 
 const ActionButton = styled.span`
-  color: #1677ff;
+  color: var(--app-color-primary);
   cursor: pointer;
   font-size: 13px;
   white-space: nowrap;
@@ -104,9 +104,9 @@ const LocationTag = styled.span`
   display: inline-block;
   font-size: 12px;
   padding: 2px 8px;
-  border-radius: 4px;
-  background: #e6f4ff;
-  color: #1677ff;
+  border-radius: var(--app-radius-s);
+  background: var(--app-color-info-bg);
+  color: var(--app-color-primary);
   margin-left: 4px;
 `;
 
@@ -116,7 +116,7 @@ const EmptyContainer = styled.div`
 `;
 
 const EmptyText = styled.p`
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 const PopupContent = styled.div`
@@ -140,9 +140,9 @@ const ScannerPopupContent = styled.div`
 `;
 
 const ConfirmInfo = styled.div`
-  background: #f5f5f5;
+  background: var(--app-color-bg);
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--app-radius-m);
   margin: 16px 0;
 `;
 
@@ -155,13 +155,13 @@ const ConfirmRow = styled.div`
 `;
 
 const ConfirmLabel = styled.span`
-  color: #666;
+  color: var(--app-color-text-weak);
   width: 80px;
   flex-shrink: 0;
 `;
 
 const ConfirmValue = styled.span`
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const ImageOverlay = styled.div`
@@ -170,8 +170,8 @@ const ImageOverlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
+  background: var(--app-color-overlay);
+  border-radius: var(--app-radius-m);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -210,10 +210,10 @@ const CropActions = styled.div`
 const CropButton = styled.button<{ $primary?: boolean }>`
   flex: 1;
   padding: 12px;
-  border: ${(props) => (props.$primary ? 'none' : '1px solid #ddd')};
-  border-radius: 8px;
-  background: ${(props) => (props.$primary ? '#1677ff' : 'white')};
-  color: ${(props) => (props.$primary ? 'white' : '#333')};
+  border: ${(props) => (props.$primary ? 'none' : '1px solid var(--app-color-border)')};
+  border-radius: var(--app-radius-m);
+  background: ${(props) => (props.$primary ? 'var(--app-color-primary)' : 'var(--app-color-surface)')};
+  color: ${(props) => (props.$primary ? 'var(--app-color-surface)' : 'var(--app-color-text)')};
   font-size: 16px;
   cursor: pointer;
 `;
@@ -232,13 +232,13 @@ const UserItem = styled.div<{ $selected?: boolean }>`
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: var(--app-radius-m);
   cursor: pointer;
-  background: ${(props) => (props.$selected ? '#e6f4ff' : 'transparent')};
+  background: ${(props) => (props.$selected ? 'var(--app-color-info-bg)' : 'transparent')};
   transition: background 0.2s;
 
   &:hover {
-    background: #f5f5f5;
+    background: var(--app-color-bg);
   }
 `;
 
@@ -247,7 +247,7 @@ const UserAvatar = styled.div<{ $avatar?: string }>`
   height: 40px;
   border-radius: 50%;
   background: ${(props) =>
-    props.$avatar ? `url(${props.$avatar}) center/cover` : '#e0e0e0'};
+    props.$avatar ? `url(${props.$avatar}) center/cover` : 'var(--app-color-placeholder)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -266,7 +266,7 @@ const UserNickname = styled.div`
 const NoUsers = styled.div`
   text-align: center;
   padding: 20px;
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 interface MyItem {
@@ -562,7 +562,7 @@ export default function MyItems() {
   const handleDelete = async (item: MyItem) => {
     const confirmed = await Dialog.confirm({
       content: `确定要删除「${item.item_name}」吗？删除后将无法恢复，该物品的所有记录（历史、评论、预约等）都将被删除。`,
-      confirmText: <span style={{ color: '#ff4d4f' }}>删除</span>,
+      confirmText: <span style={{ color: 'var(--app-color-danger)' }}>删除</span>,
       cancelText: '取消',
     });
 
@@ -829,7 +829,7 @@ export default function MyItems() {
                     <UserNickname>{user.user_nickname}</UserNickname>
                   </UserInfo>
                   {selectedUser?.user_id === user.user_id && (
-                    <span style={{ color: '#1677ff' }}>✓</span>
+                    <span style={{ color: 'var(--app-color-primary)' }}>✓</span>
                   )}
                 </UserItem>
               ))}

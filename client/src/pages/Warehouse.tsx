@@ -21,17 +21,17 @@ const Container = styled.div`
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 1px 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
 `;
 
 const SearchContainer = styled.div`
   padding: 8px 12px;
-  background: white;
+  background: var(--app-color-surface);
 `;
 
 const Content = styled.div`
@@ -60,9 +60,9 @@ const BoxGroup = styled.div`
 const BoxTitle = styled.div`
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: var(--app-color-text-weak);
   padding: 4px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
 `;
 
 const ItemGrid = styled.div`
@@ -89,14 +89,14 @@ const FABButton = styled.div`
   position: relative;
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  background: #52c41a;
-  color: white;
+  border-radius: var(--app-radius-avatar);
+  background: var(--app-color-badge-instock-text);
+  color: var(--app-color-white);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--app-shadow-fab);
   cursor: pointer;
   transition: transform 0.2s;
 
@@ -116,13 +116,13 @@ const NoRoomContainer = styled.div`
 
 const NoRoomTitle = styled.h3`
   font-size: 18px;
-  color: #333;
+  color: var(--app-color-text);
   margin-bottom: 8px;
 `;
 
 const NoRoomText = styled.p`
   font-size: 14px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   margin-bottom: 24px;
 `;
 
@@ -141,7 +141,7 @@ const IconButton = styled.div`
   justify-content: center;
   cursor: pointer;
   font-size: 18px;
-  color: #333;
+  color: var(--app-color-text);
 
   &:active {
     opacity: 0.7;
@@ -263,10 +263,10 @@ export default function Warehouse() {
                       position: 'absolute',
                       top: -4,
                       right: -6,
-                      background: '#ff4d4f',
-                      color: 'white',
+                      background: 'var(--app-color-badge-outstock-text)',
+                      color: 'var(--app-color-surface)',
                       fontSize: 10,
-                      borderRadius: '50%',
+                      borderRadius: 'var(--app-radius-avatar)',
                       minWidth: 14,
                       height: 14,
                       display: 'flex',
@@ -342,7 +342,7 @@ export default function Warehouse() {
           </div>
         ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
-            <p style={{ color: '#999', marginBottom: 16 }}>
+            <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>
               {filters.boxId === 'out-of-stock' ? '当前没有不在库中的物品' : '当前仓库暂无物品'}
             </p>
             {filters.boxId !== 'out-of-stock' && (
@@ -414,10 +414,10 @@ export default function Warehouse() {
                 position: 'absolute',
                 top: -4,
                 right: -4,
-                background: '#ff4d4f',
-                color: 'white',
+                background: 'var(--app-color-badge-outstock-text)',
+                color: 'var(--app-color-white)',
                 fontSize: 12,
-                borderRadius: '50%',
+                borderRadius: 'var(--app-radius-avatar)',
                 width: 18,
                 height: 18,
                 display: 'flex',

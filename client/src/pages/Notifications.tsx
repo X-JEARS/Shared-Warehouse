@@ -7,16 +7,16 @@ import { useNotificationStore } from '../stores/notificationStore';
 
 const Container = styled.div`
   min-height: 100%;
-  background: white;
+  background: var(--app-color-surface);
 `;
 
 const Header = styled.div`
   position: sticky;
   top: 0;
   z-index: 100;
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -34,14 +34,14 @@ const HeaderTitle = styled.div`
 
 const NotificationItem = styled.div<{ $isRead: boolean }>`
   padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
-  background: ${(props) => (props.$isRead ? 'white' : '#f0f7ff')};
+  border-bottom: 1px solid var(--app-color-border);
+  background: ${(props) => (props.$isRead ? 'var(--app-color-surface)' : 'var(--app-color-info-bg)')};
 `;
 
 const NotificationTitle = styled.div`
   font-size: 15px;
   font-weight: 500;
-  color: #333;
+  color: var(--app-color-text);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -50,13 +50,13 @@ const NotificationTitle = styled.div`
 
 const NotificationContent = styled.div`
   font-size: 13px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 4px;
 `;
 
 const NotificationTime = styled.div`
   font-size: 12px;
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 interface Notification {
@@ -179,17 +179,17 @@ export default function Notifications() {
         <div
           style={{
             padding: '12px 16px',
-            background: '#f5f5f5',
+            background: 'var(--app-color-bg)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
           }}
         >
-          <span style={{ fontSize: 14, color: '#666' }}>
+          <span style={{ fontSize: 14, color: 'var(--app-color-text-weak)' }}>
             {unreadCount} 条未读消息
           </span>
           <span
-            style={{ color: '#1677ff', fontSize: 14, cursor: 'pointer' }}
+            style={{ color: 'var(--app-color-primary)', fontSize: 14, cursor: 'pointer' }}
             onClick={markAllAsRead}
           >
             全部已读

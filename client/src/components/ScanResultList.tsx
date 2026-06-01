@@ -16,8 +16,8 @@ interface ScanResultListProps {
 }
 
 const ListContainer = styled.div`
-  background: #fff;
-  border-radius: 12px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-l);
   padding: 8px;
 `;
 
@@ -31,24 +31,24 @@ const ItemCard = styled.div`
   display: flex;
   align-items: center;
   padding: 8px;
-  background: #fafafa;
-  border-radius: 8px;
+  background: var(--app-color-bg);
+  border-radius: var(--app-radius-m);
 `;
 
 const ItemImage = styled.img`
   width: 36px;
   height: 36px;
-  border-radius: 6px;
+  border-radius: var(--app-radius-s);
   object-fit: cover;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
   flex-shrink: 0;
 `;
 
 const ItemPlaceholder = styled.div`
   width: 36px;
   height: 36px;
-  border-radius: 6px;
-  background: #f5f5f5;
+  border-radius: var(--app-radius-s);
+  background: var(--app-color-img-placeholder);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,6 +65,7 @@ const ItemInfo = styled.div`
 const ItemName = styled.div`
   font-size: 14px;
   font-weight: 500;
+  color: var(--app-color-text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -72,7 +73,7 @@ const ItemName = styled.div`
 
 const ItemLocation = styled.div`
   font-size: 11px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -80,10 +81,10 @@ const ItemLocation = styled.div`
 
 const InHandBadge = styled.span`
   font-size: 11px;
-  color: #999;
-  background: #f0f0f0;
+  color: var(--app-color-text-secondary);
+  background: var(--app-color-img-placeholder);
   padding: 1px 4px;
-  border-radius: 3px;
+  border-radius: var(--app-radius-s);
   display: inline-block;
   margin-top: 2px;
 `;
@@ -95,18 +96,18 @@ const RemoveButton = styled.div`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #ccc;
+  color: var(--app-color-placeholder);
   flex-shrink: 0;
   margin-left: 4px;
 
   &:active {
-    color: #1677ff;
+    color: var(--app-color-primary);
   }
 `;
 
 const EmptyHint = styled.div`
   text-align: center;
-  color: #999;
+  color: var(--app-color-text-secondary);
   padding: 20px;
   font-size: 14px;
 `;

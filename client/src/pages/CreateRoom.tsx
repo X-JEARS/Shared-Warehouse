@@ -7,13 +7,13 @@ import { useRoomStore } from '../stores/roomStore';
 
 const Container = styled.div`
   min-height: 100%;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -22,7 +22,7 @@ const BackButton = styled.div`
   font-size: 20px;
   margin-right: 12px;
   cursor: pointer;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const HeaderTitle = styled.div`

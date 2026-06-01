@@ -12,13 +12,13 @@ const Container = styled.div`
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 1px 6px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -39,7 +39,7 @@ const IconButton = styled.div`
   justify-content: center;
   cursor: pointer;
   font-size: 18px;
-  color: #333;
+  color: var(--app-color-text);
 
   &:active {
     opacity: 0.7;
@@ -48,20 +48,20 @@ const IconButton = styled.div`
 
 const SearchContainer = styled.div`
   padding: 8px 12px;
-  background: white;
+  background: var(--app-color-surface);
 `;
 
 const TabBar = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   display: flex;
   padding: 0 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
 `;
 
 const TabItem = styled.div<{ $active?: boolean }>`
   padding: 10px 0 8px;
   font-size: 14px;
-  color: ${(props) => (props.$active ? '#1677ff' : '#666')};
+  color: ${(props) => (props.$active ? 'var(--app-color-primary)' : 'var(--app-color-text-weak)')};
   font-weight: ${(props) => (props.$active ? 500 : 400)};
   position: relative;
   cursor: pointer;
@@ -75,7 +75,7 @@ const TabItem = styled.div<{ $active?: boolean }>`
     right: 0;
     height: 2px;
     border-radius: 1px;
-    background: ${(props) => (props.$active ? '#1677ff' : 'transparent')};
+    background: ${(props) => (props.$active ? 'var(--app-color-primary)' : 'transparent')};
   }
 `;
 
@@ -86,11 +86,11 @@ const Content = styled.div`
 `;
 
 const OrderCard = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 16px;
   margin-bottom: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--app-shadow-card);
 `;
 
 const OrderHeader = styled.div`
@@ -110,30 +110,30 @@ const OrderTitle = styled.div`
 
 const OrderUser = styled.span`
   font-size: 13px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   font-weight: normal;
 `;
 
 const OrderMeta = styled.div`
   font-size: 13px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 4px;
 `;
 
 const OrderTime = styled.div`
   font-size: 15px;
-  color: #333;
+  color: var(--app-color-text);
   font-weight: 600;
   margin-top: 8px;
   padding-top: 12px;
   margin-bottom: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--app-color-border);
 `;
 
 const EmptyContainer = styled.div`
   text-align: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--app-color-text-secondary);
 `;
 
 interface Order {

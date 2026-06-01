@@ -1,0 +1,231 @@
+/* ========================================
+   Theme CSS Variables
+   Based on Ant Design Mobile theming
+
+   Theme mode (light/dark) controls color scheme.
+   Style variant (default/rounded/compact) controls
+   border-radius, font-size, and visual density.
+
+   html[data-theme] = color mode
+   html[data-style] = visual style variant
+   ======================================== */
+
+/* ---- Light Theme (Default) ---- */
+html[data-theme='light'],
+html {
+  /* Ant Design Mobile overrides */
+  --adm-color-primary: #1677ff;
+  --adm-color-success: #00b578;
+  --adm-color-warning: #ff8f1f;
+  --adm-color-danger: #ff3141;
+  --adm-color-yellow: #ff9f18;
+  --adm-color-orange: #ff6430;
+  --adm-color-wathet: #e7f1ff;
+  --adm-color-text: #333333;
+  --adm-color-text-secondary: #666666;
+  --adm-color-weak: #999999;
+  --adm-color-light: #cccccc;
+  --adm-color-border: #eeeeee;
+  --adm-color-background: #ffffff;
+  --adm-color-box: #f5f5f5;
+  --adm-border-color: #eeeeee;
+
+  /* Application-level variables */
+  --app-color-primary: #1677ff;
+  --app-color-bg: #f5f5f5;
+  --app-color-surface: #ffffff;
+  --app-color-text: #333333;
+  --app-color-text-secondary: #999999;
+  --app-color-text-weak: #666666;
+  --app-color-border: #f0f0f0;
+  --app-color-hover: #f9f9f9;
+  --app-color-danger: #ff3141;
+  --app-color-success: #00b578;
+  --app-color-warning: #ff8f1f;
+  --app-color-badge: #ff3141;
+  --app-color-placeholder: #cccccc;
+  --app-color-overlay: rgba(0, 0, 0, 0.3);
+  --app-color-overlay-heavy: rgba(0, 0, 0, 0.85);
+  --app-color-white: #ffffff;
+  --app-color-avatar-default: #1677ff;
+
+  /* Semantic backgrounds */
+  --app-color-info-bg: #e6f7ff;
+  --app-color-info-border: #91d5ff;
+  --app-color-info-text: #0050b3;
+  --app-color-warning-bg: #fff7e6;
+  --app-color-warning-border: #ffd591;
+  --app-color-warning-text: #d46b08;
+  --app-color-success-bg: #e6f7e6;
+  --app-color-success-border: #b7eb8f;
+  --app-color-danger-bg: #fff0f0;
+  --app-color-danger-border: #ffccc7;
+
+  /* Image placeholder */
+  --app-color-img-placeholder: #f0f0f0;
+
+  /* Shadows */
+  --app-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --app-shadow-bar: 0 -2px 8px rgba(0, 0, 0, 0.1);
+  --app-shadow-tab: 0 2px 8px rgba(0, 0, 0, 0.12);
+  --app-shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+  /* Tab bar */
+  --app-color-tab-bar-bg: #ffffff;
+  --app-color-tab-bar-border: #eeeeee;
+  --app-color-tab-bar-active: #1677ff;
+  --app-color-tab-bar-inactive: #666666;
+  --app-color-scan-btn-bg: #52c41a;
+
+  /* Status badges */
+  --app-color-badge-instock-bg: #e6f7e6;
+  --app-color-badge-instock-text: #52c41a;
+  --app-color-badge-outstock-bg: #fff0f0;
+  --app-color-badge-outstock-text: #ff4d4f;
+  --app-color-badge-foreign-bg: #e6f7ff;
+  --app-color-badge-foreign-text: #1677ff;
+
+  /* Cart button */
+  --app-color-cart-btn-default-bg: #f0f0f0;
+  --app-color-cart-btn-default-icon: #999999;
+  --app-color-cart-btn-added-bg: #e6f7ff;
+  --app-color-cart-btn-added-icon: #1677ff;
+}
+
+/* ---- Dark Theme ---- */
+html[data-theme='dark'] {
+  /* Ant Design Mobile overrides */
+  --adm-color-primary: #3086ff;
+  --adm-color-success: #34b368;
+  --adm-color-warning: #ffa930;
+  --adm-color-danger: #ff4a58;
+  --adm-color-yellow: #ffa930;
+  --adm-color-orange: #e65a2b;
+  --adm-color-wathet: #0d2543;
+  --adm-color-text: #e6e6e6;
+  --adm-color-text-secondary: #b3b3b3;
+  --adm-color-weak: #808080;
+  --adm-color-light: #4d4d4d;
+  --adm-color-border: #2b2b2b;
+  --adm-color-background: #1a1a1a;
+  --adm-color-box: #0a0a0a;
+  --adm-border-color: #2b2b2b;
+
+  /* Application-level variables */
+  --app-color-primary: #3086ff;
+  --app-color-bg: #111111;
+  --app-color-surface: #1a1a1a;
+  --app-color-text: #e6e6e6;
+  --app-color-text-secondary: #808080;
+  --app-color-text-weak: #b3b3b3;
+  --app-color-border: #2b2b2b;
+  --app-color-hover: #222222;
+  --app-color-danger: #ff4a58;
+  --app-color-success: #34b368;
+  --app-color-warning: #ffa930;
+  --app-color-badge: #ff4a58;
+  --app-color-placeholder: #4d4d4d;
+  --app-color-overlay: rgba(0, 0, 0, 0.6);
+  --app-color-overlay-heavy: rgba(0, 0, 0, 0.92);
+  --app-color-white: #ffffff;
+  --app-color-avatar-default: #3086ff;
+
+  /* Semantic backgrounds */
+  --app-color-info-bg: #0d2543;
+  --app-color-info-border: #1a4a7a;
+  --app-color-info-text: #6ab0ff;
+  --app-color-warning-bg: #2a1a00;
+  --app-color-warning-border: #5a3a10;
+  --app-color-warning-text: #ffa930;
+  --app-color-success-bg: #0a2a1a;
+  --app-color-success-border: #1a5a3a;
+  --app-color-danger-bg: #2a0a0a;
+  --app-color-danger-border: #5a1a1a;
+
+  /* Image placeholder */
+  --app-color-img-placeholder: #2b2b2b;
+
+  /* Shadows */
+  --app-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --app-shadow-bar: 0 -2px 8px rgba(0, 0, 0, 0.3);
+  --app-shadow-tab: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --app-shadow-fab: 0 4px 12px rgba(0, 0, 0, 0.4);
+
+  /* Tab bar */
+  --app-color-tab-bar-bg: #1a1a1a;
+  --app-color-tab-bar-border: #2b2b2b;
+  --app-color-tab-bar-active: #3086ff;
+  --app-color-tab-bar-inactive: #b3b3b3;
+  --app-color-scan-btn-bg: #34b368;
+
+  /* Status badges */
+  --app-color-badge-instock-bg: #0a2a1a;
+  --app-color-badge-instock-text: #34b368;
+  --app-color-badge-outstock-bg: #2a0a0a;
+  --app-color-badge-outstock-text: #ff4a58;
+  --app-color-badge-foreign-bg: #0d2543;
+  --app-color-badge-foreign-text: #3086ff;
+
+  /* Cart button */
+  --app-color-cart-btn-default-bg: #2b2b2b;
+  --app-color-cart-btn-default-icon: #808080;
+  --app-color-cart-btn-added-bg: #0d2543;
+  --app-color-cart-btn-added-icon: #3086ff;
+}
+
+/* ========================================
+   Style Variants
+
+   These affect border-radius, visual density,
+   and non-color visual properties.
+   They layer ON TOP of the theme color mode.
+   ======================================== */
+
+/* ---- Default Style (Standard antd-mobile) ---- */
+html[data-style='default'],
+html:not([data-style]) {
+  --app-radius-s: 4px;
+  --app-radius-m: 8px;
+  --app-radius-l: 12px;
+  --app-radius-card: 12px;
+  --app-radius-btn: 8px;
+  --app-radius-badge: 8px;
+  --app-radius-avatar: 50%;
+  --app-radius-input: 4px;
+
+  --adm-radius-s: 4px;
+  --adm-radius-m: 8px;
+  --adm-radius-l: 12px;
+}
+
+/* ---- Rounded Style (Cartoon / Playful) ---- */
+html[data-style='rounded'] {
+  --app-radius-s: 8px;
+  --app-radius-m: 16px;
+  --app-radius-l: 24px;
+  --app-radius-card: 20px;
+  --app-radius-btn: 24px;
+  --app-radius-badge: 12px;
+  --app-radius-avatar: 50%;
+  --app-radius-input: 12px;
+
+  --adm-radius-s: 8px;
+  --adm-radius-m: 16px;
+  --adm-radius-l: 24px;
+}
+
+/* ---- Compact Style (Dense / Minimal) ---- */
+html[data-style='compact'] {
+  --app-radius-s: 2px;
+  --app-radius-m: 4px;
+  --app-radius-l: 6px;
+  --app-radius-card: 6px;
+  --app-radius-btn: 4px;
+  --app-radius-badge: 4px;
+  --app-radius-avatar: 50%;
+  --app-radius-input: 2px;
+
+  --adm-radius-s: 2px;
+  --adm-radius-m: 4px;
+  --adm-radius-l: 6px;
+}

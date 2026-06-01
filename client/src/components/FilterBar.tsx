@@ -5,11 +5,11 @@ import { boxApi, tagApi } from '../services/api';
 
 const FilterContainer = styled.div`
   padding: 2px 8px;
-  background: white;
+  background: var(--app-color-surface);
   display: flex;
   align-items: center;
   gap: 6px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
 `;
 
 const FilterItem = styled.div`
@@ -18,8 +18,8 @@ const FilterItem = styled.div`
   align-items: center;
   justify-content: center;
   padding: 4px;
-  background: #f5f5f5;
-  border-radius: 4px;
+  background: var(--app-color-bg);
+  border-radius: var(--app-radius-s);
   font-size: 12px;
   cursor: pointer;
 `;
@@ -98,7 +98,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
           <div style={{ padding: '12px' }}>
             <div
               onClick={() => handleBoxChange(undefined)}
-              style={{ padding: '12px 0', color: !selectedBox ? '#1677ff' : undefined }}
+              style={{ padding: '12px 0', color: !selectedBox ? 'var(--app-color-primary)' : undefined }}
             >
               全部
             </div>
@@ -106,8 +106,8 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
               onClick={() => handleBoxChange('out-of-stock')}
               style={{
                 padding: '12px 0',
-                borderTop: '1px solid #f0f0f0',
-                color: selectedBox === 'out-of-stock' ? '#1677ff' : undefined,
+                borderTop: '1px solid var(--app-color-border)',
+                color: selectedBox === 'out-of-stock' ? 'var(--app-color-primary)' : undefined,
               }}
             >
               不在库中
@@ -118,8 +118,8 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
                 onClick={() => handleBoxChange(box.box_id)}
                 style={{
                   padding: '12px 0',
-                  borderTop: '1px solid #f0f0f0',
-                  color: selectedBox === box.box_id ? '#1677ff' : undefined,
+                  borderTop: '1px solid var(--app-color-border)',
+                  color: selectedBox === box.box_id ? 'var(--app-color-primary)' : undefined,
                 }}
               >
                 {box.box_name || `盒子 ${box.box_id}`}
@@ -143,7 +143,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
           <div style={{ padding: '12px' }}>
             <div
               onClick={() => handleTagChange(undefined)}
-              style={{ padding: '12px 0', color: !selectedTag ? '#1677ff' : undefined }}
+              style={{ padding: '12px 0', color: !selectedTag ? 'var(--app-color-primary)' : undefined }}
             >
               全部
             </div>
@@ -153,8 +153,8 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
                 onClick={() => handleTagChange(tag.tag_id)}
                 style={{
                   padding: '12px 0',
-                  borderTop: '1px solid #f0f0f0',
-                  color: selectedTag === tag.tag_id ? '#1677ff' : undefined,
+                  borderTop: '1px solid var(--app-color-border)',
+                  color: selectedTag === tag.tag_id ? 'var(--app-color-primary)' : undefined,
                 }}
               >
                 {tag.tag_name}

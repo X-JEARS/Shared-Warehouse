@@ -7,13 +7,13 @@ import Scanner from '../components/Scanner';
 
 const Container = styled.div`
   min-height: 100%;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
 `;
@@ -22,7 +22,7 @@ const BackButton = styled.div`
   font-size: 20px;
   margin-right: 12px;
   cursor: pointer;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const HeaderTitle = styled.div`
@@ -40,7 +40,7 @@ const ScanModal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: #f5f5f5;
+  background: var(--app-color-bg);
   z-index: 1000;
 `;
 
@@ -166,13 +166,13 @@ export default function AddBox() {
           </Header>
           <Content>
             <div style={{
-              background: '#fff7e6',
-              border: '1px solid #ffd591',
-              borderRadius: 8,
+              background: 'var(--app-color-warning-bg)',
+              border: '1px solid var(--app-color-warning-border)',
+              borderRadius: 'var(--app-radius-m)',
               padding: 12,
               marginBottom: 16,
               textAlign: 'center',
-              color: '#d46b08',
+              color: 'var(--app-color-warning-text)',
               fontSize: 14,
             }}>
               请扫描盒子二维码（以 box. 开头）

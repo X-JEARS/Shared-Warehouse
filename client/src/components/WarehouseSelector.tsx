@@ -8,7 +8,7 @@ import { roomApi } from '../services/api';
 
 const SelectorContainer = styled.div`
   padding: 2px 0;
-  background: white;
+  background: var(--app-color-surface);
   display: flex;
   align-items: center;
 `;
@@ -29,8 +29,8 @@ const DropdownContent = styled.div`
 
 const RoomItem = styled.div<{ $active?: boolean }>`
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-  color: ${props => props.$active ? '#1677ff' : undefined};
+  border-bottom: 1px solid var(--app-color-border);
+  color: ${props => props.$active ? 'var(--app-color-primary)' : undefined};
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -45,7 +45,7 @@ const ActionRow = styled.div`
   display: flex;
   gap: 8px;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--app-color-border);
   margin-top: 8px;
 `;
 
@@ -106,7 +106,7 @@ export default function WarehouseSelector() {
               >
                 <span>{room.room_name}</span>
                 {room.item_count !== undefined && (
-                  <span style={{ fontSize: 12, color: '#999' }}>
+                  <span style={{ fontSize: 12, color: 'var(--app-color-text-secondary)' }}>
                     {room.item_count} 件物品
                   </span>
                 )}

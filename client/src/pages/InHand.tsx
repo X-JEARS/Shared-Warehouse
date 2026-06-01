@@ -13,9 +13,9 @@ const Container = styled.div`
 `;
 
 const Header = styled.div`
-  background: white;
+  background: var(--app-color-surface);
   padding: 8px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
 `;
 
 const HeaderTitle = styled.div`
@@ -25,7 +25,7 @@ const HeaderTitle = styled.div`
 
 const SearchContainer = styled.div`
   padding: 12px 16px;
-  background: white;
+  background: var(--app-color-surface);
 `;
 
 const Content = styled.div`
@@ -46,7 +46,7 @@ const EmptyContainer = styled.div`
 `;
 
 const EmptyText = styled.p`
-  color: #999;
+  color: var(--app-color-text-secondary);
   margin-bottom: 16px;
 `;
 

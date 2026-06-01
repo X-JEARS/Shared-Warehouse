@@ -60,7 +60,7 @@ const EditIconButton = styled.button`
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: #1677ff;
+  color: var(--app-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -71,8 +71,8 @@ const EditIconButton = styled.button`
 `;
 
 const TimeCard = styled.div`
-  background: #f9f9f9;
-  border-radius: 8px;
+  background: var(--app-color-hover);
+  border-radius: var(--app-radius-m);
   padding: 16px;
   margin-bottom: 16px;
 `;
@@ -94,21 +94,21 @@ const TimeField = styled.div`
 
 const TimeLabel = styled.div`
   font-size: 12px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 8px;
 `;
 
 const TimeButton = styled.div`
   padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  border: 1px solid var(--app-color-border);
+  border-radius: var(--app-radius-s);
   font-size: 14px;
   text-align: center;
-  background: white;
+  background: var(--app-color-surface);
   cursor: pointer;
 
   &:active {
-    background: #f5f5f5;
+    background: var(--app-color-hover);
   }
 `;
 
@@ -119,10 +119,10 @@ const CartGrid = styled.div`
 `;
 
 const CartItem = styled.div`
-  background: white;
-  border-radius: 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
   padding: 12px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--app-color-border);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -139,13 +139,13 @@ const ItemImage = styled.img`
 const ItemPlaceholder = styled.div`
   width: 36px;
   height: 36px;
-  border-radius: 6px;
-  background: #f5f5f5;
+  border-radius: var(--app-radius-s);
+  background: var(--app-color-img-placeholder);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   flex-shrink: 0;
 `;
 
@@ -171,42 +171,42 @@ const ItemName = styled.div`
 `;
 
 const ConflictBadge = styled.span`
-  background: #fff2f0;
-  color: #ff4d4f;
+  background: var(--app-color-danger-bg);
+  color: var(--app-color-danger);
   font-size: 11px;
   padding: 1px 4px;
-  border-radius: 4px;
+  border-radius: var(--app-radius-s);
   font-weight: normal;
   flex-shrink: 0;
 `;
 
 const ItemCount = styled.div`
   font-size: 14px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 12px;
 `;
 
 const ConflictInfo = styled.div`
-  background: #fff2f0;
-  border-radius: 6px;
+  background: var(--app-color-danger-bg);
+  border-radius: var(--app-radius-s);
   padding: 10px;
   margin-top: 8px;
   font-size: 13px;
-  color: #ff4d4f;
+  color: var(--app-color-danger);
 `;
 
 const ConflictTime = styled.div`
   margin-top: 4px;
   font-size: 12px;
-  color: #666;
+  color: var(--app-color-text-weak);
 `;
 
 const Footer = styled.div`
   display: flex;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1px solid #f0f0f0;
-  background: white;
+  border-top: 1px solid var(--app-color-border);
+  background: var(--app-color-surface);
   flex-shrink: 0;
 `;
 
@@ -216,13 +216,13 @@ const EmptyContainer = styled.div`
 `;
 
 const ConflictWarning = styled.div`
-  background: #fff7e6;
-  border: 1px solid #ffd591;
-  border-radius: 8px;
+  background: var(--app-color-warning-bg);
+  border: 1px solid var(--app-color-warning-border);
+  border-radius: var(--app-radius-m);
   padding: 12px;
   margin-bottom: 16px;
   font-size: 14px;
-  color: #d46b08;
+  color: var(--app-color-warning-text);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -248,7 +248,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
         id="order-title-input"
         defaultValue={orderTitle || ''}
         placeholder="请输入预约单标题"
-        style={{ width: '100%', padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
+        style={{ width: '100%', padding: '8px 12px', border: `1px solid var(--app-color-border)`, borderRadius: '4px', fontSize: '14px', outline: 'none' }}
       />,
       confirmText: '确定',
       cancelText: '取消',
@@ -433,7 +433,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
 
           {items.length === 0 ? (
             <EmptyContainer>
-              <p style={{ color: '#999', marginBottom: 16 }}>购物车为空</p>
+              <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>购物车为空</p>
               <Button onClick={onClose}>继续浏览</Button>
             </EmptyContainer>
           ) : (
@@ -498,7 +498,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
                       </ItemName>
                     </ItemInfo>
                     <TrashIcon
-                      style={{ color: '#ff4d4f', cursor: 'pointer', flexShrink: 0 }}
+                      style={{ color: 'var(--app-color-danger)', cursor: 'pointer', flexShrink: 0 }}
                       onClick={() => removeItem(item.itemId)}
                     />
                   </CartItem>
@@ -527,7 +527,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
                   {formatTime(startTime)} ~ {formatTime(endTime)}
                 </span>
               ) : (
-                <span style={{ color: '#ff4d4f' }}>请设置预约时间</span>
+                <span style={{ color: 'var(--app-color-danger)' }}>请设置预约时间</span>
               )}
             </div>
             <Button

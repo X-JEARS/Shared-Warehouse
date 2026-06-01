@@ -20,9 +20,9 @@ const ItemHeader = styled.div`
 const ItemImage = styled.div<{ $image?: string }>`
   width: 80px;
   height: 80px;
-  border-radius: 8px;
+  border-radius: var(--app-radius-m);
   background: ${(props) =>
-    props.$image ? `url(${props.$image}) center/cover` : '#f0f0f0'};
+    props.$image ? `url(${props.$image}) center/cover` : 'var(--app-color-img-placeholder)'};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -34,7 +34,7 @@ const ImageViewerOverlay = styled.div`
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.85);
+  background: var(--app-color-overlay-heavy);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -59,7 +59,7 @@ const ItemName = styled.div`
 
 const ItemMeta = styled.div`
   font-size: 13px;
-  color: #666;
+  color: var(--app-color-text-weak);
   margin-bottom: 4px;
 `;
 
@@ -67,10 +67,10 @@ const StockBadge = styled.span<{ $inStock: boolean }>`
   display: inline-block;
   font-size: 12px;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--app-radius-s);
   margin-left: 8px;
-  background: ${(props) => (props.$inStock ? '#e6f7e6' : '#fff0f0')};
-  color: ${(props) => (props.$inStock ? '#52c41a' : '#ff4d4f')};
+  background: ${(props) => (props.$inStock ? 'var(--app-color-badge-instock-bg)' : 'var(--app-color-badge-outstock-bg)')};
+  color: ${(props) => (props.$inStock ? 'var(--app-color-badge-instock-text)' : 'var(--app-color-badge-outstock-text)')};
 `;
 
 const Section = styled.div`
@@ -80,19 +80,19 @@ const Section = styled.div`
 const SectionTitle = styled.div`
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--app-color-text);
   margin-bottom: 12px;
 `;
 
 const HistoryItem = styled.div`
   padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
   font-size: 13px;
 `;
 
 const CommentItem = styled.div`
   padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--app-color-border);
 `;
 
 const CommentUser = styled.div`
@@ -102,12 +102,12 @@ const CommentUser = styled.div`
 
 const CommentContent = styled.div`
   font-size: 14px;
-  color: #333;
+  color: var(--app-color-text);
 `;
 
 const CommentTime = styled.div`
   font-size: 12px;
-  color: #999;
+  color: var(--app-color-text-secondary);
   margin-top: 4px;
 `;
 
@@ -371,7 +371,7 @@ export default function ItemDetail({
                         style={{
                           marginLeft: 8,
                           cursor: 'pointer',
-                          color: '#1677ff',
+                          color: 'var(--app-color-primary)',
                           fontSize: 14,
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -428,7 +428,7 @@ export default function ItemDetail({
                     编辑
                   </Button>
                 </SectionTitle>
-                <div style={{ fontSize: 14, color: '#666' }}>{item.item_notice || '暂无备注'}</div>
+                <div style={{ fontSize: 14, color: 'var(--app-color-text-weak)' }}>{item.item_notice || '暂无备注'}</div>
               </Section>
 
             <Section>
@@ -444,7 +444,7 @@ export default function ItemDetail({
                 <>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                     {allTags.length === 0 ? (
-                      <span style={{ color: '#999', fontSize: 13 }}>暂无标签可选，请先在仓库设置中创建标签</span>
+                      <span style={{ color: 'var(--app-color-text-secondary)', fontSize: 13 }}>暂无标签可选，请先在仓库设置中创建标签</span>
                     ) : (
                       allTags.map((tag: any) => (
                         <span
@@ -452,8 +452,8 @@ export default function ItemDetail({
                           onClick={() => toggleTag(tag.tag_id)}
                           style={{
                             padding: '4px 12px',
-                            background: selectedTagIds.includes(tag.tag_id) ? '#1677ff' : '#f5f5f5',
-                            color: selectedTagIds.includes(tag.tag_id) ? '#fff' : '#666',
+                            background: selectedTagIds.includes(tag.tag_id) ? 'var(--app-color-primary)' : 'var(--app-color-bg)',
+                            color: selectedTagIds.includes(tag.tag_id) ? 'var(--app-color-white)' : 'var(--app-color-text-weak)',
                             borderRadius: 4,
                             fontSize: 13,
                             cursor: 'pointer',
@@ -487,8 +487,8 @@ export default function ItemDetail({
                         key={tag.tag_id}
                         style={{
                           padding: '4px 12px',
-                          background: '#e6f4ff',
-                          color: '#1677ff',
+                          background: 'var(--app-color-badge-foreign-bg)',
+                          color: 'var(--app-color-badge-foreign-text)',
                           borderRadius: 4,
                           fontSize: 13,
                         }}
@@ -497,7 +497,7 @@ export default function ItemDetail({
                       </span>
                     ))
                   ) : (
-                    <span style={{ color: '#999', fontSize: 13 }}>暂无标签</span>
+                    <span style={{ color: 'var(--app-color-text-secondary)', fontSize: 13 }}>暂无标签</span>
                   )}
                 </div>
               )}
@@ -513,14 +513,14 @@ export default function ItemDetail({
                       <span style={{
                         fontSize: 12,
                         padding: '2px 8px',
-                        background: r.reservation_start_time > Date.now() ? '#fff7e6' : '#e6f7e6',
-                        color: r.reservation_start_time > Date.now() ? '#fa8c16' : '#52c41a',
+                        background: r.reservation_start_time > Date.now() ? 'var(--app-color-warning-bg)' : 'var(--app-color-success-bg)',
+                        color: r.reservation_start_time > Date.now() ? 'var(--app-color-warning-text)' : 'var(--app-color-success)',
                         borderRadius: 4
                       }}>
                         {r.reservation_start_time > Date.now() ? '待使用' : '使用中'}
                       </span>
                     </div>
-                    <div style={{ color: '#666', fontSize: 12, marginTop: 4 }}>
+                    <div style={{ color: 'var(--app-color-text-weak)', fontSize: 12, marginTop: 4 }}>
                       {formatTime(r.reservation_start_time)} ~ {formatTime(r.reservation_end_time)}
                     </div>
                   </HistoryItem>
@@ -541,7 +541,7 @@ export default function ItemDetail({
                     <div>
                       {h.is_user_box ? `${h.user_nickname} 取走了物品` : `${h.user_nickname} 将物品放入了 ${h.box_name}`}
                     </div>
-                    <div style={{ color: '#999', fontSize: 12 }}>
+                    <div style={{ color: 'var(--app-color-text-secondary)', fontSize: 12 }}>
                       {formatTime(h.history_time)}
                     </div>
                   </HistoryItem>
@@ -599,7 +599,7 @@ export default function ItemDetail({
               <div>
                 {h.is_user_box ? `${h.user_nickname} 取走了物品` : `${h.user_nickname} 将物品放入了 ${h.box_name}`}
               </div>
-              <div style={{ color: '#999', fontSize: 12 }}>
+              <div style={{ color: 'var(--app-color-text-secondary)', fontSize: 12 }}>
                 {formatTime(h.history_time)}
               </div>
             </HistoryItem>
@@ -635,7 +635,7 @@ export default function ItemDetail({
       >
         <PopupContent>
           <SectionTitle style={{ marginBottom: 16 }}>编辑别名</SectionTitle>
-          <div style={{ marginBottom: 16, fontSize: 13, color: '#666' }}>
+          <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--app-color-text-weak)' }}>
             原名称：{item?.item_name}
           </div>
           <Input
