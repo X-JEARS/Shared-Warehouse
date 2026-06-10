@@ -5,6 +5,9 @@ import {
   InformationCircleOutline,
   BellOutline,
   SetOutline,
+  UserOutline,
+  AppstoreOutline,
+  CalendarOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useAuthStore } from '../stores/authStore';
@@ -121,9 +124,12 @@ export default function Profile() {
       </Header>
 
       <Section>
-        <MenuItem icon="👤" text="我的资料" onClick={() => navigate('/my-profile')} showBorder />
-        <MenuItem icon="📦" text="我的物品" onClick={() => window.location.href = '/my-items'} showBorder />
-        <MenuItem icon="📋" text="我的预约" onClick={() => navigate('/my-reservations')} showBorder />
+        <MenuItem icon={<UserOutline fontSize={18} />} text="我的资料" onClick={() => navigate('/my-profile')} showBorder />
+        <MenuItem icon={<AppstoreOutline fontSize={18} />} text="我的物品" onClick={() => window.location.href = '/my-items'} showBorder />
+        <MenuItem icon={<CalendarOutline fontSize={18} />} text="我的预约" onClick={() => navigate('/my-reservations')} />
+      </Section>
+
+      <Section>
         <MenuItem icon={<SetOutline fontSize={18} />} text="系统设置" onClick={() => navigate('/system-settings')} />
       </Section>
 

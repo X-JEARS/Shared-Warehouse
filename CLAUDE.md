@@ -241,7 +241,8 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Features:
   - Notification bell icon in top-right corner of header, with red badge showing unread count. Click navigates to `/notifications` (standalone route without tab bar).
   - Avatar and nickname displayed in header (display-only, no inline editing)
-  - Menu items: 我的资料, 我的物品, 我的预约, 系统设置, 关于
+  - Menu items use outline icons from `antd-mobile-icons`: 我的资料 (`UserOutline`), 我的物品 (`AppstoreOutline`), 我的预约 (`CalendarOutline`), 系统设置 (`SetOutline`), 关于 (`InformationCircleOutline`)
+  - Menu is divided into two sections: 我的资料 + 我的物品 + 我的预约 in the first group, 系统设置 in the second group (separated by gap), 关于 in a third group
 
 ### Theme System
 - Located at `client/src/stores/themeStore.ts` (Zustand store with localStorage persistence)
