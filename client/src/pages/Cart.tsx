@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button, DatePicker, Dialog, Toast } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { useCartStore } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';
 import { reservationApi } from '../services/api';
@@ -162,23 +163,25 @@ const EmptyContainer = styled.div`
 
 export default function Cart() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { items, startTime, endTime, setTime, removeItem, clearCart, orderTitle, setOrderTitle } = useCartStore();
   const [loading, setLoading] = useState(false);
 
-  const defaultTitle = `${user?.user_nickname || '用户'}的预约单#${new Date().toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }).replace('/', '')}`;
+  const dateStr = new Date().toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', { month: '2-digit', day: '2-digit' }).replace(/\//g, '');
+  const defaultTitle = t('cart.defaultTitle', { nickname: user?.user_nickname || 'User', date: dateStr });
 
   const handleEditTitle = async () => {
     const result = await Dialog.confirm({
-      title: '编辑预约单标题',
+      title: t('cart.editTitle'),
       content: <input
         id="order-title-input"
         defaultValue={orderTitle || ''}
-        placeholder="请输入预约单标题"
+        placeholder={t('cart.titlePlaceholder')}
         style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--app-color-border)', borderRadius: 'var(--app-radius-s)', fontSize: '14px', outline: 'none' }}
       />,
-      confirmText: '确定',
-      cancelText: '取消',
+      confirmText: t('common.confirm'),
+      cancelText: t('common.cancel'),
     });
 
     if (result) {
@@ -190,29 +193,28 @@ export default function Cart() {
 
   const handleCheckout = async () => {
     if (!startTime || !endTime) {
-      Toast.show({ content: '请设置预约时间' });
+      Toast.show({ content: t('cart.setReservationTime') });
       return;
     }
 
     if (items.length === 0) {
-      Toast.show({ content: '购物车为空' });
+      Toast.show({ content: t('cart.cartEmpty') });
       return;
     }
 
     if (endTime <= startTime) {
-      Toast.show({ content: '结束时间必须晚于开始时间' });
+      Toast.show({ content: t('cart.endTimeAfterStart') });
       return;
     }
 
     const result = await Dialog.confirm({
-      title: '确认预约',
-      content: `将预约 ${items.length} 个物品，确定吗？`,
+      title: t('cart.confirmReservation'),
+      content: t('cart.confirmReservationContent', { count: items.length }),
     });
 
     if (result) {
       try {
         setLoading(true);
-        // 使用批量创建订单的 API
         await reservationApi.createOrder({
           title: orderTitle || defaultTitle,
           items: items.map((item) => ({
@@ -222,10 +224,10 @@ export default function Cart() {
           })),
         });
         clearCart();
-        Toast.show({ icon: 'success', content: '预约成功' });
+        Toast.show({ icon: 'success', content: t('cart.reservationSuccess') });
         navigate('/in-hand');
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '预约失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('cart.reservationFailed') });
       } finally {
         setLoading(false);
       }
@@ -241,8 +243,8 @@ export default function Cart() {
   };
 
   const formatTime = (timestamp?: number) => {
-    if (!timestamp) return '选择时间';
-    return new Date(timestamp).toLocaleString('zh-CN', {
+    if (!timestamp) return t('cart.selectTime');
+    return new Date(timestamp).toLocaleString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
       month: 'numeric',
       day: 'numeric',
       hour: '2-digit',
@@ -265,21 +267,20 @@ export default function Cart() {
       <Content>
         {items.length === 0 ? (
           <EmptyContainer>
-            <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>购物车为空</p>
+            <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>{t('cart.cartEmpty')}</p>
             <Button color="primary" onClick={() => navigate('/warehouse')}>
-              去添加物品
+              {t('warehouse.addItem')}
             </Button>
           </EmptyContainer>
         ) : (
           <>
-            {/* 统一时间设置 */}
             <TimeCard>
-              <TimeCardTitle>📅 预约时间（适用于所有物品）</TimeCardTitle>
+              <TimeCardTitle>📅 {t('cart.reservationTime')}</TimeCardTitle>
               <TimeSelector>
                 <TimeField>
-                  <TimeLabel>开始时间</TimeLabel>
+                  <TimeLabel>{t('cart.startTime')}</TimeLabel>
                   <DatePicker
-                    title="选择开始时间"
+                    title={t('cart.selectStartTime')}
                     value={startTime ? new Date(startTime) : undefined}
                     onConfirm={(val) => handleSetTime('start', val)}
                     min={new Date()}
@@ -287,15 +288,15 @@ export default function Cart() {
                   >
                     {(value, { open }) => (
                       <TimeButton onClick={open}>
-                        {value ? formatTime(value.getTime()) : '选择时间'}
+                        {value ? formatTime(value.getTime()) : t('cart.selectTime')}
                       </TimeButton>
                     )}
                   </DatePicker>
                 </TimeField>
                 <TimeField>
-                  <TimeLabel>结束时间</TimeLabel>
+                  <TimeLabel>{t('cart.endTime')}</TimeLabel>
                   <DatePicker
-                    title="选择结束时间"
+                    title={t('cart.selectEndTime')}
                     value={endTime ? new Date(endTime) : undefined}
                     onConfirm={(val) => handleSetTime('end', val)}
                     min={startTime ? new Date(startTime) : new Date()}
@@ -303,7 +304,7 @@ export default function Cart() {
                   >
                     {(value, { open }) => (
                       <TimeButton onClick={open}>
-                        {value ? formatTime(value.getTime()) : '选择时间'}
+                        {value ? formatTime(value.getTime()) : t('cart.selectTime')}
                       </TimeButton>
                     )}
                   </DatePicker>
@@ -311,15 +312,14 @@ export default function Cart() {
               </TimeSelector>
             </TimeCard>
 
-            {/* 物品列表 */}
             <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'var(--app-color-text-weak)', fontSize: 14 }}>共 {items.length} 个物品</span>
+              <span style={{ color: 'var(--app-color-text-weak)', fontSize: 14 }}>{t('cart.totalItems', { count: items.length })}</span>
               <Button
                 size="small"
                 fill="outline"
                 onClick={() => clearCart()}
               >
-                清空购物车
+                {t('cart.clear')}
               </Button>
             </div>
 
@@ -347,10 +347,10 @@ export default function Cart() {
           <div style={{ flex: 1, fontSize: 14 }}>
             {startTime && endTime ? (
               <span>
-                预约时间：{formatTime(startTime)} ~ {formatTime(endTime)}
+                {formatTime(startTime)} ~ {formatTime(endTime)}
               </span>
             ) : (
-              <span style={{ color: 'var(--app-color-danger)' }}>请设置预约时间</span>
+              <span style={{ color: 'var(--app-color-danger)' }}>{t('cart.setReservationTime')}</span>
             )}
           </div>
           <Button
@@ -359,7 +359,7 @@ export default function Cart() {
             onClick={handleCheckout}
             disabled={!startTime || !endTime}
           >
-            确认预约
+            {t('cart.confirmCheckout')}
           </Button>
         </Footer>
       )}

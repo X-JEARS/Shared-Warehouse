@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Popup, Button, Input, Toast } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { itemApi, tagApi, reservationApi } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 
@@ -134,6 +135,7 @@ export default function ItemDetail({
   onClose,
   onUpdate,
 }: ItemDetailProps) {
+  const { t, i18n } = useTranslation();
   const [item, setItem] = useState<any>(null);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
@@ -223,32 +225,32 @@ export default function ItemDetail({
 
   const handleUpdateName = async () => {
     if (!editName.trim()) {
-      Toast.show({ content: '物品名称不能为空' });
+      Toast.show({ content: t('itemDetail.nameEmpty') });
       return;
     }
     try {
       await itemApi.update(itemId!, { name: editName });
       setItem({ ...item, item_name: editName });
       setEditing(false);
-      Toast.show({ icon: 'success', content: '更新成功' });
+      Toast.show({ icon: 'success', content: t('itemDetail.updateSuccess') });
       onUpdate?.();
     } catch (error) {
-      Toast.show({ icon: 'fail', content: '更新失败' });
+      Toast.show({ icon: 'fail', content: t('itemDetail.updateFailed') });
     }
   };
 
   const handleAddComment = async () => {
     if (!commentText.trim()) {
-      Toast.show({ content: '评论内容不能为空' });
+      Toast.show({ content: t('itemDetail.commentEmpty') });
       return;
     }
     try {
       await itemApi.addComment(itemId!, commentText);
       setCommentText('');
       loadComments();
-      Toast.show({ icon: 'success', content: '评论成功' });
+      Toast.show({ icon: 'success', content: t('itemDetail.commentSuccess') });
     } catch (error) {
-      Toast.show({ icon: 'fail', content: '评论失败' });
+      Toast.show({ icon: 'fail', content: t('itemDetail.commentFailed') });
     }
   };
 
@@ -268,10 +270,10 @@ export default function ItemDetail({
       const newTags = allTags.filter((t) => selectedTagIds.includes(t.tag_id));
       setItem({ ...item, tags: newTags });
       setEditingTags(false);
-      Toast.show({ icon: 'success', content: '标签已更新' });
+      Toast.show({ icon: 'success', content: t('itemDetail.tagsUpdated') });
       onUpdate?.();
     } catch (error) {
-      Toast.show({ icon: 'fail', content: '更新失败' });
+      Toast.show({ icon: 'fail', content: t('itemDetail.updateFailed') });
     }
   };
 
@@ -285,7 +287,7 @@ export default function ItemDetail({
       boxName: item.box_name,
       roomName: item.room_name,
     });
-    Toast.show({ icon: 'success', content: '已添加到购物车' });
+    Toast.show({ icon: 'success', content: t('itemDetail.addedToCart') });
   };
 
   const handleSaveRemark = async () => {
@@ -294,10 +296,10 @@ export default function ItemDetail({
       await itemApi.setRemark(itemId!, item.room_id, editRemarkText);
       setItem({ ...item, remark: editRemarkText || null });
       setEditingRemark(false);
-      Toast.show({ icon: 'success', content: '别名已更新' });
+      Toast.show({ icon: 'success', content: t('itemDetail.remarkUpdated') });
       onUpdate?.();
     } catch (error) {
-      Toast.show({ icon: 'fail', content: '更新失败' });
+      Toast.show({ icon: 'fail', content: t('itemDetail.updateFailed') });
     }
   };
 
@@ -306,17 +308,17 @@ export default function ItemDetail({
       await itemApi.update(itemId!, { notice: editNoticeText });
       setItem({ ...item, item_notice: editNoticeText || null });
       setEditingNotice(false);
-      Toast.show({ icon: 'success', content: '备注已更新' });
+      Toast.show({ icon: 'success', content: t('itemDetail.noticeUpdated') });
       onUpdate?.();
     } catch (error) {
-      Toast.show({ icon: 'fail', content: '更新失败' });
+      Toast.show({ icon: 'fail', content: t('itemDetail.updateFailed') });
     }
   };
 
   const formatTime = (timestamp: number | string) => {
     const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
-    if (!ts || isNaN(ts)) return '未知时间';
-    return new Date(ts).toLocaleString('zh-CN');
+    if (!ts || isNaN(ts)) return t('common.unknownTime');
+    return new Date(ts).toLocaleString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN');
   };
 
   return (
@@ -336,7 +338,7 @@ export default function ItemDetail({
                 onClick={handleAddToCart}
                 disabled={isInCart}
               >
-                {isInCart ? '已预约' : '预约'}
+                {isInCart ? t('itemDetail.reserved') : t('itemDetail.reserve')}
               </Button>
             </div>
             <ItemHeader>
@@ -349,14 +351,14 @@ export default function ItemDetail({
                     <Input
                       value={editName}
                       onChange={setEditName}
-                      placeholder="物品名称"
+                      placeholder={t('itemDetail.itemNamePlaceholder')}
                       style={{ flex: 1 }}
                     />
                     <Button size="small" onClick={handleUpdateName}>
-                      保存
+                      {t('common.save')}
                     </Button>
                     <Button size="small" onClick={() => setEditing(false)}>
-                      取消
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 ) : (
@@ -389,54 +391,53 @@ export default function ItemDetail({
                         style={{ marginLeft: 8 }}
                         onClick={() => setEditing(true)}
                       >
-                        编辑名称
+                        {t('itemDetail.editName')}
                       </Button>
                     )}
                   </ItemName>
                 )}
-                <ItemMeta>创建于 {formatTime(item.item_create_time)}</ItemMeta>
+                <ItemMeta>{t('itemDetail.createdAt', { time: formatTime(item.item_create_time) })}</ItemMeta>
                 <ItemMeta>
-                  当前位置: {item.display_location_name || item.current_room_name || '未知仓库'}
+                  {t('itemDetail.currentLocation', { location: item.display_location_name || item.current_room_name || t('itemDetail.unknownWarehouse') })}
                   {item.current_box_name && ` / ${item.current_box_name}`}
                   {item.is_in_stock !== undefined && (
                     <StockBadge $inStock={item.is_in_stock || item.is_foreign}>
-                      {item.is_foreign ? '外来物品' : (item.is_in_stock ? '在库' : '离库')}
+                      {item.is_foreign ? t('status.foreign') : (item.is_in_stock ? t('status.inStock') : t('status.outOfStock'))}
                     </StockBadge>
                   )}
                 </ItemMeta>
                 {item.is_foreign && (
                   <ItemMeta>
-                    应归还到: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
+                    {t('itemDetail.shouldReturnTo', { location: `${item.belong_room_name || item.room_name}${item.belong_box_name ? ` / ${item.belong_box_name}` : ''}` })}
                   </ItemMeta>
                 )}
                 {!item.is_in_stock && !item.is_foreign && (
                   <ItemMeta>
-                    应归还到: {item.belong_room_name || item.room_name}{item.belong_box_name && ` / ${item.belong_box_name}`}
-                    {item.holder_nickname && ` (正在: ${item.holder_nickname})`}
+                    {t('itemDetail.shouldReturnTo', { location: `${item.belong_room_name || item.room_name}${item.belong_box_name ? ` / ${item.belong_box_name}` : ''}${item.holder_nickname ? ` (${t('itemDetail.withPerson', { name: item.holder_nickname })})` : ''}` })}
                   </ItemMeta>
                 )}
                 {item.owner_nickname && (
-                  <ItemMeta>所有者: {item.owner_nickname}</ItemMeta>
+                  <ItemMeta>{t('itemDetail.owner', { name: item.owner_nickname })}</ItemMeta>
                 )}
               </ItemTitle>
             </ItemHeader>
 
             <Section>
                 <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  备注
+                  {t('itemDetail.remark')}
                   <Button size="mini" onClick={() => { setEditNoticeText(item.item_notice || ''); setEditingNotice(true); }}>
-                    编辑
+                    {t('common.edit')}
                   </Button>
                 </SectionTitle>
-                <div style={{ fontSize: 14, color: 'var(--app-color-text-weak)' }}>{item.item_notice || '暂无备注'}</div>
+                <div style={{ fontSize: 14, color: 'var(--app-color-text-weak)' }}>{item.item_notice || t('itemDetail.noRemark')}</div>
               </Section>
 
             <Section>
               <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                标签
+                {t('itemDetail.tags')}
                 {item.room_id && !editingTags && (
                   <Button size="mini" onClick={() => setEditingTags(true)}>
-                    编辑
+                    {t('common.edit')}
                   </Button>
                 )}
               </SectionTitle>
@@ -444,7 +445,7 @@ export default function ItemDetail({
                 <>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                     {allTags.length === 0 ? (
-                      <span style={{ color: 'var(--app-color-text-secondary)', fontSize: 13 }}>暂无标签可选，请先在仓库设置中创建标签</span>
+                      <span style={{ color: 'var(--app-color-text-secondary)', fontSize: 13 }}>{t('itemDetail.noTagsAvailable')}</span>
                     ) : (
                       allTags.map((tag: any) => (
                         <span
@@ -466,7 +467,7 @@ export default function ItemDetail({
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <Button size="small" color="primary" onClick={handleSaveTags}>
-                      保存
+                      {t('common.save')}
                     </Button>
                     <Button size="small" onClick={() => {
                       setEditingTags(false);
@@ -475,7 +476,7 @@ export default function ItemDetail({
                         setSelectedTagIds(item.tags.map((t: any) => t.tag_id));
                       }
                     }}>
-                      取消
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 </>
@@ -497,7 +498,7 @@ export default function ItemDetail({
                       </span>
                     ))
                   ) : (
-                    <span style={{ color: 'var(--app-color-text-secondary)', fontSize: 13 }}>暂无标签</span>
+                    <span style={{ color: 'var(--app-color-text-secondary)', fontSize: 13 }}>{t('itemDetail.noTags')}</span>
                   )}
                 </div>
               )}
@@ -505,7 +506,7 @@ export default function ItemDetail({
 
             {reservations.length > 0 && (
               <Section>
-                <SectionTitle>预约记录</SectionTitle>
+                <SectionTitle>{t('itemDetail.reservationRecords')}</SectionTitle>
                 {reservations.map((r) => (
                   <HistoryItem key={r.reservation_id}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -517,7 +518,7 @@ export default function ItemDetail({
                         color: r.reservation_start_time > Date.now() ? 'var(--app-color-warning-text)' : 'var(--app-color-success)',
                         borderRadius: 4
                       }}>
-                        {r.reservation_start_time > Date.now() ? '待使用' : '使用中'}
+                        {r.reservation_start_time > Date.now() ? t('status.pending') : t('status.inUse')}
                       </span>
                     </div>
                     <div style={{ color: 'var(--app-color-text-weak)', fontSize: 12, marginTop: 4 }}>
@@ -531,15 +532,15 @@ export default function ItemDetail({
             {history.length > 0 && (
               <Section>
                 <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  转移记录
+                  {t('itemDetail.transferRecords')}
                   {history.length > 3 && (
-                    <Button size="mini" onClick={() => setShowAllHistory(true)}>更多</Button>
+                    <Button size="mini" onClick={() => setShowAllHistory(true)}>{t('common.more')}</Button>
                   )}
                 </SectionTitle>
                 {history.slice(0, 3).map((h) => (
                   <HistoryItem key={h.history_id}>
                     <div>
-                      {h.is_user_box ? `${h.user_nickname} 取走了物品` : `${h.user_nickname} 将物品放入了 ${h.box_name}`}
+                      {h.is_user_box ? t('itemDetail.tookItem', { name: h.user_nickname }) : t('itemDetail.putItemInBox', { name: h.user_nickname, boxName: h.box_name })}
                     </div>
                     <div style={{ color: 'var(--app-color-text-secondary)', fontSize: 12 }}>
                       {formatTime(h.history_time)}
@@ -551,20 +552,20 @@ export default function ItemDetail({
 
             <Section>
               <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                评论 ({comments.length})
+                {t('itemDetail.comments')} ({comments.length})
                 {comments.length > 5 && (
-                  <Button size="mini" onClick={() => setShowAllComments(true)}>更多</Button>
+                  <Button size="mini" onClick={() => setShowAllComments(true)}>{t('common.more')}</Button>
                 )}
               </SectionTitle>
               <CommentInput>
                 <Input
                   value={commentText}
                   onChange={setCommentText}
-                  placeholder="添加评论..."
+                  placeholder={t('itemDetail.addCommentPlaceholder')}
                   style={{ flex: 1 }}
                 />
                 <Button color="primary" size="small" onClick={handleAddComment}>
-                  发送
+                  {t('itemDetail.send')}
                 </Button>
               </CommentInput>
               {comments.slice(0, 5).map((c) => (
@@ -591,13 +592,13 @@ export default function ItemDetail({
         bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0', display: 'flex', flexDirection: 'column' }}
       >
         <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
-          <SectionTitle style={{ marginBottom: 16 }}>转移记录 (全部 {history.length} 条)</SectionTitle>
+          <SectionTitle style={{ marginBottom: 16 }}>{t('itemDetail.allTransferRecords', { count: history.length })}</SectionTitle>
         </div>
         <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 20px' }}>
           {history.map((h) => (
             <HistoryItem key={h.history_id}>
               <div>
-                {h.is_user_box ? `${h.user_nickname} 取走了物品` : `${h.user_nickname} 将物品放入了 ${h.box_name}`}
+                {h.is_user_box ? t('itemDetail.tookItem', { name: h.user_nickname }) : t('itemDetail.putItemInBox', { name: h.user_nickname, boxName: h.box_name })}
               </div>
               <div style={{ color: 'var(--app-color-text-secondary)', fontSize: 12 }}>
                 {formatTime(h.history_time)}
@@ -614,7 +615,7 @@ export default function ItemDetail({
         bodyStyle={{ height: '60vh', borderRadius: '12px 12px 0 0', display: 'flex', flexDirection: 'column' }}
       >
         <div style={{ padding: '20px 20px 0', flexShrink: 0 }}>
-          <SectionTitle style={{ marginBottom: 16 }}>评论 (全部 {comments.length} 条)</SectionTitle>
+          <SectionTitle style={{ marginBottom: 16 }}>{t('itemDetail.allComments', { count: comments.length })}</SectionTitle>
         </div>
         <div style={{ flex: 1, overflow: 'auto', padding: '0 20px 20px' }}>
           {comments.map((c) => (
@@ -634,22 +635,22 @@ export default function ItemDetail({
         bodyStyle={{ borderRadius: '12px 12px 0 0' }}
       >
         <PopupContent>
-          <SectionTitle style={{ marginBottom: 16 }}>编辑别名</SectionTitle>
+          <SectionTitle style={{ marginBottom: 16 }}>{t('itemDetail.editRemark')}</SectionTitle>
           <div style={{ marginBottom: 16, fontSize: 13, color: 'var(--app-color-text-weak)' }}>
-            原名称：{item?.item_name}
+            {t('itemDetail.originalName', { name: item?.item_name })}
           </div>
           <Input
             value={editRemarkText}
             onChange={setEditRemarkText}
-            placeholder="输入别名（留空则显示原名称）"
+            placeholder={t('itemDetail.remarkPlaceholder')}
             style={{ marginBottom: 16 }}
           />
           <div style={{ display: 'flex', gap: 8 }}>
             <Button color="primary" size="small" onClick={handleSaveRemark}>
-              保存
+              {t('common.save')}
             </Button>
             <Button size="small" onClick={() => setEditingRemark(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
           </div>
         </PopupContent>
@@ -662,19 +663,19 @@ export default function ItemDetail({
         bodyStyle={{ borderRadius: '12px 12px 0 0' }}
       >
         <PopupContent>
-          <SectionTitle style={{ marginBottom: 16 }}>编辑备注</SectionTitle>
+          <SectionTitle style={{ marginBottom: 16 }}>{t('itemDetail.editNotice')}</SectionTitle>
           <Input
             value={editNoticeText}
             onChange={setEditNoticeText}
-            placeholder="输入备注（可选）"
+            placeholder={t('itemDetail.noticePlaceholder')}
             style={{ marginBottom: 16 }}
           />
           <div style={{ display: 'flex', gap: 8 }}>
             <Button color="primary" size="small" onClick={handleSaveNotice}>
-              保存
+              {t('common.save')}
             </Button>
             <Button size="small" onClick={() => setEditingNotice(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
           </div>
         </PopupContent>

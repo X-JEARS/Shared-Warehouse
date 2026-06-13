@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Dropdown, Button } from 'antd-mobile';
 import { AddOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { useRoomStore } from '../stores/roomStore';
 import { roomApi } from '../services/api';
 
@@ -50,6 +51,7 @@ const ActionRow = styled.div`
 `;
 
 export default function WarehouseSelector() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { rooms, currentRoom, setCurrentRoom, setRooms } = useRoomStore();
 
@@ -80,7 +82,7 @@ export default function WarehouseSelector() {
     return (
       <SelectorContainer>
         <Button size="small" color="primary" onClick={() => navigate('/create-room')}>
-          创建仓库
+          {t('warehouseSelector.createRoom')}
         </Button>
       </SelectorContainer>
     );
@@ -93,7 +95,7 @@ export default function WarehouseSelector() {
           key="room"
           title={
             <RoomName>
-              {currentRoom?.room_name || '选择仓库'}
+              {currentRoom?.room_name || t('warehouseSelector.selectRoom')}
             </RoomName>
           }
         >
@@ -107,7 +109,7 @@ export default function WarehouseSelector() {
                 <span>{room.room_name}</span>
                 {room.item_count !== undefined && (
                   <span style={{ fontSize: 12, color: 'var(--app-color-text-secondary)' }}>
-                    {room.item_count} 件物品
+                    {t('warehouseSelector.itemCount', { count: room.item_count })}
                   </span>
                 )}
               </RoomItem>
@@ -118,14 +120,14 @@ export default function WarehouseSelector() {
                 fill="outline"
                 onClick={() => navigate('/create-room')}
               >
-                <AddOutline /> 创建
+                <AddOutline /> {t('warehouseSelector.create')}
               </Button>
               <Button
                 size="small"
                 fill="outline"
                 onClick={() => navigate('/join-room')}
               >
-                加入
+                {t('warehouseSelector.join')}
               </Button>
             </ActionRow>
           </DropdownContent>

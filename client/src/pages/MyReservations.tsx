@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tag, SpinLoading } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { reservationApi } from '../services/api';
 
 const Container = styled.div`
@@ -120,6 +121,7 @@ interface Order {
 
 export default function MyReservations() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [pastOrders, setPastOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -148,7 +150,7 @@ export default function MyReservations() {
   const formatTime = (timestamp: number | string | null) => {
     if (!timestamp) return '--';
     const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
-    return new Date(ts).toLocaleString('zh-CN', {
+    return new Date(ts).toLocaleString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
       month: 'numeric',
       day: 'numeric',
       hour: '2-digit',
@@ -159,13 +161,13 @@ export default function MyReservations() {
   const getStatusTag = (status: string) => {
     switch (status) {
       case 'upcoming':
-        return <Tag color="primary">即将开始</Tag>;
+        return <Tag color="primary">{t('status.upcoming')}</Tag>;
       case 'active':
-        return <Tag color="success">进行中</Tag>;
+        return <Tag color="success">{t('status.active')}</Tag>;
       case 'completed':
-        return <Tag color="default">已完成</Tag>;
+        return <Tag color="default">{t('status.completed')}</Tag>;
       case 'canceled':
-        return <Tag color="danger">已取消</Tag>;
+        return <Tag color="danger">{t('status.canceled')}</Tag>;
       default:
         return null;
     }
@@ -173,7 +175,7 @@ export default function MyReservations() {
 
   const renderOrderList = (orders: Order[]) => {
     if (orders.length === 0) {
-      return <EmptyContainer>暂无预约订单</EmptyContainer>;
+      return <EmptyContainer>{t('myReservations.noOrders')}</EmptyContainer>;
     }
 
     return orders.map((order) => (
@@ -183,7 +185,7 @@ export default function MyReservations() {
       >
         <OrderHeader>
           <OrderTitle>
-            {order.order_title || `预约单 #${order.order_id}`}
+            {order.order_title || t('cart.orderFallbackTitle', { id: order.order_id })}
           </OrderTitle>
           {getStatusTag(order.order_status)}
         </OrderHeader>
@@ -193,7 +195,7 @@ export default function MyReservations() {
           </OrderTime>
         )}
         <OrderMeta>
-          物品数量：{order.active_items} / {order.total_items} 个
+          {t('myReservations.itemCount', { active: order.active_items, total: order.total_items })}
         </OrderMeta>
       </OrderCard>
     ));
@@ -204,7 +206,7 @@ export default function MyReservations() {
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>我的预约</HeaderTitle>
+          <HeaderTitle>{t('myReservations.title')}</HeaderTitle>
         </Header>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
@@ -217,14 +219,14 @@ export default function MyReservations() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>我的预约</HeaderTitle>
+        <HeaderTitle>{t('myReservations.title')}</HeaderTitle>
       </Header>
       <TabBar>
         <TabItem $active={activeTab === 'active'} onClick={() => setActiveTab('active')}>
-          进行中 ({activeOrders.length})
+          {t('myReservations.active')} ({activeOrders.length})
         </TabItem>
         <TabItem $active={activeTab === 'past'} onClick={() => setActiveTab('past')}>
-          已结束 ({pastOrders.length})
+          {t('myReservations.past')} ({pastOrders.length})
         </TabItem>
       </TabBar>
       <Content>

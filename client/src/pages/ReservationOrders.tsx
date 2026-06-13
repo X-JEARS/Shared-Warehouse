@@ -4,6 +4,7 @@ import { Tag, SpinLoading, SearchBar } from 'antd-mobile';
 import type { InputRef } from 'antd-mobile/es/components/input';
 import { SearchOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { reservationApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
 import WarehouseSelector from '../components/WarehouseSelector';
@@ -151,6 +152,7 @@ interface Order {
 
 export default function ReservationOrders() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { currentRoom } = useRoomStore();
   const [activeOrders, setActiveOrders] = useState<Order[]>([]);
   const [pastOrders, setPastOrders] = useState<Order[]>([]);
@@ -177,7 +179,7 @@ export default function ReservationOrders() {
   const filterOrders = (orders: Order[]) => {
     if (!searchText) return orders;
     return orders.filter((order) => {
-      const title = order.order_title || `预约单 #${order.order_id}`;
+      const title = order.order_title || t('cart.orderFallbackTitle', { id: order.order_id });
       return title.toLowerCase().includes(searchText.toLowerCase());
     });
   };
@@ -202,7 +204,7 @@ export default function ReservationOrders() {
   const formatTime = (timestamp: number | string | null) => {
     if (!timestamp) return '--';
     const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
-    return new Date(ts).toLocaleString('zh-CN', {
+    return new Date(ts).toLocaleString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
       month: 'numeric',
       day: 'numeric',
       hour: '2-digit',
@@ -213,13 +215,13 @@ export default function ReservationOrders() {
   const getStatusTag = (status: string) => {
     switch (status) {
       case 'upcoming':
-        return <Tag color="primary">即将开始</Tag>;
+        return <Tag color="primary">{t('status.upcoming')}</Tag>;
       case 'active':
-        return <Tag color="success">进行中</Tag>;
+        return <Tag color="success">{t('status.active')}</Tag>;
       case 'completed':
-        return <Tag color="default">已完成</Tag>;
+        return <Tag color="default">{t('status.completed')}</Tag>;
       case 'canceled':
-        return <Tag color="danger">已取消</Tag>;
+        return <Tag color="danger">{t('status.canceled')}</Tag>;
       default:
         return null;
     }
@@ -227,7 +229,7 @@ export default function ReservationOrders() {
 
   const renderOrderList = (orders: Order[]) => {
     if (orders.length === 0) {
-      return <EmptyContainer>暂无预约订单</EmptyContainer>;
+      return <EmptyContainer>{t('reservationOrders.noOrders')}</EmptyContainer>;
     }
 
     return orders.map((order) => (
@@ -237,7 +239,7 @@ export default function ReservationOrders() {
       >
         <OrderHeader>
           <OrderTitle>
-            {order.order_title || `预约单 #${order.order_id}`}
+            {order.order_title || t('cart.orderFallbackTitle', { id: order.order_id })}
             {order.order_user_nickname && (
               <OrderUser>- {order.order_user_nickname}</OrderUser>
             )}
@@ -250,7 +252,7 @@ export default function ReservationOrders() {
           </OrderTime>
         )}
         <OrderMeta>
-          物品数量：{order.active_items} / {order.total_items} 个
+          {t('reservationOrders.itemCount', { active: order.active_items, total: order.total_items })}
         </OrderMeta>
       </OrderCard>
     ));
@@ -290,7 +292,7 @@ export default function ReservationOrders() {
         <SearchContainer>
           <SearchBar
             ref={searchInputRef}
-            placeholder="搜索预约标题"
+            placeholder={t('reservationOrders.searchPlaceholder')}
             value={searchText}
             onChange={(val) => setSearchText(val)}
             onSearch={(val) => setSearchText(val)}
@@ -304,10 +306,10 @@ export default function ReservationOrders() {
       )}
       <TabBar>
         <TabItem $active={activeTab === 'active'} onClick={() => setActiveTab('active')}>
-          进行中 ({filterOrders(activeOrders).length})
+          {t('reservationOrders.active')} ({filterOrders(activeOrders).length})
         </TabItem>
         <TabItem $active={activeTab === 'past'} onClick={() => setActiveTab('past')}>
-          已结束 ({filterOrders(pastOrders).length})
+          {t('reservationOrders.past')} ({filterOrders(pastOrders).length})
         </TabItem>
       </TabBar>
       <Content>

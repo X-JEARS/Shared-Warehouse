@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 're
 import { Dialog, Button } from 'antd-mobile';
 import { BrowserMultiFormatReader } from '@zxing/library';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 
 const ScannerContainer = styled.div`
   position: relative;
@@ -88,6 +89,7 @@ interface ScannerProps {
 }
 
 const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, showStopButton = false }, ref) => {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -151,7 +153,7 @@ const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, show
       // 优先选择后置摄像头（主摄像头）
       const videoInputDevices = await reader.listVideoInputDevices();
       if (videoInputDevices.length === 0) {
-        Dialog.alert({ content: '未找到摄像头设备' });
+        Dialog.alert({ content: t('scannerComponent.noCamera') });
         return;
       }
 
@@ -204,7 +206,7 @@ const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, show
       // 所以 stream/torch 检测不在这里做，而是通过延迟检测
     } catch (error: any) {
       console.error('Scanner error:', error);
-      Dialog.alert({ content: `启动摄像头失败: ${error.message}` });
+      Dialog.alert({ content: t('scannerComponent.cameraStartFailed', { message: error.message }) });
       setIsScanning(false);
     }
   };
@@ -278,12 +280,12 @@ const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, show
   return (
     <div>
       {isPaused ? (
-        <PausedPlaceholder>扫描已暂停</PausedPlaceholder>
+        <PausedPlaceholder>{t('scannerComponent.scanPaused')}</PausedPlaceholder>
       ) : (
         <ScannerContainer>
           <Video ref={videoRef} />
           {isScanning && <Overlay />}
-          {isScanning && <Hint>将二维码放入框内</Hint>}
+          {isScanning && <Hint>{t('scannerComponent.placeQRInFrame')}</Hint>}
           {isScanning && torchSupported && (
             <TorchButton $active={torchEnabled} onClick={toggleTorch}>
               💡
@@ -294,7 +296,7 @@ const Scanner = forwardRef<ScannerHandle, ScannerProps>(({ onScan, onError, show
 
       {isScanning && showStopButton && (
         <Button block style={{ marginTop: 12 }} onClick={stopScanning}>
-          停止扫描
+          {t('scannerComponent.stopScan')}
         </Button>
       )}
     </div>

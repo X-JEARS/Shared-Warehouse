@@ -8,6 +8,7 @@ import {
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useEffect, useState, Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNotificationStore } from '../stores/notificationStore';
 import { itemApi } from '../services/api';
 
@@ -229,31 +230,31 @@ const ScanPlaceholder = styled.div`
   flex: 1;
 `;
 
-const tabs = [
+const tabsConfig = [
   {
     key: '/scanner',
-    title: '扫码',
+    titleKey: 'tabBar.scan',
     icon: <ScanCodeOutline />,
     type: 'scan',
   },
   {
     key: '/warehouse',
-    title: '仓库',
+    titleKey: 'tabBar.warehouse',
     icon: <AppOutline />,
   },
   {
     key: '/reservation-orders',
-    title: '预约',
+    titleKey: 'tabBar.reservation',
     icon: <CalendarOutline />,
   },
   {
     key: '/in-hand',
-    title: '我手中的',
+    titleKey: 'tabBar.inHand',
     icon: <UnorderedListOutline />,
   },
   {
     key: '/profile',
-    title: '我的',
+    titleKey: 'tabBar.profile',
     icon: <UserOutline />,
   },
 ];
@@ -262,8 +263,14 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { pathname } = location;
+  const { t } = useTranslation();
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const [inHandCount, setInHandCount] = useState(0);
+
+  const tabs = tabsConfig.map(tab => ({
+    ...tab,
+    title: t(tab.titleKey),
+  }));
 
   useEffect(() => {
     fetchUnreadCount();

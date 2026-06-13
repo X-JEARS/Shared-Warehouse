@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Empty, SpinLoading, Badge } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { notificationApi } from '../services/api';
 import { useNotificationStore } from '../stores/notificationStore';
 
@@ -70,6 +71,7 @@ interface Notification {
 
 export default function Notifications() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const { unreadCount, setUnreadCount, decrement, reset } = useNotificationStore();
@@ -119,7 +121,7 @@ export default function Notifications() {
 
   const formatTime = (timestamp: number | string) => {
     const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
-    if (!ts || isNaN(ts)) return '未知时间';
+    if (!ts || isNaN(ts)) return t('common.unknownTime');
     const date = new Date(ts);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
@@ -129,15 +131,15 @@ export default function Notifications() {
       const hours = Math.floor(diff / (1000 * 60 * 60));
       if (hours === 0) {
         const minutes = Math.floor(diff / (1000 * 60));
-        return `${minutes}分钟前`;
+        return t('notifications.minutesAgo', { count: minutes });
       }
-      return `${hours}小时前`;
+      return t('notifications.hoursAgo', { count: hours });
     } else if (days === 1) {
-      return '昨天';
+      return t('notifications.yesterday');
     } else if (days < 7) {
-      return `${days}天前`;
+      return t('notifications.daysAgo', { count: days });
     }
-    return date.toLocaleDateString('zh-CN');
+    return date.toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN');
   };
 
   const getTypeIcon = (type: string) => {
@@ -160,7 +162,7 @@ export default function Notifications() {
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>通知</HeaderTitle>
+          <HeaderTitle>{t('notifications.title')}</HeaderTitle>
         </Header>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
@@ -173,7 +175,7 @@ export default function Notifications() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>通知</HeaderTitle>
+        <HeaderTitle>{t('notifications.title')}</HeaderTitle>
       </Header>
       {unreadCount > 0 && (
         <div
@@ -186,19 +188,19 @@ export default function Notifications() {
           }}
         >
           <span style={{ fontSize: 14, color: 'var(--app-color-text-weak)' }}>
-            {unreadCount} 条未读消息
+            {t('notifications.unreadCount', { count: unreadCount })}
           </span>
           <span
             style={{ color: 'var(--app-color-primary)', fontSize: 14, cursor: 'pointer' }}
             onClick={markAllAsRead}
           >
-            全部已读
+            {t('notifications.markAllRead')}
           </span>
         </div>
       )}
 
       {notifications.length === 0 ? (
-        <Empty description="暂无通知" style={{ padding: 40 }} />
+        <Empty description={t('notifications.noNotifications')} style={{ padding: 40 }} />
       ) : (
         notifications.map((n) => (
           <NotificationItem

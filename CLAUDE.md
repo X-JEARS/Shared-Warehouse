@@ -181,7 +181,7 @@ Items → Reservations → Orders
 - **ItemCard**: Vertical layout card with image on top (56x56px), item name below, then tags. Stock status badge (在库/离库/外来物品) at top-right corner of card. Accepts `showStockStatus` prop to toggle status display, `showCartButton` prop to show "+" SVG icon button at bottom-right corner (22px circular button, light blue background + blue icon when not in cart, gray background + gray icon when added).
 - **FilterBar**: Box/tag filters. Box dropdown includes "全部", "不在库中" (shows only out-of-stock items), and individual boxes. When "全部" is selected for box, displays "全部" instead of "盒子".
 - **MainLayout**: Responsive navigation - bottom tab bar on mobile with centered scan button (green circular, 52px, protruding above bar) flanked by tabs: 仓库 and 预约 on the left, 我手中的 and 我的 on the right, with ScanPlaceholder (flex:1) between 预约 and 我手中的 to reserve space. ScanDome (70px clipped circle, 9px radius diff from scan button, white bg, #eee border, clip-path showing only arc above tab bar) wraps around the scan button. Left sidebar (56px width) on desktop (≥768px) with green scan button at top, then regular items vertically. In-hand icon shows green badge with held item count.
-- **Warehouse page**: Items displayed in adaptive grid (`repeat(auto-fill, minmax(150px, 1fr))`). In-stock items grouped by `current_box`, items within each group sorted by name (`localeCompare` with `'zh'` locale for Chinese pinyin order). Out-of-stock items sorted by name and displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
+- **Warehouse page**: Items displayed in adaptive grid (`repeat(auto-fill, minmax(150px, 1fr))`). In-stock items grouped by `current_box`, items within each group sorted by name (`localeCompare` with i18n-aware locale: `i18n.language === 'en-US' ? 'en' : 'zh'`). Out-of-stock items sorted by name and displayed in "不在库中" section. Foreign items (from other rooms) shown with green "外来物品" badge.
 - **InHand page**: Items displayed in adaptive grid with search bar, no grouping needed. No stock status displayed (items in user's hand are always "out of stock").
 - **CartPopup**: Popup component for cart functionality, slides up from bottom like ItemDetail. Fixed footer at bottom with confirm button, scrollable content area above. Items displayed in two-column grid layout (item image + item name + delete icon). Automatically checks for reservation conflicts when time is set, conflict info displayed below the grid with item name for identification. Header shows editable order title (default: `用户名+的预约单#+日期简写`, e.g. `张三的预约单#0310`) with blue outline edit icon (SVG pencil+square) inline to the right. Click edit icon opens Dialog with input to modify title. Title submitted via `title` field in `createOrder` API; if user didn't edit, default title is used.
 - **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that opens scanner modal in batch mode. Scanned items accumulate in pending list, "放入" button triggers batch return.
@@ -254,11 +254,25 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - CSS variables cover: colors (`--app-color-*`), semantic backgrounds (`--app-color-info/warning/success/danger-*`), shadows (`--app-shadow-*`), border-radius (`--app-radius-*`), tab bar (`--app-color-tab-bar-*`), badges (`--app-color-badge-*`), and overrides for antd-mobile's `--adm-*` variables
 - All pages and components use CSS variables instead of hardcoded colors. When adding new UI elements, always use `var(--app-color-*)` and `var(--app-radius-*)` instead of hex values.
 
+### Internationalization (i18n)
+- Uses `i18next` + `react-i18next` for internationalization
+- Configuration at `client/src/locales/i18n.ts`, initialized in `main.tsx` before React renders
+- Translation files: `client/src/locales/zh-CN.json` (Chinese) and `client/src/locales/en-US.json` (English)
+- **Language modes** (`LanguageMode`): `zh-CN`, `en-US`, `system` (follows OS language, auto-updates on system change)
+- **Effective language** (`EffectiveLanguage`): `zh-CN` or `en-US` (resolved from system when mode is `system`)
+- Language state managed in `themeStore` alongside theme/style settings, persisted to localStorage
+- Language applied via `html[data-language]` attribute and `i18n.changeLanguage()`
+- System language changes detected via `window.addEventListener('languagechange')`
+- Use `useTranslation()` hook in components to access `t()` function and `i18n` instance
+- All user-facing text must use `t('key')` instead of hardcoded strings. When adding new UI text, add keys to both `zh-CN.json` and `en-US.json`
+- Date/time formatting: use `i18n.language === 'en-US' ? 'en-US' : 'zh-CN'` for locale parameter in `toLocaleString()` / `toLocaleDateString()` calls
+- Sorting: use `i18n.language === 'en-US' ? 'en' : 'zh'` for `localeCompare()` locale parameter
+
 ### System Settings Page (系统设置)
 - Located at `client/src/pages/SystemSettings.tsx`, standalone route `/system-settings` (no tab bar)
 - Accessible from Profile page menu item "系统设置" (uses `SetOutline` gear icon)
 - Unified sub-page Header with ← back button + title "系统设置", sticky at top
-- **System language**: Shows "简体中文", click shows Toast "暂未开放，敬请期待" (placeholder, not implemented)
+- **Language setting**: Three card-style options (跟随系统 🌐 / 简体中文 中 / English En), active option has blue border + blue text. "跟随系统" option shows current effective language below label. Language change takes effect immediately via i18next.
 - **Theme mode**: Three card-style options (浅色模式 ☀️ / 深色模式 🌙 / 跟随系统 💻), active option has blue border + blue text. "跟随系统" option shows current effective theme (浅色/深色) below label
 - **Visual style**: Three card-style options (标准 / 圆润 / 紧凑) with preview rectangles showing border-radius differences. Active option has blue border + blue text
 
@@ -271,7 +285,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
   - Login name: Display-only (no arrow)
   - Nickname: Click opens `Dialog.confirm` with Input
   - Phone number (`user_tel`): Click opens `Dialog.confirm` with Input. Shows "未设置" if empty.
-  - Registration time: Display-only (no arrow), formatted via `new Date(Number(timestamp)).toLocaleDateString('zh-CN')`
+  - Registration time: Display-only (no arrow), formatted via `new Date(Number(timestamp)).toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN')`
   - Change password: Click opens `Dialog.confirm` with current/new password inputs
 - Logout button: Red solid background with white text, at bottom of page
 - Uses `POST /api/upload/avatar` for avatar upload, `PUT /users/profile` for nickname/phone updates, `PUT /users/password` for password changes

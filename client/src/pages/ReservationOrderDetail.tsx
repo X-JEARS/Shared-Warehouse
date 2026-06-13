@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Tag, SpinLoading, Dialog, Toast, DatePicker, Input } from 'antd-mobile';
 import styled, { css } from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { reservationApi } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 
@@ -275,6 +276,7 @@ interface OrderDetail {
 export default function ReservationOrderDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const [data, setData] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -293,7 +295,7 @@ export default function ReservationOrderDetail() {
       setData(res.data);
     } catch (error) {
       console.error('Failed to load order detail:', error);
-      Toast.show({ icon: 'fail', content: '加载失败' });
+      Toast.show({ icon: 'fail', content: t('reservationOrderDetail.loadFailed') });
     } finally {
       setLoading(false);
     }
@@ -301,7 +303,7 @@ export default function ReservationOrderDetail() {
 
   const formatTime = (timestamp: number | string) => {
     const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
-    return new Date(ts).toLocaleString('zh-CN', {
+    return new Date(ts).toLocaleString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
       month: 'numeric',
       day: 'numeric',
       hour: '2-digit',
@@ -313,34 +315,34 @@ export default function ReservationOrderDetail() {
     if (!data) return;
 
     const result = await Dialog.confirm({
-      title: '取消整个订单',
-      content: '确定要取消整个订单吗？这将取消该订单下所有物品的预约。',
+      title: t('reservationOrderDetail.cancelOrder'),
+      content: t('reservationOrderDetail.confirmCancelOrder'),
     });
 
     if (result) {
       try {
         await reservationApi.cancelOrder(data.order.order_id);
-        Toast.show({ icon: 'success', content: '订单已取消' });
+        Toast.show({ icon: 'success', content: t('reservationOrderDetail.orderCanceled') });
         navigate(-1);
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '取消失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('reservationOrderDetail.cancelFailed') });
       }
     }
   };
 
   const handleCancelReservation = async (reservationId: number, itemName: string) => {
     const result = await Dialog.confirm({
-      title: '取消物品预约',
-      content: `确定要取消「${itemName}」的预约吗？`,
+      title: t('reservationOrderDetail.cancelReservation'),
+      content: t('reservationOrderDetail.confirmCancelReservation', { name: itemName }),
     });
 
     if (result) {
       try {
         await reservationApi.cancel(reservationId);
-        Toast.show({ icon: 'success', content: '已取消' });
+        Toast.show({ icon: 'success', content: t('reservationOrderDetail.canceled') });
         loadDetail();
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '取消失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('reservationOrderDetail.cancelFailed') });
       }
     }
   };
@@ -349,11 +351,11 @@ export default function ReservationOrderDetail() {
     const currentTitle = data?.order.order_title || '';
 
     const result = await Dialog.confirm({
-      title: '修改订单标题',
+      title: t('reservationOrderDetail.editOrderTitle'),
       content: (
         <Input
           id="order-title-input"
-          placeholder="请输入订单标题"
+          placeholder={t('reservationOrderDetail.orderTitlePlaceholder')}
           defaultValue={currentTitle}
           maxLength={24}
           style={{ '--font-size': '16px' }}
@@ -367,12 +369,12 @@ export default function ReservationOrderDetail() {
     const newTitle = input?.value?.trim();
 
     if (!newTitle) {
-      Toast.show({ content: '标题不能为空' });
+      Toast.show({ content: t('reservationOrderDetail.titleEmpty') });
       return;
     }
 
     if (newTitle.length > 24) {
-      Toast.show({ content: '标题最多24个字符' });
+      Toast.show({ content: t('reservationOrderDetail.titleTooLong') });
       return;
     }
 
@@ -382,9 +384,9 @@ export default function ReservationOrderDetail() {
         ...data!,
         order: { ...data!.order, order_title: newTitle },
       });
-      Toast.show({ icon: 'success', content: '标题修改成功' });
+      Toast.show({ icon: 'success', content: t('reservationOrderDetail.titleUpdated') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('reservationOrderDetail.editFailed') });
     }
   };
 
@@ -401,12 +403,12 @@ export default function ReservationOrderDetail() {
     const currentMaxEndTime = Math.max(...extendableReservations.map((r) => r.reservation_end_time));
 
     if (newEndTimeMs <= currentMaxEndTime) {
-      Toast.show({ content: '新的结束时间必须晚于当前最晚的结束时间' });
+      Toast.show({ content: t('reservationOrderDetail.newEndTimeRequired') });
       return;
     }
 
     const formatTimeStr = (ts: number) =>
-      new Date(ts).toLocaleString('zh-CN', {
+      new Date(ts).toLocaleString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', {
         month: 'numeric',
         day: 'numeric',
         hour: '2-digit',
@@ -414,8 +416,8 @@ export default function ReservationOrderDetail() {
       });
 
     const result = await Dialog.confirm({
-      title: '确认延长订单',
-      content: `将延长所有还在预约状态中的物品的结束时间至 ${formatTimeStr(newEndTimeMs)}，确定吗？`,
+      title: t('reservationOrderDetail.confirmExtendOrder'),
+      content: t('reservationOrderDetail.confirmExtendContent', { time: formatTimeStr(newEndTimeMs) }),
     });
 
     if (!result) return;
@@ -423,10 +425,10 @@ export default function ReservationOrderDetail() {
     try {
       setExtendLoading(true);
       await reservationApi.extendOrder(data.order.order_id, newEndTimeMs);
-      Toast.show({ icon: 'success', content: '订单已延长' });
+      Toast.show({ icon: 'success', content: t('reservationOrderDetail.orderExtended') });
       loadDetail();
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '延长失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('reservationOrderDetail.extendFailed') });
     } finally {
       setExtendLoading(false);
     }
@@ -434,16 +436,16 @@ export default function ReservationOrderDetail() {
 
   const getReservationStatus = (r: Reservation) => {
     if (r.reservation_is_canceled) {
-      return <Tag color="danger">已取消</Tag>;
+      return <Tag color="danger">{t('status.canceled')}</Tag>;
     }
     const now = Date.now();
     if (r.reservation_end_time < now) {
-      return <Tag color="default">已结束</Tag>;
+      return <Tag color="default">{t('status.ended')}</Tag>;
     }
     if (r.reservation_start_time > now) {
-      return <Tag color="primary">即将开始</Tag>;
+      return <Tag color="primary">{t('status.upcoming')}</Tag>;
     }
-    return <Tag color="success">进行中</Tag>;
+    return <Tag color="success">{t('status.active')}</Tag>;
   };
 
   if (loading) {
@@ -451,7 +453,7 @@ export default function ReservationOrderDetail() {
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>订单详情</HeaderTitle>
+          <HeaderTitle>{t('reservationOrderDetail.title')}</HeaderTitle>
         </Header>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
@@ -465,10 +467,10 @@ export default function ReservationOrderDetail() {
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>订单详情</HeaderTitle>
+          <HeaderTitle>{t('reservationOrderDetail.title')}</HeaderTitle>
         </Header>
         <div style={{ textAlign: 'center', padding: 60, color: 'var(--app-color-text-secondary)' }}>
-          订单不存在
+          {t('reservationOrderDetail.orderNotFound')}
         </div>
       </Container>
     );
@@ -489,14 +491,14 @@ export default function ReservationOrderDetail() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>订单详情</HeaderTitle>
+        <HeaderTitle>{t('reservationOrderDetail.title')}</HeaderTitle>
       </Header>
 
       <Content>
         <OrderInfo>
           <OrderTitleRow>
             <OrderTitle>
-              {data.order.order_title || `预约单 #${data.order.order_id}`}
+              {data.order.order_title || t('reservationOrderDetail.orderFallbackTitle', { id: data.order.order_id })}
             </OrderTitle>
             {isOwner && (
               <EditIconButton onClick={handleEditTitle}>
@@ -505,18 +507,18 @@ export default function ReservationOrderDetail() {
             )}
           </OrderTitleRow>
           <OrderMeta>
-            物品数量：{activeReservations.length} / {data.reservations.length} 个
+            {t('reservationOrderDetail.itemCount', { active: activeReservations.length, total: data.reservations.length })}
           </OrderMeta>
           <OrderMeta>
-            创建时间：{formatTime(data.order.order_create_time)}
+            {t('reservationOrderDetail.createTime', { time: formatTime(data.order.order_create_time) })}
           </OrderMeta>
           {data.order.order_is_canceled && (
-            <Tag color="danger" style={{ marginTop: 8 }}>订单已取消</Tag>
+            <Tag color="danger" style={{ marginTop: 8 }}>{t('reservationOrderDetail.orderCanceledTag')}</Tag>
           )}
         </OrderInfo>
 
         <SectionTitle>
-          预约物品
+          {t('reservationOrderDetail.reservationItems')}
           <ViewToggle>
             <ViewToggleBtn $active={viewMode === 'card'} onClick={() => setViewMode('card')}>
               <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
@@ -543,7 +545,7 @@ export default function ReservationOrderDetail() {
                 <ItemName>{r.item_name}</ItemName>
                 <ItemMeta className={r.is_user_box && r.holder_user_id === user?.user_id ? 'in-hand' : ''}>
                   {r.is_user_box
-                    ? r.holder_user_id === user?.user_id ? '在我手中' : `${r.holder_nickname || '未知用户'}手中`
+                    ? r.holder_user_id === user?.user_id ? t('reservationOrderDetail.inMyHand') : t('reservationOrderDetail.inUserHand', { name: r.holder_nickname || t('reservationOrderDetail.unknownUser') })
                     : `${r.room_name || ''}${r.box_name ? ` / ${r.box_name}` : ''}`
                   }
                 </ItemMeta>
@@ -570,7 +572,7 @@ export default function ReservationOrderDetail() {
         <Footer>
           {canExtendOrder && (
             <DatePicker
-              title="选择新的结束时间"
+              title={t('reservationOrderDetail.selectNewEndTime')}
               onConfirm={(val) => handleExtendOrder(val)}
               min={new Date(currentMaxEndTime + 60000)}
               precision="minute"
@@ -583,7 +585,7 @@ export default function ReservationOrderDetail() {
                   loading={extendLoading}
                   onClick={open}
                 >
-                  延长订单
+                  {t('reservationOrderDetail.extendOrder')}
                 </Button>
               )}
             </DatePicker>
@@ -595,7 +597,7 @@ export default function ReservationOrderDetail() {
               fill="solid"
               onClick={handleCancelOrder}
             >
-              取消整个订单
+              {t('reservationOrderDetail.cancelOrder')}
             </Button>
           )}
         </Footer>

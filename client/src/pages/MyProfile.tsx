@@ -5,6 +5,7 @@ import ReactCrop from 'react-image-crop';
 import { makeAspectCrop, centerCrop, convertToPixelCrop, Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { userApi } from '../services/api';
 
@@ -153,6 +154,7 @@ function centerAspectCrop(
 }
 
 export default function MyProfile() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user, updateUser, logout } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -176,7 +178,7 @@ export default function MyProfile() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      Toast.show({ icon: 'fail', content: '请选择图片文件' });
+      Toast.show({ icon: 'fail', content: t('myProfile.selectImageFile') });
       return;
     }
 
@@ -247,7 +249,7 @@ export default function MyProfile() {
     try {
       const croppedFile = await getCroppedImg();
       if (!croppedFile) {
-        Toast.show({ icon: 'fail', content: '请先选择裁剪区域' });
+        Toast.show({ icon: 'fail', content: t('myProfile.selectCropArea') });
         return;
       }
 
@@ -257,11 +259,11 @@ export default function MyProfile() {
       const res: any = await userApi.uploadAvatar(formData);
       updateUser({ user_avatar: res.data.avatar });
       setAvatarTimestamp(Date.now());
-      Toast.show({ icon: 'success', content: '头像更新成功' });
+      Toast.show({ icon: 'success', content: t('myProfile.avatarUpdated') });
       setCropPopupVisible(false);
       setImageSrc(null);
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '更新失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myProfile.updateFailed') });
     }
   };
 
@@ -269,11 +271,11 @@ export default function MyProfile() {
     const currentValue = user?.user_nickname || '';
 
     const result = await Dialog.confirm({
-      title: '修改昵称',
+      title: t('myProfile.editNickname'),
       content: (
         <Input
           id="nickname-input"
-          placeholder="请输入昵称"
+          placeholder={t('myProfile.nicknamePlaceholder')}
           defaultValue={currentValue}
           maxLength={16}
           style={{ '--font-size': '16px' }}
@@ -287,21 +289,21 @@ export default function MyProfile() {
     const newNickname = input?.value?.trim();
 
     if (!newNickname) {
-      Toast.show({ content: '昵称不能为空' });
+      Toast.show({ content: t('myProfile.nicknameEmpty') });
       return;
     }
 
     if (newNickname.length > 16) {
-      Toast.show({ content: '昵称最多16个字符' });
+      Toast.show({ content: t('myProfile.nicknameTooLong') });
       return;
     }
 
     try {
       await userApi.updateProfile({ nickname: newNickname });
       updateUser({ user_nickname: newNickname });
-      Toast.show({ icon: 'success', content: '昵称修改成功' });
+      Toast.show({ icon: 'success', content: t('myProfile.nicknameUpdated') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myProfile.updateFailed') });
     }
   };
 
@@ -309,11 +311,11 @@ export default function MyProfile() {
     const currentValue = user?.user_tel || '';
 
     const result = await Dialog.confirm({
-      title: '修改手机号',
+      title: t('myProfile.editPhone'),
       content: (
         <Input
           id="tel-input"
-          placeholder="请输入手机号"
+          placeholder={t('myProfile.phonePlaceholder')}
           defaultValue={currentValue}
           maxLength={20}
           type="tel"
@@ -330,20 +332,20 @@ export default function MyProfile() {
     try {
       await userApi.updateProfile({ tel: newTel });
       updateUser({ user_tel: newTel });
-      Toast.show({ icon: 'success', content: '手机号修改成功' });
+      Toast.show({ icon: 'success', content: t('myProfile.phoneUpdated') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myProfile.updateFailed') });
     }
   };
 
   const handleChangePassword = async () => {
     const result = await Dialog.confirm({
-      title: '修改密码',
+      title: t('myProfile.changePassword'),
       content: (
         <div>
           <input
             type="password"
-            placeholder="当前密码"
+            placeholder={t('myProfile.currentPassword')}
             id="currentPassword"
             style={{
               width: '100%',
@@ -355,7 +357,7 @@ export default function MyProfile() {
           />
           <input
             type="password"
-            placeholder="新密码"
+            placeholder={t('myProfile.newPassword')}
             id="newPassword"
             style={{
               width: '100%',
@@ -375,21 +377,21 @@ export default function MyProfile() {
     const newPassword = (document.getElementById('newPassword') as HTMLInputElement)?.value;
 
     if (!currentPassword || !newPassword) {
-      Toast.show({ content: '请填写完整信息' });
+      Toast.show({ content: t('myProfile.fillAllFields') });
       return;
     }
 
     try {
       await userApi.updatePassword({ currentPassword, newPassword });
-      Toast.show({ icon: 'success', content: '密码修改成功' });
+      Toast.show({ icon: 'success', content: t('myProfile.passwordUpdated') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myProfile.updateFailed') });
     }
   };
 
   const handleLogout = () => {
     Dialog.confirm({
-      content: '确定要退出登录吗？',
+      content: t('myProfile.confirmLogout'),
       onConfirm: () => {
         logout();
         window.location.href = '/login';
@@ -401,12 +403,12 @@ export default function MyProfile() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>我的资料</HeaderTitle>
+        <HeaderTitle>{t('myProfile.title')}</HeaderTitle>
       </Header>
 
       <Section>
         <ProfileRow onClick={handleAvatarClick}>
-          <RowLabel>头像</RowLabel>
+          <RowLabel>{t('myProfile.avatar')}</RowLabel>
           <RowValue>
             <AvatarWrapper>
               <Avatar $avatar={avatarUrl}>
@@ -423,32 +425,32 @@ export default function MyProfile() {
           onChange={handleFileChange}
         />
         <ProfileRow>
-          <RowLabel>登录名</RowLabel>
+          <RowLabel>{t('myProfile.loginName')}</RowLabel>
           <RowValue>{user?.user_login_name}</RowValue>
         </ProfileRow>
         <ProfileRow onClick={handleEditNickname}>
-          <RowLabel>昵称</RowLabel>
-          <RowValue>{user?.user_nickname || '未设置'}</RowValue>
+          <RowLabel>{t('myProfile.nickname')}</RowLabel>
+          <RowValue>{user?.user_nickname || t('myProfile.notSet')}</RowValue>
           <RowArrow>›</RowArrow>
         </ProfileRow>
         <ProfileRow onClick={handleEditTel}>
-          <RowLabel>手机号</RowLabel>
-          <RowValue>{user?.user_tel || '未设置'}</RowValue>
+          <RowLabel>{t('myProfile.phone')}</RowLabel>
+          <RowValue>{user?.user_tel || t('myProfile.notSet')}</RowValue>
           <RowArrow>›</RowArrow>
         </ProfileRow>
         <ProfileRow>
-          <RowLabel>注册时间</RowLabel>
-          <RowValue>{user?.user_create_time ? new Date(Number(user.user_create_time)).toLocaleDateString('zh-CN') : '未知'}</RowValue>
+          <RowLabel>{t('myProfile.registerTime')}</RowLabel>
+          <RowValue>{user?.user_create_time ? new Date(Number(user.user_create_time)).toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN') : t('common.unknown')}</RowValue>
         </ProfileRow>
         <ProfileRow onClick={handleChangePassword}>
-          <RowLabel>修改密码</RowLabel>
+          <RowLabel>{t('myProfile.changePassword')}</RowLabel>
           <RowValue></RowValue>
           <RowArrow>›</RowArrow>
         </ProfileRow>
       </Section>
 
       <LogoutButton onClick={handleLogout}>
-        退出登录
+        {t('myProfile.logout')}
       </LogoutButton>
 
       {/* Avatar Crop Popup */}
@@ -477,10 +479,10 @@ export default function MyProfile() {
           )}
           <CropActions>
             <CropButton onClick={() => setCropPopupVisible(false)}>
-              取消
+              {t('common.cancel')}
             </CropButton>
             <CropButton $primary onClick={handleCropConfirm}>
-              确定
+              {t('common.confirm')}
             </CropButton>
           </CropActions>
         </CropContainer>

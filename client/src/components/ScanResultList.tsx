@@ -1,5 +1,6 @@
 import styled from 'styled-components';
 import { CloseOutline } from 'antd-mobile-icons';
+import { useTranslation } from 'react-i18next';
 
 export interface PendingItem {
   itemId: number;
@@ -113,8 +114,10 @@ const EmptyHint = styled.div`
 `;
 
 export default function ScanResultList({ items, onRemoveItem }: ScanResultListProps) {
+  const { t } = useTranslation();
+
   if (items.length === 0) {
-    return <EmptyHint>暂无扫描物品</EmptyHint>;
+    return <EmptyHint>{t('scanResultList.noItems')}</EmptyHint>;
   }
 
   return (
@@ -135,7 +138,7 @@ export default function ScanResultList({ items, onRemoveItem }: ScanResultListPr
             )}
             <ItemInfo>
               <ItemName>{item.itemName}</ItemName>
-              {item.isInHand && <InHandBadge>已在手中</InHandBadge>}
+              {item.isInHand && <InHandBadge>{t('scanResultList.inHand')}</InHandBadge>}
               <ItemLocation>{item.locationName}</ItemLocation>
             </ItemInfo>
             <RemoveButton onClick={() => onRemoveItem(item.qrcode)}>

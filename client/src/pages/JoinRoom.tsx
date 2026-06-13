@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Form, Input, Button, Toast } from 'antd-mobile';
 import styled from 'styled-components';
@@ -82,6 +83,7 @@ interface JoinRequestStatus {
 }
 
 export default function JoinRoom() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [roomId, setRoomId] = useState('');
@@ -99,17 +101,17 @@ export default function JoinRoom() {
 
   const handleJoin = async () => {
     if (!roomId.trim()) {
-      Toast.show({ content: '请输入仓库ID' });
+      Toast.show({ content: t('joinRoom.roomIdRequired') });
       return;
     }
 
     try {
       setLoading(true);
       await roomApi.requestJoin(parseInt(roomId), memberName.trim() || undefined);
-      Toast.show({ icon: 'success', content: '申请已提交，等待管理员审批' });
+      Toast.show({ icon: 'success', content: t('joinRoom.requestSubmitted') });
       await checkRequestStatus(parseInt(roomId));
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '申请失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('joinRoom.requestFailed') });
     } finally {
       setLoading(false);
     }
@@ -119,19 +121,19 @@ export default function JoinRoom() {
     if (!requestStatus) return null;
 
     const statusText = {
-      pending: <StatusPending>等待审批</StatusPending>,
-      approved: <StatusApproved>已通过</StatusApproved>,
-      rejected: <StatusRejected>已拒绝</StatusRejected>,
+      pending: <StatusPending>{t('joinRoom.pending')}</StatusPending>,
+      approved: <StatusApproved>{t('joinRoom.approved')}</StatusApproved>,
+      rejected: <StatusRejected>{t('joinRoom.rejected')}</StatusRejected>,
     };
 
     return (
       <StatusCard>
-        <StatusTitle>当前申请状态</StatusTitle>
+        <StatusTitle>{t('joinRoom.currentStatus')}</StatusTitle>
         <StatusText>
-          状态: {statusText[requestStatus.request_status]}
+          {t('joinRoom.statusLabel')} {statusText[requestStatus.request_status]}
         </StatusText>
         <StatusText>
-          申请时间: {new Date(requestStatus.request_create_time).toLocaleString()}
+          {t('joinRoom.requestTime')} {new Date(requestStatus.request_create_time).toLocaleString()}
         </StatusText>
         {requestStatus.request_status === 'rejected' && (
           <Button
@@ -141,7 +143,7 @@ export default function JoinRoom() {
             onClick={handleJoin}
             loading={loading}
           >
-            重新申请
+            {t('joinRoom.reapply')}
           </Button>
         )}
       </StatusCard>
@@ -152,31 +154,31 @@ export default function JoinRoom() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>加入仓库</HeaderTitle>
+        <HeaderTitle>{t('joinRoom.title')}</HeaderTitle>
       </Header>
 
       <Content>
         <Tip>
-          💡 请向仓库管理员获取仓库ID，提交申请后需等待管理员审批
+          {t('joinRoom.tip')}
         </Tip>
 
         {renderStatus()}
 
         <Form layout="horizontal">
-          <Form.Item label="仓库ID" required>
+          <Form.Item label={t('joinRoom.roomId')} required>
             <Input
               value={roomId}
               onChange={setRoomId}
-              placeholder="请输入仓库ID"
+              placeholder={t('joinRoom.roomIdPlaceholder')}
               type="number"
             />
           </Form.Item>
 
-          <Form.Item label="成员名称">
+          <Form.Item label={t('joinRoom.memberName')}>
             <Input
               value={memberName}
               onChange={setMemberName}
-              placeholder="在仓库中显示的名称（可选）"
+              placeholder={t('joinRoom.memberNamePlaceholder')}
               maxLength={16}
             />
           </Form.Item>
@@ -190,7 +192,7 @@ export default function JoinRoom() {
           onClick={handleJoin}
           style={{ marginTop: 24 }}
         >
-          申请加入
+          {t('joinRoom.applyJoin')}
         </Button>
       </Content>
     </Container>

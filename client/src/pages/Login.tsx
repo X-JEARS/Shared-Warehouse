@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Form, Input, Button, Toast } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '../services/api';
 import { useAuthStore } from '../stores/authStore';
 import { useRoomStore } from '../stores/roomStore';
@@ -47,6 +48,7 @@ const LinkText = styled.span`
 
 export default function Login() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const login = useAuthStore((state) => state.login);
   const { setRooms } = useRoomStore();
   const [loading, setLoading] = useState(false);
@@ -56,7 +58,7 @@ export default function Login() {
     const values = form.getFieldsValue();
 
     if (!values.loginName || !values.password) {
-      Toast.show({ content: '请填写用户名和密码' });
+      Toast.show({ content: t('login.fillRequired') });
       return;
     }
 
@@ -64,13 +66,11 @@ export default function Login() {
       setLoading(true);
       const res: any = await authApi.login(values);
       login(res.data.user, res.data.token);
-      // 清空旧的房间数据，进入仓库页面时会重新加载
-      // 但保留 currentRoom 以记住用户上次访问的仓库
       setRooms([]);
-      Toast.show({ icon: 'success', content: '登录成功' });
+      Toast.show({ icon: 'success', content: t('login.loginSuccess') });
       navigate('/warehouse');
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '登录失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('login.loginFailed') });
     } finally {
       setLoading(false);
     }
@@ -79,17 +79,17 @@ export default function Login() {
   return (
     <Container>
       <Logo>
-        <LogoText>共享仓库</LogoText>
-        <LogoSubtext>扫码借还，高效管理</LogoSubtext>
+        <LogoText>{t('login.title')}</LogoText>
+        <LogoSubtext>{t('login.subtitle')}</LogoSubtext>
       </Logo>
 
       <FormContainer>
         <Form form={form} layout="horizontal">
-          <Form.Item name="loginName" label="用户名">
-            <Input placeholder="请输入用户名" clearable />
+          <Form.Item name="loginName" label={t('login.username')}>
+            <Input placeholder={t('login.usernamePlaceholder')} clearable />
           </Form.Item>
-          <Form.Item name="password" label="密码">
-            <Input placeholder="请输入密码" type="password" clearable />
+          <Form.Item name="password" label={t('login.password')}>
+            <Input placeholder={t('login.passwordPlaceholder')} type="password" clearable />
           </Form.Item>
         </Form>
 
@@ -101,14 +101,14 @@ export default function Login() {
           onClick={handleSubmit}
           style={{ marginTop: 24 }}
         >
-          登录
+          {t('login.submit')}
         </Button>
       </FormContainer>
 
       <Footer>
-        还没有账号？{' '}
+        {t('login.noAccount')}{' '}
         <Link to="/register">
-          <LinkText>立即注册</LinkText>
+          <LinkText>{t('login.registerNow')}</LinkText>
         </Link>
       </Footer>
     </Container>

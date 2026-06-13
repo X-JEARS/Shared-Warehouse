@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, SearchBar, SpinLoading } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { itemApi } from '../services/api';
 import ItemCard from '../components/ItemCard';
 import ItemDetail from '../components/ItemDetail';
@@ -52,6 +53,7 @@ const EmptyText = styled.p`
 
 export default function InHand() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -93,7 +95,7 @@ export default function InHand() {
     return (
       <Container>
         <Header>
-          <HeaderTitle>我手中的</HeaderTitle>
+          <HeaderTitle>{t('inHand.title')}</HeaderTitle>
         </Header>
         <Content>
           <div style={{ textAlign: 'center', padding: 40 }}>
@@ -107,14 +109,14 @@ export default function InHand() {
   return (
     <Container>
       <Header>
-        <HeaderTitle>我手中的</HeaderTitle>
+        <HeaderTitle>{t('inHand.title')}</HeaderTitle>
       </Header>
 
       <SearchContainer>
         <SearchBar
           value={searchText}
           onChange={setSearchText}
-          placeholder="搜索物品..."
+          placeholder={t('inHand.searchPlaceholder')}
           showCancelButton
         />
       </SearchContainer>
@@ -123,11 +125,11 @@ export default function InHand() {
         {filteredItems.length === 0 ? (
           <EmptyContainer>
             <EmptyText>
-              {searchText ? '没有找到匹配的物品' : '暂无借用物品'}
+              {searchText ? t('inHand.noMatch') : t('inHand.noItems')}
             </EmptyText>
             {!searchText && (
               <Button color="primary" onClick={() => navigate('/scanner')}>
-                扫码借用
+                {t('inHand.scanToBorrow')}
               </Button>
             )}
           </EmptyContainer>

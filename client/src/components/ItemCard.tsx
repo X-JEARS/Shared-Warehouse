@@ -1,4 +1,5 @@
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { useCartStore } from '../stores/cartStore';
 
 const CardContainer = styled.div`
@@ -129,6 +130,7 @@ interface ItemCardProps {
 }
 
 export default function ItemCard({ item, onClick, showStockStatus = true, showCartButton = false }: ItemCardProps) {
+  const { t } = useTranslation();
   const isInStock = item.is_in_stock !== false;
   const isForeign = item.is_foreign === true;
   const { items: cartItems, addItem } = useCartStore();
@@ -160,7 +162,7 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
         <ItemName>{displayName}</ItemName>
         {item.item_notice && <ItemMeta>{item.item_notice}</ItemMeta>}
         {showStockStatus && !isInStock && !isForeign && item.holder_nickname && (
-          <ItemMeta>正在: {item.holder_nickname}</ItemMeta>
+          <ItemMeta>{t('itemCard.withPerson', { name: item.holder_nickname })}</ItemMeta>
         )}
         {item.tags && item.tags.length > 0 && (
           <ItemTags>
@@ -180,7 +182,7 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
       )}
       {showStockStatus && (
         <StockStatus $inStock={isInStock || isForeign}>
-          {isForeign ? '外来物品' : (isInStock ? '在库' : '离库')}
+          {isForeign ? t('itemCard.foreignItem') : (isInStock ? t('itemCard.inStock') : t('itemCard.outOfStock'))}
         </StockStatus>
       )}
     </CardContainer>

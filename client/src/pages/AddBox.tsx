@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Form, Input, Button, Toast } from 'antd-mobile';
 import styled from 'styled-components';
@@ -45,6 +46,7 @@ const ScanModal = styled.div`
 `;
 
 export default function AddBox() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -62,7 +64,7 @@ export default function AddBox() {
     if (!trimmedQrcode.toLowerCase().startsWith('box.')) {
       Toast.show({
         icon: 'fail',
-        content: `二维码格式不正确：${trimmedQrcode.substring(0, 20)}${trimmedQrcode.length > 20 ? '...' : ''}`
+        content: t('addBox.qrcodeFormatError', { code: `${trimmedQrcode.substring(0, 20)}${trimmedQrcode.length > 20 ? '...' : ''}` })
       });
       // 返回 false 表示继续扫描
       return false;
@@ -77,18 +79,18 @@ export default function AddBox() {
     const qrcode = formData.qrcode.trim();
 
     if (!qrcode) {
-      Toast.show({ content: '请输入或扫描二维码' });
+      Toast.show({ content: t('addBox.qrcodeRequired') });
       return;
     }
 
     // 验证二维码格式（不区分大小写）
     if (!qrcode.toLowerCase().startsWith('box.')) {
-      Toast.show({ icon: 'fail', content: '盒子二维码必须以 box. 开头' });
+      Toast.show({ icon: 'fail', content: t('addBox.boxQRCodePrefix') });
       return;
     }
 
     if (!formData.name || !formData.name.trim()) {
-      Toast.show({ content: '请输入盒子名称' });
+      Toast.show({ content: t('addBox.nameRequired') });
       return;
     }
 
@@ -98,10 +100,10 @@ export default function AddBox() {
         qrcode,
         name: formData.name.trim(),
       });
-      Toast.show({ icon: 'success', content: '添加成功' });
+      Toast.show({ icon: 'success', content: t('addBox.addSuccess') });
       navigate(-1);
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '添加失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('addBox.addFailed') });
     } finally {
       setLoading(false);
     }
@@ -111,17 +113,17 @@ export default function AddBox() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>添加盒子</HeaderTitle>
+        <HeaderTitle>{t('addBox.title')}</HeaderTitle>
       </Header>
 
       <Content>
         <Form layout="horizontal">
-          <Form.Item label="二维码" required>
+          <Form.Item label={t('addBox.qrcode')} required>
             <div style={{ display: 'flex', gap: 8 }}>
               <Input
                 value={formData.qrcode}
                 onChange={(v) => setFormData({ ...formData, qrcode: v })}
-                placeholder="请扫描或输入二维码"
+                placeholder={t('addBox.qrcodePlaceholder')}
                 style={{ flex: 1 }}
                 maxLength={64}
               />
@@ -130,16 +132,16 @@ export default function AddBox() {
                 color="primary"
                 onClick={() => setShowScanner(true)}
               >
-                扫码
+                {t('common.scanCode')}
               </Button>
             </div>
           </Form.Item>
 
-          <Form.Item label="名称" required>
+          <Form.Item label={t('addBox.name')} required>
             <Input
               value={formData.name}
               onChange={(v) => setFormData({ ...formData, name: v })}
-              placeholder="请输入盒子名称"
+              placeholder={t('addBox.namePlaceholder')}
               maxLength={24}
             />
           </Form.Item>
@@ -153,7 +155,7 @@ export default function AddBox() {
           onClick={handleSubmit}
           style={{ marginTop: 24 }}
         >
-          添加盒子
+          {t('addBox.addBox')}
         </Button>
       </Content>
 
@@ -162,7 +164,7 @@ export default function AddBox() {
         <ScanModal>
           <Header>
             <BackButton onClick={() => setShowScanner(false)}>←</BackButton>
-            <HeaderTitle>扫描盒子二维码</HeaderTitle>
+            <HeaderTitle>{t('addBox.scanBoxQRCode')}</HeaderTitle>
           </Header>
           <Content>
             <div style={{
@@ -175,14 +177,14 @@ export default function AddBox() {
               color: 'var(--app-color-warning-text)',
               fontSize: 14,
             }}>
-              请扫描盒子二维码（以 box. 开头）
+              {t('addBox.scanBoxHint')}
             </div>
             <Scanner
               showStopButton
               onScan={handleScanQrcode}
               onError={(error) => {
                 console.error('Scanner error:', error);
-                Toast.show({ icon: 'fail', content: '扫描失败' });
+                Toast.show({ icon: 'fail', content: t('addBox.scanFailed') });
               }}
             />
           </Content>

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SearchBar, SpinLoading, Input, Button, Toast, Popup, Dialog, ActionSheet } from 'antd-mobile';
 import styled from 'styled-components';
 import { itemApi, scanApi, userApi } from '../services/api';
@@ -297,6 +298,7 @@ interface SearchedUser {
 }
 
 export default function MyItems() {
+  const { t } = useTranslation();
   const [items, setItems] = useState<MyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
@@ -349,7 +351,7 @@ export default function MyItems() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      Toast.show({ icon: 'fail', content: '请选择图片文件' });
+      Toast.show({ icon: 'fail', content: t('myItems.selectImageFile') });
       return;
     }
 
@@ -434,7 +436,7 @@ export default function MyItems() {
 
       const croppedFile = await getCroppedImg();
       if (!croppedFile) {
-        Toast.show({ icon: 'fail', content: '请先选择裁剪区域' });
+        Toast.show({ icon: 'fail', content: t('myItems.selectCropArea') });
         return;
       }
 
@@ -451,23 +453,23 @@ export default function MyItems() {
           : item
       ));
 
-      Toast.show({ icon: 'success', content: '图片更新成功' });
+      Toast.show({ icon: 'success', content: t('myItems.imageUpdated') });
       setImageCropPopupVisible(false);
       setImageSrc(null);
       setUploadingItem(null);
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '更新失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myItems.updateFailed') });
     }
   };
 
   const showActionSheet = (item: MyItem) => {
     const handler = ActionSheet.show({
       actions: [
-        { text: '编辑名称', key: 'edit' },
-        { text: '转让', key: 'transfer' },
-        { text: '删除', key: 'delete', danger: true },
+        { text: t('myItems.editName'), key: 'edit' },
+        { text: t('myItems.transfer'), key: 'transfer' },
+        { text: t('myItems.delete'), key: 'delete', danger: true },
       ],
-      cancelText: '取消',
+      cancelText: t('common.cancel'),
       onAction: (action) => {
         handler.close();
         if (action.key === 'edit') {
@@ -486,20 +488,20 @@ export default function MyItems() {
     Dialog.confirm({
       content: (
         <div>
-          <div style={{ marginBottom: 12, fontWeight: 500 }}>修改物品名称</div>
+          <div style={{ marginBottom: 12, fontWeight: 500 }}>{t('myItems.editItemName')}</div>
           <Input
             defaultValue={item.item_name}
             onChange={(value) => { currentEditName = value; }}
-            placeholder="请输入物品名称"
+            placeholder={t('myItems.itemNamePlaceholder')}
             style={{ '--text-align': 'left' }}
           />
         </div>
       ),
-      confirmText: '保存',
-      cancelText: '取消',
+      confirmText: t('common.save'),
+      cancelText: t('common.cancel'),
       onConfirm: async () => {
         if (!currentEditName.trim()) {
-          Toast.show({ content: '物品名称不能为空' });
+          Toast.show({ content: t('myItems.nameEmpty') });
           return;
         }
         try {
@@ -509,9 +511,9 @@ export default function MyItems() {
               ? { ...i, item_name: currentEditName }
               : i
           ));
-          Toast.show({ icon: 'success', content: '名称已更新' });
+          Toast.show({ icon: 'success', content: t('myItems.nameUpdated') });
         } catch (error) {
-          Toast.show({ icon: 'fail', content: '更新失败' });
+          Toast.show({ icon: 'fail', content: t('myItems.updateFailed') });
         }
       },
     });
@@ -536,7 +538,7 @@ export default function MyItems() {
       const res: any = await userApi.search(keyword);
       setSearchedUsers(res.data || []);
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '搜索失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myItems.searchFailed') });
     } finally {
       setSearchingUsers(false);
     }
@@ -544,7 +546,7 @@ export default function MyItems() {
 
   const handleConfirmTransfer = async () => {
     if (!transferItem || !selectedUser) {
-      Toast.show({ content: '请选择要转让的用户' });
+      Toast.show({ content: t('myItems.selectTransferUser') });
       return;
     }
 
@@ -553,26 +555,26 @@ export default function MyItems() {
       // 从列表中移除已转让的物品
       setItems(items.filter(item => item.item_id !== transferItem.item_id));
       setTransferPopupVisible(false);
-      Toast.show({ icon: 'success', content: `物品已转让给 ${selectedUser.user_nickname}` });
+      Toast.show({ icon: 'success', content: t('myItems.itemTransferred', { name: selectedUser.user_nickname }) });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '转让失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myItems.transferFailed') });
     }
   };
 
   const handleDelete = async (item: MyItem) => {
     const confirmed = await Dialog.confirm({
-      content: `确定要删除「${item.item_name}」吗？删除后将无法恢复，该物品的所有记录（历史、评论、预约等）都将被删除。`,
-      confirmText: <span style={{ color: 'var(--app-color-danger)' }}>删除</span>,
-      cancelText: '取消',
+      content: t('myItems.confirmDeleteItem', { name: item.item_name }),
+      confirmText: <span style={{ color: 'var(--app-color-danger)' }}>{t('myItems.delete')}</span>,
+      cancelText: t('common.cancel'),
     });
 
     if (confirmed) {
       try {
         await itemApi.delete(item.item_id);
         setItems(items.filter(i => i.item_id !== item.item_id));
-        Toast.show({ icon: 'success', content: '物品已删除' });
+        Toast.show({ icon: 'success', content: t('myItems.itemDeleted') });
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('myItems.deleteFailed') });
       }
     }
   };
@@ -585,7 +587,7 @@ export default function MyItems() {
   const handleScan = async (scannedText: string): Promise<boolean> => {
     // 验证是盒子二维码
     if (!scannedText.startsWith('box.')) {
-      Toast.show({ content: '请扫描盒子二维码' });
+      Toast.show({ content: t('myItems.scanBoxQRCode') });
       return false; // 继续扫描
     }
 
@@ -594,7 +596,7 @@ export default function MyItems() {
       const res: any = await scanApi.scan(scannedText);
 
       if (res.data?.type !== 'box') {
-        Toast.show({ content: '未找到该盒子' });
+        Toast.show({ content: t('myItems.boxNotFound') });
         return false;
       }
 
@@ -602,7 +604,7 @@ export default function MyItems() {
 
       // 检查盒子是否是个人盒子（box_belong_room_id 为 null 表示是个人盒子）
       if (!box.box_belong_room_id) {
-        Toast.show({ content: '不能将物品归属到个人盒子' });
+        Toast.show({ content: t('myItems.cannotUsePersonalBox') });
         return false;
       }
 
@@ -617,7 +619,7 @@ export default function MyItems() {
       return true; // 停止扫描
     } catch (error: any) {
       console.error('Scan box error:', error);
-      Toast.show({ content: error.message || '扫码失败' });
+      Toast.show({ content: error.message || t('myItems.scanFailed') });
       return false;
     }
   };
@@ -644,9 +646,9 @@ export default function MyItems() {
       setConfirmVisible(false);
       setScannedBoxInfo(null);
       setChangingBelongBoxItem(null);
-      Toast.show({ icon: 'success', content: '归属盒子已更新' });
+      Toast.show({ icon: 'success', content: t('myItems.belongBoxUpdated') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '更新失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('myItems.updateFailed') });
     }
   };
 
@@ -660,7 +662,7 @@ export default function MyItems() {
     return (
       <Container>
         <Header>
-          <HeaderTitle>我的物品</HeaderTitle>
+          <HeaderTitle>{t('myItems.title')}</HeaderTitle>
         </Header>
         <Content>
           <div style={{ textAlign: 'center', padding: 40 }}>
@@ -677,14 +679,14 @@ export default function MyItems() {
         <BackButton onClick={() => window.history.back()}>
           ←
         </BackButton>
-        <HeaderTitle>我的物品</HeaderTitle>
+        <HeaderTitle>{t('myItems.title')}</HeaderTitle>
       </Header>
 
       <SearchContainer>
         <SearchBar
           value={searchText}
           onChange={setSearchText}
-          placeholder="搜索物品..."
+          placeholder={t('myItems.searchPlaceholder')}
           showCancelButton
         />
       </SearchContainer>
@@ -693,7 +695,7 @@ export default function MyItems() {
         {filteredItems.length === 0 ? (
           <EmptyContainer>
             <EmptyText>
-              {searchText ? '没有找到匹配的物品' : '暂无物品'}
+              {searchText ? t('myItems.noMatch') : t('myItems.noItems')}
             </EmptyText>
           </EmptyContainer>
         ) : (
@@ -710,21 +712,21 @@ export default function MyItems() {
                   <ItemName>
                     {item.item_name}
                     <ActionButton onClick={() => showActionSheet(item)}>
-                      操作
+                      {t('myItems.operations')}
                     </ActionButton>
                   </ItemName>
                   <ItemMeta>
-                    所在位置:
+                    {t('myItems.currentLocation')}
                     <LocationTag>
-                      {item.display_location_name || item.current_room_name || '未知'}
+                      {item.display_location_name || item.current_room_name || t('common.unknown')}
                     </LocationTag>
                     {item.current_box_name && ` / ${item.current_box_name}`}
                   </ItemMeta>
                   <ItemMeta>
-                    应归还到: {item.belong_room_name || '未知仓库'}
+                    {t('myItems.shouldReturnTo')} {item.belong_room_name || t('myItems.unknownWarehouse')}
                     {item.belong_box_name && ` / ${item.belong_box_name}`}
                     <ActionButton onClick={() => handleChangeBelongBox(item)}>
-                      变更
+                      {t('myItems.change')}
                     </ActionButton>
                   </ItemMeta>
                 </ItemInfo>
@@ -743,7 +745,7 @@ export default function MyItems() {
         bodyStyle={{ borderRadius: '12px 12px 0 0' }}
       >
         <ScannerPopupContent>
-          <PopupTitle>扫描新归属盒子</PopupTitle>
+          <PopupTitle>{t('myItems.scanNewBelongBox')}</PopupTitle>
           <Scanner
             showStopButton
             onScan={handleScan}
@@ -762,31 +764,31 @@ export default function MyItems() {
         bodyStyle={{ borderRadius: '12px 12px 0 0' }}
       >
         <PopupContent>
-          <PopupTitle>确认变更归属盒子</PopupTitle>
+          <PopupTitle>{t('myItems.confirmChangeBelongBox')}</PopupTitle>
           <ConfirmInfo>
             <ConfirmRow>
-              <ConfirmLabel>物品名称:</ConfirmLabel>
+              <ConfirmLabel>{t('myItems.itemName')}</ConfirmLabel>
               <ConfirmValue>{changingBelongBoxItem?.item_name}</ConfirmValue>
             </ConfirmRow>
             <ConfirmRow>
-              <ConfirmLabel>新归属盒子:</ConfirmLabel>
+              <ConfirmLabel>{t('myItems.newBelongBox')}</ConfirmLabel>
               <ConfirmValue>{scannedBoxInfo?.box_name}</ConfirmValue>
             </ConfirmRow>
             <ConfirmRow>
-              <ConfirmLabel>所属仓库:</ConfirmLabel>
+              <ConfirmLabel>{t('myItems.belongRoom')}</ConfirmLabel>
               <ConfirmValue>{scannedBoxInfo?.room_name}</ConfirmValue>
             </ConfirmRow>
           </ConfirmInfo>
           <PopupButtons>
             <Button color="primary" size="small" onClick={handleConfirmChange}>
-              确认变更
+              {t('myItems.confirmChange')}
             </Button>
             <Button size="small" onClick={() => {
               setConfirmVisible(false);
               setScannedBoxInfo(null);
               setChangingBelongBoxItem(null);
             }}>
-              取消
+              {t('common.cancel')}
             </Button>
           </PopupButtons>
         </PopupContent>
@@ -799,7 +801,7 @@ export default function MyItems() {
         bodyStyle={{ borderRadius: '12px 12px 0 0' }}
       >
         <PopupContent>
-          <PopupTitle>转让物品「{transferItem?.item_name}」</PopupTitle>
+          <PopupTitle>{t('myItems.transferItem', { name: transferItem?.item_name })}</PopupTitle>
           <UserSearchContainer>
             <SearchBar
               value={userSearchKeyword}
@@ -807,7 +809,7 @@ export default function MyItems() {
                 setUserSearchKeyword(value);
                 searchUsers(value);
               }}
-              placeholder="搜索用户昵称..."
+              placeholder={t('myItems.searchUserPlaceholder')}
             />
           </UserSearchContainer>
           {searchingUsers ? (
@@ -835,9 +837,9 @@ export default function MyItems() {
               ))}
             </UserList>
           ) : userSearchKeyword ? (
-            <NoUsers>未找到匹配的用户</NoUsers>
+            <NoUsers>{t('myItems.noMatchUser')}</NoUsers>
           ) : (
-            <NoUsers>请输入用户昵称搜索</NoUsers>
+            <NoUsers>{t('myItems.enterNicknameSearch')}</NoUsers>
           )}
           <PopupButtons>
             <Button
@@ -846,10 +848,10 @@ export default function MyItems() {
               onClick={handleConfirmTransfer}
               disabled={!selectedUser}
             >
-              确认转让
+              {t('myItems.confirmTransfer')}
             </Button>
             <Button size="small" onClick={() => setTransferPopupVisible(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
           </PopupButtons>
         </PopupContent>
@@ -896,10 +898,10 @@ export default function MyItems() {
               setImageSrc(null);
               setUploadingItem(null);
             }}>
-              取消
+              {t('common.cancel')}
             </CropButton>
             <CropButton $primary onClick={handleCropConfirm}>
-              确定
+              {t('common.confirm')}
             </CropButton>
           </CropActions>
         </CropContainer>
