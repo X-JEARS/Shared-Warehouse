@@ -11,6 +11,7 @@ import {
 } from 'antd-mobile';
 import { AddOutline, CheckCircleOutline, CloseCircleOutline, CloseOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { roomApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
 import { useAuthStore } from '../stores/authStore';
@@ -359,6 +360,7 @@ export default function RoomSettings() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
   const { updateRoom } = useRoomStore();
   const { user } = useAuthStore();
   const [room, setRoom] = useState<any>(null);
@@ -407,7 +409,7 @@ export default function RoomSettings() {
       }
     } catch (error) {
       console.error('Failed to load room:', error);
-      Toast.show({ icon: 'fail', content: '加载失败' });
+      Toast.show({ icon: 'fail', content: t('roomSettings.loadFailed') });
     } finally {
       setLoading(false);
     }
@@ -415,11 +417,11 @@ export default function RoomSettings() {
 
   const handleEditRoom = async () => {
     const result = await Dialog.confirm({
-      title: '修改仓库名称',
+      title: t('roomSettings.editRoomName'),
       content: (
         <Input
           id="roomName"
-          placeholder="仓库名称"
+          placeholder={t('roomSettings.editRoomName')}
           defaultValue={room?.room_name}
           style={{ marginTop: 8 }}
         />
@@ -429,7 +431,7 @@ export default function RoomSettings() {
     if (result) {
       const name = (document.getElementById('roomName') as HTMLInputElement)?.value;
       if (!name) {
-        Toast.show({ content: '请输入名称' });
+        Toast.show({ content: t('roomSettings.nameRequired') });
         return;
       }
 
@@ -437,9 +439,9 @@ export default function RoomSettings() {
         await roomApi.update(parseInt(id!), { name });
         setRoom({ ...room, room_name: name });
         updateRoom(parseInt(id!), { room_name: name });
-        Toast.show({ icon: 'success', content: '修改成功' });
+        Toast.show({ icon: 'success', content: t('roomSettings.editSuccess') });
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('roomSettings.editFailed') });
       }
     }
   };
@@ -450,11 +452,11 @@ export default function RoomSettings() {
 
   const handleRenameBox = async (box: Box) => {
     const result = await Dialog.confirm({
-      title: '修改盒子名称',
+      title: t('roomSettings.editBoxName'),
       content: (
         <Input
           id="boxRenameInput"
-          placeholder="盒子名称"
+          placeholder={t('roomSettings.editBoxName')}
           defaultValue={box.box_name || ''}
           style={{ marginTop: 8 }}
         />
@@ -464,16 +466,16 @@ export default function RoomSettings() {
     if (result) {
       const name = (document.getElementById('boxRenameInput') as HTMLInputElement)?.value;
       if (!name) {
-        Toast.show({ content: '请输入名称' });
+        Toast.show({ content: t('roomSettings.nameRequired') });
         return;
       }
 
       try {
         await boxApi.update(box.box_id, { name });
         setBoxes(boxes.map((b) => b.box_id === box.box_id ? { ...b, box_name: name } : b));
-        Toast.show({ icon: 'success', content: '修改成功' });
+        Toast.show({ icon: 'success', content: t('roomSettings.editSuccess') });
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('roomSettings.editFailed') });
       }
     }
   };
@@ -484,23 +486,23 @@ export default function RoomSettings() {
 
     // 如果是最后一个盒子，不允许删除
     if (isLastBox) {
-      Toast.show({ content: '无法删除最后一个盒子' });
+      Toast.show({ content: t('roomSettings.cannotDeleteLastBox') });
       return;
     }
 
     // 如果盒子中没有物品，直接删除
     if (itemCount === 0) {
       const result = await Dialog.confirm({
-        content: `确定要删除盒子「${box.box_name || `盒子 ${box.box_id}`}」吗？`,
+        content: t('roomSettings.confirmDeleteBox', { name: box.box_name || t('roomSettings.boxId', { id: box.box_id }) }),
       });
 
       if (result) {
         try {
           await boxApi.delete(box.box_id);
           setBoxes(boxes.filter((b) => b.box_id !== box.box_id));
-          Toast.show({ icon: 'success', content: '删除成功' });
+          Toast.show({ icon: 'success', content: t('roomSettings.deleteSuccess') });
         } catch (error: any) {
-          Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+          Toast.show({ icon: 'fail', content: error.message || t('roomSettings.deleteFailed') });
         }
       }
       return;
@@ -513,7 +515,7 @@ export default function RoomSettings() {
   const confirmDeleteBox = async () => {
     const { box, targetValue } = deleteBoxPopup;
     if (!box || !targetValue) {
-      Toast.show({ content: '请选择移动目标' });
+      Toast.show({ content: t('roomSettings.selectMoveTarget') });
       return;
     }
 
@@ -527,19 +529,19 @@ export default function RoomSettings() {
 
       setBoxes(boxes.filter((b) => b.box_id !== box.box_id));
       setDeleteBoxPopup({ visible: false, box: null, targetValue: '' });
-      Toast.show({ icon: 'success', content: '删除成功' });
+      Toast.show({ icon: 'success', content: t('roomSettings.deleteSuccess') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('roomSettings.deleteFailed') });
     }
   };
 
   const handleAddTag = async () => {
     const result = await Dialog.confirm({
-      title: '添加标签',
+      title: t('roomSettings.addTag'),
       content: (
         <Input
           id="tagName"
-          placeholder="标签名称"
+          placeholder={t('roomSettings.addTag')}
           style={{ marginTop: 8 }}
         />
       ),
@@ -548,16 +550,16 @@ export default function RoomSettings() {
     if (result) {
       const name = (document.getElementById('tagName') as HTMLInputElement)?.value;
       if (!name) {
-        Toast.show({ content: '请输入标签名称' });
+        Toast.show({ content: t('roomSettings.tagNameRequired') });
         return;
       }
 
       try {
         const res: any = await tagApi.create(parseInt(id!), name);
         setTags([...tags, res.data]);
-        Toast.show({ icon: 'success', content: '添加成功' });
+        Toast.show({ icon: 'success', content: t('roomSettings.addSuccess') });
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '添加失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('roomSettings.addFailed') });
       }
     }
   };
@@ -569,11 +571,11 @@ export default function RoomSettings() {
     }
 
     const result = await Dialog.confirm({
-      title: '修改标签名称',
+      title: t('roomSettings.editTagName'),
       content: (
         <Input
           id="tagRenameInput"
-          placeholder="标签名称"
+          placeholder={t('roomSettings.editTagName')}
           defaultValue={tag.tag_name}
           style={{ marginTop: 8 }}
         />
@@ -583,23 +585,23 @@ export default function RoomSettings() {
     if (result) {
       const name = (document.getElementById('tagRenameInput') as HTMLInputElement)?.value;
       if (!name) {
-        Toast.show({ content: '请输入标签名称' });
+        Toast.show({ content: t('roomSettings.tagNameRequired') });
         return;
       }
 
       try {
         await tagApi.update(tag.tag_id, name);
         setTags(tags.map((t) => t.tag_id === tag.tag_id ? { ...t, tag_name: name } : t));
-        Toast.show({ icon: 'success', content: '修改成功' });
+        Toast.show({ icon: 'success', content: t('roomSettings.editSuccess') });
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '修改失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('roomSettings.editFailed') });
       }
     }
   };
 
   const handleConfirmDeleteTags = async () => {
     if (selectedTagIds.size === 0) {
-      Toast.show({ content: '请选择要删除的标签' });
+      Toast.show({ content: t('roomSettings.selectTagsToDelete') });
       return;
     }
     try {
@@ -607,9 +609,9 @@ export default function RoomSettings() {
       setTags(tags.filter((t) => !selectedTagIds.has(t.tag_id)));
       setSelectedTagIds(new Set());
       setTagDeleteMode(false);
-      Toast.show({ icon: 'success', content: '删除成功' });
+      Toast.show({ icon: 'success', content: t('roomSettings.deleteSuccess') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '删除失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('roomSettings.deleteFailed') });
     }
   };
 
@@ -639,7 +641,7 @@ export default function RoomSettings() {
 
   const handleConfirmDeleteMembers = async () => {
     if (selectedMemberIds.size === 0) {
-      Toast.show({ content: '请选择要移除的成员' });
+      Toast.show({ content: t('roomSettings.selectMembersToRemove') });
       return;
     }
     try {
@@ -649,9 +651,9 @@ export default function RoomSettings() {
       setMembers(members.filter((m) => !selectedMemberIds.has(m.member_user_id)));
       setSelectedMemberIds(new Set());
       setMemberDeleteMode(false);
-      Toast.show({ icon: 'success', content: '移除成功' });
+      Toast.show({ icon: 'success', content: t('roomSettings.removeSuccess') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '移除失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('roomSettings.removeFailed') });
     }
   };
 
@@ -663,24 +665,24 @@ export default function RoomSettings() {
       // 重新加载成员列表
       const membersRes: any = await roomApi.getMembers(parseInt(id!));
       setMembers(membersRes.data || []);
-      Toast.show({ icon: 'success', content: '已通过申请' });
+      Toast.show({ icon: 'success', content: t('roomSettings.approved') });
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '操作失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('roomSettings.operationFailed') });
     }
   };
 
   const handleRejectRequest = async (request: JoinRequest) => {
     const result = await Dialog.confirm({
-      content: `确定要拒绝 ${request.user_nickname} 的加入申请吗？`,
+      content: t('roomSettings.confirmReject', { name: request.user_nickname }),
     });
 
     if (result) {
       try {
         await roomApi.rejectJoinRequest(parseInt(id!), request.request_id);
         setJoinRequests(joinRequests.filter((r) => r.request_id !== request.request_id));
-        Toast.show({ icon: 'success', content: '已拒绝申请' });
+        Toast.show({ icon: 'success', content: t('roomSettings.rejected') });
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '操作失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('roomSettings.operationFailed') });
       }
     }
   };
@@ -690,7 +692,7 @@ export default function RoomSettings() {
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>仓库设置</HeaderTitle>
+          <HeaderTitle>{t('roomSettings.title')}</HeaderTitle>
         </Header>
         <div style={{ textAlign: 'center', padding: 60 }}>
           <SpinLoading />
@@ -705,10 +707,10 @@ export default function RoomSettings() {
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>仓库设置</HeaderTitle>
+          <HeaderTitle>{t('roomSettings.title')}</HeaderTitle>
         </Header>
         <div style={{ padding: 40, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
-          您不是该仓库的管理员，无法访问此页面
+          {t('roomSettings.notAdmin')}
         </div>
       </Container>
     );
@@ -718,7 +720,7 @@ export default function RoomSettings() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>仓库设置</HeaderTitle>
+        <HeaderTitle>{t('roomSettings.title')}</HeaderTitle>
       </Header>
       <Content>
 
@@ -735,9 +737,9 @@ export default function RoomSettings() {
       {joinRequests.length > 0 && (
         <Card>
           <CardHeader>
-            加入申请
+            {t('roomSettings.joinRequests')}
             <span style={{ fontWeight: 400, color: 'var(--app-color-danger)', fontSize: 13 }}>
-              ({joinRequests.length}个待处理)
+              {t('roomSettings.pendingCount', { count: joinRequests.length })}
             </span>
           </CardHeader>
           <RequestGrid>
@@ -767,7 +769,7 @@ export default function RoomSettings() {
                     style={{ flex: 1 }}
                     onClick={() => handleApproveRequest(request)}
                   >
-                    <CheckCircleOutline /> 通过
+                    <CheckCircleOutline /> {t('roomSettings.approve')}
                   </Button>
                   <Button
                     size="small"
@@ -775,7 +777,7 @@ export default function RoomSettings() {
                     style={{ flex: 1 }}
                     onClick={() => handleRejectRequest(request)}
                   >
-                    <CloseCircleOutline /> 拒绝
+                    <CloseCircleOutline /> {t('roomSettings.reject')}
                   </Button>
                 </RequestCardButtons>
               </RequestCard>
@@ -786,14 +788,14 @@ export default function RoomSettings() {
 
       <Card>
         <CardHeader>
-          盒子管理
+          {t('roomSettings.boxManagement')}
           <Button size="small" onClick={handleAddBox}>
-            <AddOutline /> 添加
+            <AddOutline /> {t('roomSettings.add')}
           </Button>
         </CardHeader>
         {boxes.length === 0 ? (
           <div style={{ padding: 20, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
-            暂无盒子
+            {t('roomSettings.noBoxes')}
           </div>
         ) : (
           <BoxGrid>
@@ -801,7 +803,7 @@ export default function RoomSettings() {
               <BoxCard key={box.box_id} onClick={() => handleRenameBox(box)}>
                 <BoxCardInfo>
                   <BoxCardName>
-                    {box.box_name || `盒子 ${box.box_id}`}
+                    {box.box_name || t('roomSettings.boxId', { id: box.box_id })}
                     {(box.item_count || 0) > 0 && (
                       <ItemCountBadge>{box.item_count}</ItemCountBadge>
                     )}
@@ -824,7 +826,7 @@ export default function RoomSettings() {
 
       <Card>
         <CardHeader>
-          标签管理
+          {t('roomSettings.tagManagement')}
         {tagDeleteMode ? (
           <Button
             size="small"
@@ -833,7 +835,7 @@ export default function RoomSettings() {
               setSelectedTagIds(new Set());
             }}
           >
-            <CloseOutline /> 取消
+            <CloseOutline /> {t('common.cancel')}
           </Button>
         ) : (
           <div style={{ display: 'flex', gap: 8 }}>
@@ -850,7 +852,7 @@ export default function RoomSettings() {
         </CardHeader>
         {tags.length === 0 ? (
           <div style={{ padding: 20, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
-            暂无标签
+            {t('roomSettings.noTags')}
           </div>
         ) : (
           <TagList>
@@ -874,7 +876,7 @@ export default function RoomSettings() {
                 setSelectedTagIds(new Set());
               }}
             >
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               block
@@ -882,7 +884,7 @@ export default function RoomSettings() {
               onClick={handleConfirmDeleteTags}
               disabled={selectedTagIds.size === 0}
             >
-              确认删除{selectedTagIds.size > 0 ? ` (${selectedTagIds.size})` : ''}
+              {t('roomSettings.confirmDelete', { count: selectedTagIds.size > 0 ? ` (${selectedTagIds.size})` : '' })}
             </Button>
           </DeleteBar>
         )}
@@ -891,9 +893,9 @@ export default function RoomSettings() {
       <Card>
         <CardHeader>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            成员管理
+            {t('roomSettings.memberManagement')}
             <span style={{ fontWeight: 400, color: 'var(--app-color-text-secondary)', fontSize: 13, marginLeft: 6 }}>
-              ({members.length}人)
+              {t('roomSettings.memberCount', { count: members.length })}
             </span>
           </div>
           {memberDeleteMode ? (
@@ -904,7 +906,7 @@ export default function RoomSettings() {
                 setSelectedMemberIds(new Set());
               }}
             >
-              <CloseOutline /> 取消
+              <CloseOutline /> {t('common.cancel')}
             </Button>
           ) : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -916,7 +918,7 @@ export default function RoomSettings() {
         </CardHeader>
         {members.length === 0 ? (
           <div style={{ padding: 20, textAlign: 'center', color: 'var(--app-color-text-secondary)' }}>
-            暂无成员
+            {t('roomSettings.noMembers')}
           </div>
         ) : (
           <MemberGrid>
@@ -951,7 +953,7 @@ export default function RoomSettings() {
                       <MemberCardInfo>
                         <MemberCardName style={isSelected ? { color: 'var(--app-color-surface)' } : undefined}>
                           {member.member_name || member.user_nickname}
-                          {member.member_user_id === room?.room_admin && ' (管理员)'}
+                          {member.member_user_id === room?.room_admin && ` (${t('roomSettings.admin')})`}
                         </MemberCardName>
                         <MemberCardMeta style={isSelected ? { color: 'var(--app-color-surface)' } : undefined}>
                           @{member.user_login_name}
@@ -972,7 +974,7 @@ export default function RoomSettings() {
                 setSelectedMemberIds(new Set());
               }}
             >
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               block
@@ -980,7 +982,7 @@ export default function RoomSettings() {
               onClick={handleConfirmDeleteMembers}
               disabled={selectedMemberIds.size === 0}
             >
-              确认删除{selectedMemberIds.size > 0 ? ` (${selectedMemberIds.size})` : ''}
+              {t('roomSettings.confirmDelete', { count: selectedMemberIds.size > 0 ? ` (${selectedMemberIds.size})` : '' })}
             </Button>
           </DeleteBar>
         )}
@@ -995,21 +997,20 @@ export default function RoomSettings() {
       >
         <div style={{ padding: 16 }}>
           <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
-            删除盒子
+            {t('roomSettings.deleteBox')}
           </div>
           <div style={{ marginBottom: 12, color: 'var(--app-color-text-weak)' }}>
-            盒子「{deleteBoxPopup.box?.box_name || `盒子 ${deleteBoxPopup.box?.box_id}`}」中有{' '}
-            {deleteBoxPopup.box?.item_count || 0} 个物品，请选择移动目标：
+            {t('roomSettings.boxHasItems', { name: deleteBoxPopup.box?.box_name || t('roomSettings.boxId', { id: deleteBoxPopup.box?.box_id }), count: deleteBoxPopup.box?.item_count || 0 })}
           </div>
           <Selector
             options={[
               ...boxes
                 .filter((b) => b.box_id !== deleteBoxPopup.box?.box_id)
                 .map((b) => ({
-                  label: b.box_name || `盒子 ${b.box_id}`,
+                  label: b.box_name || t('roomSettings.boxId', { id: b.box_id }),
                   value: `box_${b.box_id}`,
                 })),
-              { label: '用户手中', value: 'user_hand' },
+              { label: t('roomSettings.userHand'), value: 'user_hand' },
             ]}
             value={deleteBoxPopup.targetValue ? [deleteBoxPopup.targetValue] : []}
             onChange={(arr) =>
@@ -1022,7 +1023,7 @@ export default function RoomSettings() {
               block
               onClick={() => setDeleteBoxPopup({ visible: false, box: null, targetValue: '' })}
             >
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               block
@@ -1030,7 +1031,7 @@ export default function RoomSettings() {
               onClick={confirmDeleteBox}
               disabled={!deleteBoxPopup.targetValue}
             >
-              确认删除
+              {t('common.confirm')}
             </Button>
           </div>
         </div>

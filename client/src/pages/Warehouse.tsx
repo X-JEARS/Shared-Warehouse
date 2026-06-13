@@ -4,6 +4,7 @@ import { Button, SearchBar, SpinLoading } from 'antd-mobile';
 import type { InputRef } from 'antd-mobile/es/components/input';
 import { AddOutline, SearchOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { useRoomStore } from '../stores/roomStore';
 import { useCartStore } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';
@@ -155,6 +156,7 @@ const ActionButtons = styled.div`
 
 export default function Warehouse() {
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const { currentRoom, rooms } = useRoomStore();
   const { items: cartItems } = useCartStore();
   const { user } = useAuthStore();
@@ -232,14 +234,14 @@ export default function Warehouse() {
         </Header>
         <Content>
           <NoRoomContainer>
-            <NoRoomTitle>欢迎使用共享仓库</NoRoomTitle>
-            <NoRoomText>您还没有加入任何仓库，请创建或加入一个仓库开始使用</NoRoomText>
+            <NoRoomTitle>{t('warehouse.welcome')}</NoRoomTitle>
+            <NoRoomText>{t('warehouse.welcomeDesc')}</NoRoomText>
             <ActionButtons>
               <Button color="primary" onClick={() => navigate('/create-room')}>
-                创建仓库
+                {t('warehouse.createRoom')}
               </Button>
               <Button onClick={() => navigate('/join-room')}>
-                加入仓库
+                {t('warehouse.joinRoom')}
               </Button>
             </ActionButtons>
           </NoRoomContainer>
@@ -309,7 +311,7 @@ export default function Warehouse() {
             ref={searchInputRef}
             value={searchText}
             onChange={setSearchText}
-            placeholder="搜索物品..."
+            placeholder={t('warehouse.searchPlaceholder')}
             onSearch={() => {
               handleSearch();
               setShowSearch(false);
@@ -343,21 +345,21 @@ export default function Warehouse() {
         ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>
-              {filters.boxId === 'out-of-stock' ? '当前没有不在库中的物品' : '当前仓库暂无物品'}
+              {filters.boxId === 'out-of-stock' ? t('warehouse.noOutOfStockItems') : t('warehouse.noItems')}
             </p>
             {filters.boxId !== 'out-of-stock' && (
               <Button color="primary" onClick={() => navigate('/create-item')}>
-                添加物品
+                {t('warehouse.addItem')}
               </Button>
             )}
           </div>
         ) : (
           <ItemList>
-            {/* 在库物品：按当前所在盒子分组显示（不在库筛选时不显示） */}
+            {/* 在库物品：按当前所在盒子分组显示 */}
             {filters.boxId !== 'out-of-stock' && (() => {
               const groupedItems = inStockItems.reduce((acc, item) => {
                 const boxKey = item.item_current_box_id || 'no-box';
-                const boxName = item.current_box_name || '未分配盒子';
+                const boxName = item.current_box_name || t('warehouse.unassignedBox');
                 if (!acc[boxKey]) {
                   acc[boxKey] = { name: boxName, items: [] };
                 }
@@ -365,7 +367,7 @@ export default function Warehouse() {
                 return acc;
               }, {} as Record<string, { name: string; items: any[] }>);
               (Object.values(groupedItems) as { name: string; items: any[] }[]).forEach(group => {
-                group.items.sort((a: any, b: any) => (a.item_name || '').localeCompare(b.item_name || '', 'zh'));
+                group.items.sort((a: any, b: any) => (a.item_name || '').localeCompare(b.item_name || '', i18n.language === 'en-US' ? 'en' : 'zh'));
               });
 
               return (Object.entries(groupedItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
@@ -388,9 +390,9 @@ export default function Warehouse() {
             {/* 不在库物品 */}
             {(filters.boxId === 'out-of-stock' ? outOfStockItems.length > 0 : outOfStockItems.length > 0) && (
               <BoxGroup>
-                <BoxTitle>不在库中</BoxTitle>
+                <BoxTitle>{t('warehouse.notInStock')}</BoxTitle>
                 <ItemGrid>
-                  {[...outOfStockItems].sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', 'zh')).map((item) => (
+                  {[...outOfStockItems].sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', i18n.language === 'en-US' ? 'en' : 'zh')).map((item) => (
                     <ItemCard
                       key={item.item_id}
                       item={item}

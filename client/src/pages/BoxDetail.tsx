@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Toast, SpinLoading, Dialog } from 'antd-mobile';
+import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import ScannerComponent, { ScannerHandle } from '../components/Scanner';
 import ScanResultList, { PendingItem } from '../components/ScanResultList';
@@ -113,6 +114,7 @@ const ButtonRow = styled.div`
 `;
 
 export default function BoxDetail() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -134,7 +136,7 @@ export default function BoxDetail() {
       const res: any = await boxApi.getById(parseInt(id));
       setBox(res.data);
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '加载失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('boxDetail.loadFailed') });
       navigate(-1);
     } finally {
       setLoading(false);
@@ -144,14 +146,14 @@ export default function BoxDetail() {
   const handleScanItem = async (qrcode: string): Promise<boolean> => {
     // 验证是否为物品码（非盒子码）
     if (qrcode.toLowerCase().startsWith('box.')) {
-      Toast.show({ icon: 'fail', content: '请扫描物品二维码' });
+      Toast.show({ icon: 'fail', content: t('boxDetail.scanItemQRCode') });
       return false;
     }
 
     // 去重检查
     const exists = pendingItems.some(p => p.qrcode === qrcode);
     if (exists) {
-      Toast.show({ content: '该物品已在列表中' });
+      Toast.show({ content: t('boxDetail.itemInList') });
       return false;
     }
 
@@ -160,7 +162,7 @@ export default function BoxDetail() {
       const res: any = await scanApi.scan(qrcode);
 
       if (res.data.type !== 'item') {
-        Toast.show({ icon: 'fail', content: '未识别到物品' });
+        Toast.show({ icon: 'fail', content: t('boxDetail.notItem') });
         return false;
       }
 
@@ -169,14 +171,14 @@ export default function BoxDetail() {
         itemId: item.item_id,
         itemName: item.item_name,
         itemImage: item.item_image,
-        locationName: item.display_location_name || item.room_name || '未知位置',
+        locationName: item.display_location_name || item.room_name || t('common.unknown'),
         isInHand: item.isInHand || false,
         qrcode,
       }]);
-      Toast.show({ content: `已添加「${item.item_name}」` });
+      Toast.show({ content: t('boxDetail.itemAdded', { name: item.item_name }) });
       return false; // 继续扫描
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '识别失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('boxDetail.scanFailed') });
       return false;
     } finally {
       setItemLoading(false);
@@ -192,8 +194,8 @@ export default function BoxDetail() {
 
     scannerRef.current?.pause();
     const result = await Dialog.confirm({
-      title: '确认放入',
-      content: `确认将 ${pendingItems.length} 个物品放入「${box.box_name}」？`,
+      title: t('boxDetail.confirmReturn'),
+      content: t('boxDetail.confirmReturnContent', { count: pendingItems.length, boxName: box.box_name }),
     });
     if (!result) {
       scannerRef.current?.resume();
@@ -207,19 +209,19 @@ export default function BoxDetail() {
       const { totalSucceeded, totalFailed } = res.data;
 
       if (totalFailed > 0) {
-        Toast.show({ icon: 'fail', content: `放入 ${totalSucceeded} 个成功，${totalFailed} 个失败` });
+        Toast.show({ icon: 'fail', content: t('boxDetail.returnPartialSuccess', { succeeded: totalSucceeded, failed: totalFailed }) });
         // 移除成功的物品，保留失败的
         const failedIds = res.data.results
           .filter((r: any) => !r.success)
           .map((r: any) => r.itemId);
         setPendingItems(prev => prev.filter(p => failedIds.includes(p.itemId)));
       } else {
-        Toast.show({ icon: 'success', content: `成功放入 ${totalSucceeded} 个物品` });
+        Toast.show({ icon: 'success', content: t('boxDetail.returnSuccess', { count: totalSucceeded }) });
         setPendingItems([]);
         loadBox();
       }
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '批量放入失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('boxDetail.batchReturnFailed') });
     } finally {
       setReturnLoading(false);
       scannerRef.current?.resume();
@@ -235,12 +237,12 @@ export default function BoxDetail() {
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>盒子详情</HeaderTitle>
+          <HeaderTitle>{t('boxDetail.title')}</HeaderTitle>
         </Header>
         <Content>
           <div style={{ textAlign: 'center', padding: 60 }}>
             <SpinLoading />
-            <p>加载中...</p>
+            <p>{t('common.loading')}</p>
           </div>
         </Content>
       </Container>
@@ -251,16 +253,16 @@ export default function BoxDetail() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>盒子详情</HeaderTitle>
+        <HeaderTitle>{t('boxDetail.title')}</HeaderTitle>
       </Header>
 
       <Content>
         <BoxInfo>
           <BoxInfoContent>
             <BoxName>📦 {box?.box_name}</BoxName>
-            <BoxMeta>所属仓库: {box?.room_name || '个人盒子'}</BoxMeta>
+            <BoxMeta>{t('boxDetail.belongToRoom')}{box?.room_name || t('boxDetail.personalBox')}</BoxMeta>
             {box?.box_notice && (
-              <BoxMeta>备注: {box.box_notice}</BoxMeta>
+              <BoxMeta>{t('boxDetail.notice')}{box.box_notice}</BoxMeta>
             )}
           </BoxInfoContent>
         </BoxInfo>
@@ -271,10 +273,10 @@ export default function BoxDetail() {
           size="large"
           onClick={() => { setShowScanner(true); setPendingItems([]); }}
         >
-          存入物品
+          {t('boxDetail.depositItems')}
         </Button>
 
-        <SectionTitle style={{ marginTop: 24 }}>物品列表</SectionTitle>
+        <SectionTitle style={{ marginTop: 24 }}>{t('boxDetail.itemList')}</SectionTitle>
         {box?.items?.length > 0 ? (
           <ItemList>
             {box.items.map((item: any) => (
@@ -286,7 +288,7 @@ export default function BoxDetail() {
             ))}
           </ItemList>
         ) : (
-          <EmptyText>盒子内暂无物品</EmptyText>
+          <EmptyText>{t('boxDetail.noItems')}</EmptyText>
         )}
       </Content>
 
@@ -295,11 +297,11 @@ export default function BoxDetail() {
         <ScanModal>
           <Header>
             <BackButton onClick={() => { setShowScanner(false); setPendingItems([]); }}>←</BackButton>
-            <HeaderTitle>扫描物品</HeaderTitle>
+            <HeaderTitle>{t('boxDetail.scanItems')}</HeaderTitle>
           </Header>
           <ScanModalContent>
             <ScanHint>
-              请扫描要放入的物品二维码
+              {t('boxDetail.scanItemHint')}
             </ScanHint>
             <ScannerComponent
               ref={scannerRef}
@@ -314,7 +316,7 @@ export default function BoxDetail() {
                   onClick={() => { setPendingItems([]); }}
                   style={{ flex: 1 }}
                 >
-                  取消
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   block
@@ -324,7 +326,7 @@ export default function BoxDetail() {
                   onClick={handleBatchReturn}
                   style={{ flex: 1 }}
                 >
-                  放入 ({pendingItems.length})
+                  {t('boxDetail.putIn', { count: pendingItems.length })}
                 </Button>
               </ButtonRow>
 

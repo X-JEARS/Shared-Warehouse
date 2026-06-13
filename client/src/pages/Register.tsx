@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Form, Input, Button, Toast } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { authApi } from '../services/api';
 
 const Container = styled.div`
@@ -39,6 +40,7 @@ const LinkText = styled.span`
 
 export default function Register() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
 
@@ -46,17 +48,17 @@ export default function Register() {
     const values = form.getFieldsValue();
 
     if (!values.loginName || !values.password) {
-      Toast.show({ content: '请填写用户名和密码' });
+      Toast.show({ content: t('register.fillRequired') });
       return;
     }
 
     if (values.password !== values.confirmPassword) {
-      Toast.show({ content: '两次密码输入不一致' });
+      Toast.show({ content: t('register.passwordMismatch') });
       return;
     }
 
     if (values.password.length < 6) {
-      Toast.show({ content: '密码长度至少6位' });
+      Toast.show({ content: t('register.passwordTooShort') });
       return;
     }
 
@@ -68,10 +70,10 @@ export default function Register() {
         nickname: values.nickname,
         tel: values.tel,
       });
-      Toast.show({ icon: 'success', content: '注册成功，请登录' });
+      Toast.show({ icon: 'success', content: t('register.registerSuccess') });
       navigate('/login');
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '注册失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('register.registerFailed') });
     } finally {
       setLoading(false);
     }
@@ -80,25 +82,25 @@ export default function Register() {
   return (
     <Container>
       <Logo>
-        <LogoText>创建账号</LogoText>
-        <LogoSubtext>加入共享仓库</LogoSubtext>
+        <LogoText>{t('register.title')}</LogoText>
+        <LogoSubtext>{t('register.subtitle')}</LogoSubtext>
       </Logo>
 
       <Form form={form} layout="horizontal">
-        <Form.Item name="loginName" label="用户名" rules={[{ required: true }]}>
-          <Input placeholder="字母和数字，最多16位" clearable />
+        <Form.Item name="loginName" label={t('register.username')} rules={[{ required: true }]}>
+          <Input placeholder={t('register.usernamePlaceholder')} clearable />
         </Form.Item>
-        <Form.Item name="password" label="密码" rules={[{ required: true }]}>
-          <Input placeholder="至少6位" type="password" clearable />
+        <Form.Item name="password" label={t('register.password')} rules={[{ required: true }]}>
+          <Input placeholder={t('register.passwordPlaceholder')} type="password" clearable />
         </Form.Item>
-        <Form.Item name="confirmPassword" label="确认密码">
-          <Input placeholder="再次输入密码" type="password" clearable />
+        <Form.Item name="confirmPassword" label={t('register.confirmPassword')}>
+          <Input placeholder={t('register.confirmPasswordPlaceholder')} type="password" clearable />
         </Form.Item>
-        <Form.Item name="nickname" label="昵称">
-          <Input placeholder="选填，最多16位" clearable />
+        <Form.Item name="nickname" label={t('register.nickname')}>
+          <Input placeholder={t('register.nicknamePlaceholder')} clearable />
         </Form.Item>
-        <Form.Item name="tel" label="电话">
-          <Input placeholder="选填" clearable />
+        <Form.Item name="tel" label={t('register.phone')}>
+          <Input placeholder={t('register.phonePlaceholder')} clearable />
         </Form.Item>
       </Form>
 
@@ -110,13 +112,13 @@ export default function Register() {
         onClick={handleSubmit}
         style={{ marginTop: 24 }}
       >
-        注册
+        {t('register.submit')}
       </Button>
 
       <Footer>
-        已有账号？{' '}
+        {t('register.hasAccount')}{' '}
         <Link to="/login">
-          <LinkText>立即登录</LinkText>
+          <LinkText>{t('register.loginNow')}</LinkText>
         </Link>
       </Footer>
     </Container>

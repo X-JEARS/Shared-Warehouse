@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Dropdown, Tag } from 'antd-mobile';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { boxApi, tagApi } from '../services/api';
 
 const FilterContainer = styled.div`
@@ -40,6 +41,7 @@ interface Tag {
 }
 
 export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
+  const { t } = useTranslation();
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [selectedBox, setSelectedBox] = useState<number | 'out-of-stock' | undefined>();
@@ -88,10 +90,10 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
           title={
             <FilterItem>
               {selectedBox === 'out-of-stock'
-                ? '不在库中'
+                ? t('filterBar.notInStock')
                 : selectedBox
-                  ? boxes.find((b) => b.box_id === selectedBox)?.box_name || '盒子'
-                  : '全部'}
+                  ? boxes.find((b) => b.box_id === selectedBox)?.box_name || t('filterBar.box')
+                  : t('filterBar.all')}
             </FilterItem>
           }
         >
@@ -100,7 +102,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
               onClick={() => handleBoxChange(undefined)}
               style={{ padding: '12px 0', color: !selectedBox ? 'var(--app-color-primary)' : undefined }}
             >
-              全部
+              {t('filterBar.all')}
             </div>
             <div
               onClick={() => handleBoxChange('out-of-stock')}
@@ -110,7 +112,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
                 color: selectedBox === 'out-of-stock' ? 'var(--app-color-primary)' : undefined,
               }}
             >
-              不在库中
+              {t('filterBar.notInStock')}
             </div>
             {boxes.map((box) => (
               <div
@@ -122,7 +124,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
                   color: selectedBox === box.box_id ? 'var(--app-color-primary)' : undefined,
                 }}
               >
-                {box.box_name || `盒子 ${box.box_id}`}
+                {box.box_name || t('filterBar.boxId', { id: box.box_id })}
               </div>
             ))}
           </div>
@@ -135,8 +137,8 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
           title={
             <FilterItem>
               {selectedTag
-                ? tags.find((t) => t.tag_id === selectedTag)?.tag_name || '标签'
-                : '标签'}
+                ? tags.find((t) => t.tag_id === selectedTag)?.tag_name || t('filterBar.tags')
+                : t('filterBar.tags')}
             </FilterItem>
           }
         >
@@ -145,7 +147,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
               onClick={() => handleTagChange(undefined)}
               style={{ padding: '12px 0', color: !selectedTag ? 'var(--app-color-primary)' : undefined }}
             >
-              全部
+              {t('filterBar.all')}
             </div>
             {tags.map((tag) => (
               <div
@@ -166,7 +168,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
 
       {(selectedBox || selectedTag) && (
         <FilterItem onClick={clearFilters} style={{ flex: '0 0 auto', padding: '8px 12px', whiteSpace: 'nowrap' }}>
-          清除
+          {t('filterBar.clear')}
         </FilterItem>
       )}
     </FilterContainer>

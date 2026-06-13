@@ -10,6 +10,7 @@ import {
   CalendarOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import { useNotificationStore } from '../stores/notificationStore';
 
@@ -96,6 +97,7 @@ const Section = styled.div`
 
 export default function Profile() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
@@ -119,28 +121,28 @@ export default function Profile() {
         <Avatar $avatar={avatarUrl}>
           {!avatarUrl && (user?.user_nickname?.charAt(0).toUpperCase() || 'U')}
         </Avatar>
-        <Nickname>{user?.user_nickname || '未设置昵称'}</Nickname>
+        <Nickname>{user?.user_nickname || t('profile.noNickname')}</Nickname>
         <LoginName>@{user?.user_login_name}</LoginName>
       </Header>
 
       <Section>
-        <MenuItem icon={<UserOutline fontSize={18} />} text="我的资料" onClick={() => navigate('/my-profile')} showBorder />
-        <MenuItem icon={<AppstoreOutline fontSize={18} />} text="我的物品" onClick={() => window.location.href = '/my-items'} showBorder />
-        <MenuItem icon={<CalendarOutline fontSize={18} />} text="我的预约" onClick={() => navigate('/my-reservations')} />
+        <MenuItem icon={<UserOutline fontSize={18} />} text={t('profile.myProfile')} onClick={() => navigate('/my-profile')} showBorder />
+        <MenuItem icon={<AppstoreOutline fontSize={18} />} text={t('profile.myItems')} onClick={() => window.location.href = '/my-items'} showBorder />
+        <MenuItem icon={<CalendarOutline fontSize={18} />} text={t('profile.myReservations')} onClick={() => navigate('/my-reservations')} />
       </Section>
 
       <Section>
-        <MenuItem icon={<SetOutline fontSize={18} />} text="系统设置" onClick={() => navigate('/system-settings')} />
+        <MenuItem icon={<SetOutline fontSize={18} />} text={t('profile.systemSettings')} onClick={() => navigate('/system-settings')} />
       </Section>
 
       <Section>
         <MenuItem
           icon={<InformationCircleOutline fontSize={18} />}
-          text="关于"
+          text={t('profile.about')}
           onClick={() =>
             Dialog.alert({
-              title: '关于',
-              content: '共享仓库 v1.0.0\n扫码借还，高效管理',
+              title: t('profile.about'),
+              content: t('profile.aboutContent'),
             })
           }
         />

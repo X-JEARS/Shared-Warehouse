@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Toast, SpinLoading, Dialog } from 'antd-mobile';
+import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import ScannerComponent, { ScannerHandle } from '../components/Scanner';
 import ScanResultList, { PendingItem } from '../components/ScanResultList';
@@ -100,6 +101,7 @@ const LoadingOverlay = styled.div`
 `;
 
 export default function Scanner() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const scannerRef = useRef<ScannerHandle>(null);
   const [mode, setMode] = useState<ScanMode>('idle');
@@ -114,38 +116,38 @@ export default function Scanner() {
   const addItemToList = (item: any, qrcode: string) => {
     const exists = pendingItemsRef.current.some(p => p.qrcode === qrcode);
     if (exists) {
-      Toast.show({ content: '该物品已在列表中' });
+      Toast.show({ content: t('scanner.itemInList') });
       return;
     }
     setPendingItems(prev => [...prev, {
       itemId: item.item_id,
       itemName: item.item_name,
       itemImage: item.item_image,
-      locationName: item.display_location_name || item.room_name || '未知位置',
+      locationName: item.display_location_name || item.room_name || t('common.unknown'),
       isInHand: item.isInHand || false,
       qrcode,
     }]);
-    Toast.show({ content: `已添加「${item.item_name}」` });
+    Toast.show({ content: t('scanner.itemAdded', { name: item.item_name }) });
   };
 
   const handleScan = async (qrcode: string): Promise<boolean> => {
     // 模式已确定时的处理
     if (mode === 'borrow') {
       if (qrcode.toLowerCase().startsWith('box.')) {
-        Toast.show({ content: '已进入取走模式，请扫描物品二维码' });
+        Toast.show({ content: t('scanner.borrowModeHint') });
         return false;
       }
       try {
         setScanLoading(true);
         const res: any = await scanApi.scan(qrcode);
         if (res.data.type !== 'item') {
-          Toast.show({ icon: 'fail', content: '未识别到物品' });
+          Toast.show({ icon: 'fail', content: t('scanner.notItem') });
           return false;
         }
         addItemToList(res.data.item, qrcode);
         return false;
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '识别失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('scanner.scanFailed') });
         return false;
       } finally {
         setScanLoading(false);
@@ -154,20 +156,20 @@ export default function Scanner() {
 
     if (mode === 'return') {
       if (qrcode.toLowerCase().startsWith('box.')) {
-        Toast.show({ content: '已进入放入模式，请扫描物品二维码' });
+        Toast.show({ content: t('scanner.returnModeHint') });
         return false;
       }
       try {
         setScanLoading(true);
         const res: any = await scanApi.scan(qrcode);
         if (res.data.type !== 'item') {
-          Toast.show({ icon: 'fail', content: '未识别到物品' });
+          Toast.show({ icon: 'fail', content: t('scanner.notItem') });
           return false;
         }
         addItemToList(res.data.item, qrcode);
         return false;
       } catch (error: any) {
-        Toast.show({ icon: 'fail', content: error.message || '识别失败' });
+        Toast.show({ icon: 'fail', content: error.message || t('scanner.scanFailed') });
         return false;
       } finally {
         setScanLoading(false);
@@ -191,7 +193,7 @@ export default function Scanner() {
       addItemToList(res.data.item, qrcode);
       return false; // 继续扫描
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '扫描失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('scanner.idleScanFailed') });
       return false;
     } finally {
       setScanLoading(false);
@@ -205,14 +207,14 @@ export default function Scanner() {
   const handleBatchBorrow = async () => {
     const borrowableItems = pendingItems.filter(p => !p.isInHand);
     if (borrowableItems.length === 0) {
-      Toast.show({ content: '没有可取走的物品' });
+      Toast.show({ content: t('scanner.noBorrowableItems') });
       return;
     }
 
     scannerRef.current?.pause();
     const result = await Dialog.confirm({
-      title: '确认取走',
-      content: `确认取走 ${borrowableItems.length} 个物品？`,
+      title: t('scanner.confirmBorrow'),
+      content: t('scanner.confirmBorrowContent', { count: borrowableItems.length }),
     });
     if (!result) {
       scannerRef.current?.resume();
@@ -226,18 +228,18 @@ export default function Scanner() {
       const { totalSucceeded, totalFailed } = res.data;
 
       if (totalFailed > 0) {
-        Toast.show({ icon: 'fail', content: `取走 ${totalSucceeded} 个成功，${totalFailed} 个失败` });
+        Toast.show({ icon: 'fail', content: t('scanner.borrowPartialSuccess', { succeeded: totalSucceeded, failed: totalFailed }) });
         const failedIds = res.data.results
           .filter((r: any) => !r.success)
           .map((r: any) => r.itemId);
         setPendingItems(prev => prev.filter(p => failedIds.includes(p.itemId)));
         scannerRef.current?.resume();
       } else {
-        Toast.show({ icon: 'success', content: `成功取走 ${totalSucceeded} 个物品` });
+        Toast.show({ icon: 'success', content: t('scanner.borrowSuccess', { count: totalSucceeded }) });
         resetMode();
       }
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '批量取走失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('scanner.borrowFailed') });
       scannerRef.current?.resume();
     } finally {
       setActionLoading(false);
@@ -249,8 +251,8 @@ export default function Scanner() {
 
     scannerRef.current?.pause();
     const result = await Dialog.confirm({
-      title: '确认放入',
-      content: `确认将 ${pendingItems.length} 个物品放入「${returnTargetBox.box_name}」？`,
+      title: t('scanner.confirmReturn'),
+      content: t('scanner.confirmReturnContent', { count: pendingItems.length, boxName: returnTargetBox.box_name }),
     });
     if (!result) {
       scannerRef.current?.resume();
@@ -264,18 +266,18 @@ export default function Scanner() {
       const { totalSucceeded, totalFailed } = res.data;
 
       if (totalFailed > 0) {
-        Toast.show({ icon: 'fail', content: `放入 ${totalSucceeded} 个成功，${totalFailed} 个失败` });
+        Toast.show({ icon: 'fail', content: t('scanner.returnPartialSuccess', { succeeded: totalSucceeded, failed: totalFailed }) });
         const failedIds = res.data.results
           .filter((r: any) => !r.success)
           .map((r: any) => r.itemId);
         setPendingItems(prev => prev.filter(p => failedIds.includes(p.itemId)));
         scannerRef.current?.resume();
       } else {
-        Toast.show({ icon: 'success', content: `成功放入 ${totalSucceeded} 个物品` });
+        Toast.show({ icon: 'success', content: t('scanner.returnSuccess', { count: totalSucceeded }) });
         resetMode();
       }
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '批量放入失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('scanner.returnFailed') });
       scannerRef.current?.resume();
     } finally {
       setActionLoading(false);
@@ -289,9 +291,9 @@ export default function Scanner() {
     // 操作完成后不再重启扫码器，摄像头已释放
   };
 
-  const navTitle = mode === 'borrow' ? '扫码取走' : mode === 'return' ? '扫码放入' : '扫描二维码';
+  const navTitle = mode === 'borrow' ? t('scanner.scanBorrow') : mode === 'return' ? t('scanner.scanReturn') : t('scanner.scanQRCode');
 
-  const actionLabel = mode === 'borrow' ? '取走' : '放入';
+  const actionLabel = mode === 'borrow' ? t('scanner.borrow') : t('scanner.putIn');
   const actionCount = mode === 'borrow'
     ? pendingItems.filter(p => !p.isInHand).length
     : pendingItems.length;
@@ -314,10 +316,10 @@ export default function Scanner() {
 
         {mode !== 'idle' && (
           <ScanHint>
-            {mode === 'borrow' && '扫描物品二维码加入取走列表'}
+            {mode === 'borrow' && t('scanner.scanItemHint')}
             {mode === 'return' && (
               <>
-                将物品放入{' '}
+                {t('scanner.putInto')}{' '}
                 <BoxLink onClick={() => navigate(`/box/${returnTargetBox.box_id}`)}>
                   {returnTargetBox.box_name}
                 </BoxLink>
@@ -335,7 +337,7 @@ export default function Scanner() {
                 onClick={resetMode}
                 style={{ flex: 1 }}
               >
-                取消
+                {t('common.cancel')}
               </Button>
               <Button
                 block

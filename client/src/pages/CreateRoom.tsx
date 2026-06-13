@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Form, Input, Button, TextArea, Toast } from 'antd-mobile';
 import styled from 'styled-components';
@@ -35,6 +36,7 @@ const Content = styled.div`
 `;
 
 export default function CreateRoom() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { addRoom } = useRoomStore();
   const [loading, setLoading] = useState(false);
@@ -45,7 +47,7 @@ export default function CreateRoom() {
 
   const handleSubmit = async () => {
     if (!formData.name.trim()) {
-      Toast.show({ content: '请输入仓库名称' });
+      Toast.show({ content: t('createRoom.roomNameRequired') });
       return;
     }
 
@@ -56,10 +58,10 @@ export default function CreateRoom() {
         notice: formData.notice.trim() || undefined,
       });
       addRoom(res.data);
-      Toast.show({ icon: 'success', content: '创建成功' });
+      Toast.show({ icon: 'success', content: t('createRoom.createSuccess') });
       navigate(-1);
     } catch (error: any) {
-      Toast.show({ icon: 'fail', content: error.message || '创建失败' });
+      Toast.show({ icon: 'fail', content: error.message || t('createRoom.createFailed') });
     } finally {
       setLoading(false);
     }
@@ -69,25 +71,25 @@ export default function CreateRoom() {
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>创建仓库</HeaderTitle>
+        <HeaderTitle>{t('createRoom.title')}</HeaderTitle>
       </Header>
 
       <Content>
         <Form layout="horizontal">
-          <Form.Item label="仓库名称" required>
+          <Form.Item label={t('createRoom.roomName')} required>
             <Input
               value={formData.name}
               onChange={(v) => setFormData({ ...formData, name: v })}
-              placeholder="请输入仓库名称"
+              placeholder={t('createRoom.roomNamePlaceholder')}
               maxLength={24}
             />
           </Form.Item>
 
-          <Form.Item label="仓库公告">
+          <Form.Item label={t('createRoom.roomNotice')}>
             <TextArea
               value={formData.notice}
               onChange={(v) => setFormData({ ...formData, notice: v })}
-              placeholder="仓库公告（可选）"
+              placeholder={t('createRoom.roomNoticePlaceholder')}
               maxLength={240}
               rows={3}
             />
@@ -102,7 +104,7 @@ export default function CreateRoom() {
           onClick={handleSubmit}
           style={{ marginTop: 24 }}
         >
-          创建仓库
+          {t('createRoom.createRoom')}
         </Button>
       </Content>
     </Container>

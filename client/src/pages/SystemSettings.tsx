@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import { Toast } from 'antd-mobile';
 import styled from 'styled-components';
-import { useThemeStore, ThemeMode, StyleVariant } from '../stores/themeStore';
+import { useTranslation } from 'react-i18next';
+import { useThemeStore, ThemeMode, StyleVariant, LanguageMode } from '../stores/themeStore';
 
 const Container = styled.div`
   min-height: 100%;
@@ -30,62 +30,6 @@ const HeaderTitle = styled.div`
   font-size: 16px;
   font-weight: 500;
   color: var(--app-color-text);
-`;
-
-const Section = styled.div`
-  background: var(--app-color-surface);
-  margin-top: 12px;
-`;
-
-const SettingRow = styled.div`
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--app-color-border);
-  cursor: pointer;
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:active {
-    background: var(--app-color-hover);
-  }
-`;
-
-const RowLeft = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 12px;
-`;
-
-const RowIcon = styled.span`
-  font-size: 20px;
-  color: var(--app-color-text);
-  display: flex;
-  align-items: center;
-`;
-
-const RowLabel = styled.div`
-  font-size: 15px;
-  color: var(--app-color-text);
-`;
-
-const RowRight = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 6px;
-`;
-
-const RowValue = styled.div`
-  font-size: 14px;
-  color: var(--app-color-text-secondary);
-`;
-
-const RowArrow = styled.div`
-  color: var(--app-color-text-secondary);
-  font-size: 14px;
 `;
 
 const ThemeSection = styled.div`
@@ -144,6 +88,28 @@ const ThemeIcon = styled.div<{ $variant: 'light' | 'dark' | 'system' }>`
   }}
 `;
 
+const LanguageIcon = styled.div<{ $variant: 'system' | 'zh' | 'en' }>`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+
+  ${(props) => {
+    switch (props.$variant) {
+      case 'system':
+        return 'background: linear-gradient(135deg, #e8f4f8 50%, #f0e6ff 50%); color: #666;';
+      case 'zh':
+        return 'background: #fee2e2; color: #dc2626;';
+      case 'en':
+        return 'background: #dbeafe; color: #2563eb;';
+    }
+  }}
+`;
+
 const ThemeOptionLabel = styled.div<{ $active: boolean }>`
   font-size: 13px;
   color: ${(props) => (props.$active ? 'var(--app-color-primary)' : 'var(--app-color-text)')};
@@ -186,48 +152,66 @@ const PreviewLine = styled.div<{ $short?: boolean }>`
   opacity: ${(props) => (props.$short ? 0.4 : 0.7)};
 `;
 
-const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: string; variant: 'light' | 'dark' | 'system' }[] = [
-  { mode: 'light', label: '浅色模式', icon: '☀️', variant: 'light' },
-  { mode: 'dark', label: '深色模式', icon: '🌙', variant: 'dark' },
-  { mode: 'system', label: '跟随系统', icon: '💻', variant: 'system' },
-];
-
-const STYLE_OPTIONS: { style: StyleVariant; label: string; desc: string }[] = [
-  { style: 'default', label: '标准', desc: '默认圆角，经典风格' },
-  { style: 'rounded', label: '圆润', desc: '大圆角，柔和卡通风格' },
-  { style: 'compact', label: '紧凑', desc: '小圆角，简约扁平风格' },
-];
-
 export default function SystemSettings() {
   const navigate = useNavigate();
-  const { theme, effectiveTheme, style, setTheme, setStyle } = useThemeStore();
+  const { t } = useTranslation();
+  const { theme, effectiveTheme, style, language, effectiveLanguage, setTheme, setStyle, setLanguage } = useThemeStore();
 
-  const handleLanguageClick = () => {
-    Toast.show('暂未开放，敬请期待');
-  };
+  const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: string; variant: 'light' | 'dark' | 'system' }[] = [
+    { mode: 'light', label: t('systemSettings.lightMode'), icon: '☀️', variant: 'light' },
+    { mode: 'dark', label: t('systemSettings.darkMode'), icon: '🌙', variant: 'dark' },
+    { mode: 'system', label: t('systemSettings.systemMode'), icon: '💻', variant: 'system' },
+  ];
+
+  const STYLE_OPTIONS: { style: StyleVariant; label: string; desc: string }[] = [
+    { style: 'default', label: t('systemSettings.styleDefault'), desc: t('systemSettings.styleDefaultDesc') },
+    { style: 'rounded', label: t('systemSettings.styleRounded'), desc: t('systemSettings.styleRoundedDesc') },
+    { style: 'compact', label: t('systemSettings.styleCompact'), desc: t('systemSettings.styleCompactDesc') },
+  ];
+
+  const LANGUAGE_OPTIONS: { mode: LanguageMode; label: string; iconText: string; variant: 'system' | 'zh' | 'en' }[] = [
+    { mode: 'system', label: t('systemSettings.languageSystem'), iconText: '🌐', variant: 'system' },
+    { mode: 'zh-CN', label: t('systemSettings.languageZhCN'), iconText: '中', variant: 'zh' },
+    { mode: 'en-US', label: t('systemSettings.languageEnUS'), iconText: 'En', variant: 'en' },
+  ];
+
+  const currentLanguageName = effectiveLanguage === 'zh-CN' ? t('systemSettings.languageZhCN') : t('systemSettings.languageEnUS');
+  const currentThemeName = effectiveTheme === 'dark' ? t('systemSettings.darkTheme') : t('systemSettings.lightTheme');
 
   return (
     <Container>
       <Header>
         <BackButton onClick={() => navigate(-1)}>←</BackButton>
-        <HeaderTitle>系统设置</HeaderTitle>
+        <HeaderTitle>{t('systemSettings.title')}</HeaderTitle>
       </Header>
 
-      <Section>
-        <SettingRow onClick={handleLanguageClick}>
-          <RowLeft>
-            <RowIcon>🌐</RowIcon>
-            <RowLabel>系统语言</RowLabel>
-          </RowLeft>
-          <RowRight>
-            <RowValue>简体中文</RowValue>
-            <RowArrow>›</RowArrow>
-          </RowRight>
-        </SettingRow>
-      </Section>
+      <ThemeSection>
+        <ThemeSectionTitle>{t('systemSettings.language')}</ThemeSectionTitle>
+        <ThemeOptions>
+          {LANGUAGE_OPTIONS.map((option) => (
+            <ThemeOption
+              key={option.mode}
+              $active={language === option.mode}
+              onClick={() => setLanguage(option.mode)}
+            >
+              <LanguageIcon $variant={option.variant}>
+                {option.iconText}
+              </LanguageIcon>
+              <ThemeOptionLabel $active={language === option.mode}>
+                {option.label}
+              </ThemeOptionLabel>
+              {option.mode === 'system' && (
+                <ThemeOptionHint>
+                  {t('systemSettings.currentLanguage', { language: currentLanguageName })}
+                </ThemeOptionHint>
+              )}
+            </ThemeOption>
+          ))}
+        </ThemeOptions>
+      </ThemeSection>
 
       <ThemeSection>
-        <ThemeSectionTitle>配色模式</ThemeSectionTitle>
+        <ThemeSectionTitle>{t('systemSettings.themeMode')}</ThemeSectionTitle>
         <ThemeOptions>
           {THEME_OPTIONS.map((option) => (
             <ThemeOption
@@ -243,7 +227,7 @@ export default function SystemSettings() {
               </ThemeOptionLabel>
               {option.mode === 'system' && (
                 <ThemeOptionHint>
-                  当前：{effectiveTheme === 'dark' ? '深色' : '浅色'}
+                  {t('systemSettings.currentTheme', { theme: currentThemeName })}
                 </ThemeOptionHint>
               )}
             </ThemeOption>
@@ -252,7 +236,7 @@ export default function SystemSettings() {
       </ThemeSection>
 
       <ThemeSection>
-        <ThemeSectionTitle>视觉风格</ThemeSectionTitle>
+        <ThemeSectionTitle>{t('systemSettings.visualStyle')}</ThemeSectionTitle>
         <ThemeOptions>
           {STYLE_OPTIONS.map((option) => (
             <ThemeOption
