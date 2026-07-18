@@ -1011,12 +1011,9 @@ export default function RoomSettings() {
           ) : adminEditMode ? (
             <Button
               size="small"
-              onClick={() => {
-                setAdminEditMode(false);
-                setAdminEditSelection(new Set());
-              }}
+              onClick={enterTransferMode}
             >
-              <CloseOutline /> {t('common.cancel')}
+              → {t('roomSettings.transferPrimaryAdmin')}
             </Button>
           ) : transferMode ? (
             <Button
@@ -1048,9 +1045,8 @@ export default function RoomSettings() {
         ) : (
           <>
             {adminEditMode && (
-              <div style={{ padding: '0 16px 8px', fontSize: 12, color: 'var(--app-color-text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span>{t('roomSettings.adminEditHint')}</span>
-                <Button size='mini' onClick={enterTransferMode}>→ {t('roomSettings.transferPrimaryAdmin')}</Button>
+              <div style={{ padding: '0 16px 8px', fontSize: 12, color: 'var(--app-color-text-secondary)' }}>
+                {t('roomSettings.adminEditHint')}
               </div>
             )}
             {transferMode && (
