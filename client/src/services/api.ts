@@ -110,11 +110,28 @@ export const itemApi = {
 export const scanApi = {
   scan: (qrcode: string) => request.post('/scan', { qrcode }),
   borrow: (itemId: number) => request.post('/scan/borrow', { itemId }),
-  borrowBatch: (itemIds: number[]) => request.post('/scan/borrow-batch', { itemIds }),
+  borrowBatch: (itemIds: number[], image?: File) => {
+    if (!image) return request.post('/scan/borrow-batch', { itemIds });
+    const formData = new FormData();
+    formData.append('itemIds', JSON.stringify(itemIds));
+    formData.append('image', image);
+    return request.post('/scan/borrow-batch', formData);
+  },
   returnItem: (itemId: number, boxId: number) =>
     request.post('/scan/return', { itemId, boxId }),
-  returnBatch: (items: Array<{ itemId: number; boxId: number }>) =>
-    request.post('/scan/return-batch', { items }),
+  returnBatch: (items: Array<{ itemId: number; boxId: number }>, image?: File) => {
+    if (!image) return request.post('/scan/return-batch', { items });
+    const formData = new FormData();
+    formData.append('items', JSON.stringify(items));
+    formData.append('image', image);
+    return request.post('/scan/return-batch', formData);
+  },
+};
+
+// Transfer Record API
+export const transferRecordApi = {
+  getAll: (page = 1, pageSize = 20) =>
+    request.get('/transfer-records', { params: { page, pageSize } }),
 };
 
 // Reservation API

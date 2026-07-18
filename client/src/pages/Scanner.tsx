@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Toast, SpinLoading, Dialog, Dropdown, DropdownRef } from 'antd-mobile';
+import { CloseOutline, PictureOutline } from 'antd-mobile-icons';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import ScannerComponent, { ScannerHandle } from '../components/Scanner';
@@ -103,6 +104,58 @@ const ButtonRow = styled.div`
   display: flex;
   gap: 12px;
   flex-shrink: 0;
+`;
+
+const PhotoArea = styled.div`
+  margin-top: 10px;
+  flex-shrink: 0;
+`;
+
+const PhotoSelection = styled.div`
+  height: 52px;
+  padding: 6px 8px;
+  border: 1px solid var(--app-color-border);
+  border-radius: var(--app-radius-m);
+  background: var(--app-color-surface);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const PhotoPreview = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: var(--app-radius-s);
+  object-fit: cover;
+  flex-shrink: 0;
+`;
+
+const PhotoName = styled.div`
+  flex: 1;
+  min-width: 0;
+  color: var(--app-color-text);
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const PhotoAction = styled.button`
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+`;
+
+const HiddenPhotoInput = styled.input`
+  display: none;
 `;
 
 const ReferenceDropdownHost = styled.div<{ $open: boolean }>`
@@ -281,6 +334,7 @@ export default function Scanner() {
   const scannerRef = useRef<ScannerHandle>(null);
   const referenceDropdownRef = useRef<DropdownRef>(null);
   const referenceDropdownHostRef = useRef<HTMLDivElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [mode, setMode] = useState<ScanMode>('idle');
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [returnTargetBox, setReturnTargetBox] = useState<any>(null);
@@ -291,9 +345,17 @@ export default function Scanner() {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [referenceLoading, setReferenceLoading] = useState(false);
   const [referenceDropdownOpen, setReferenceDropdownOpen] = useState(false);
+  const [transferImage, setTransferImage] = useState<File | null>(null);
+  const [transferImagePreview, setTransferImagePreview] = useState<string | null>(null);
   // 用 ref 持有最新 pendingItems，避免闭包陈旧导致去重失效
   const pendingItemsRef = useRef<PendingItem[]>([]);
   pendingItemsRef.current = pendingItems;
+
+  useEffect(() => {
+    return () => {
+      if (transferImagePreview) URL.revokeObjectURL(transferImagePreview);
+    };
+  }, [transferImagePreview]);
 
   useEffect(() => {
     if (mode === 'idle' || !referenceRoomId) {
@@ -418,6 +480,31 @@ export default function Scanner() {
     setPendingItems(prev => prev.filter(p => p.qrcode !== qrcode));
   };
 
+  const clearTransferImage = () => {
+    setTransferImage(null);
+    setTransferImagePreview(null);
+    if (photoInputRef.current) photoInputRef.current.value = '';
+  };
+
+  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      Toast.show({ icon: 'fail', content: t('scanner.invalidTransferImage') });
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) {
+      Toast.show({ icon: 'fail', content: t('scanner.transferImageTooLarge') });
+      return;
+    }
+
+    setTransferImage(file);
+    setTransferImagePreview(URL.createObjectURL(file));
+  };
+
   const handleBatchBorrow = async () => {
     const borrowableItems = pendingItems.filter(p => !p.isInHand);
     if (borrowableItems.length === 0) {
@@ -438,8 +525,9 @@ export default function Scanner() {
     setActionLoading(true);
     try {
       const itemIds = borrowableItems.map(p => p.itemId);
-      const res: any = await scanApi.borrowBatch(itemIds);
+      const res: any = await scanApi.borrowBatch(itemIds, transferImage || undefined);
       const { totalSucceeded, totalFailed } = res.data;
+      if (res.data.transferRecordId) clearTransferImage();
 
       if (totalFailed > 0) {
         Toast.show({ icon: 'fail', content: t('scanner.borrowPartialSuccess', { succeeded: totalSucceeded, failed: totalFailed }) });
@@ -476,8 +564,9 @@ export default function Scanner() {
     setActionLoading(true);
     try {
       const items = pendingItems.map(p => ({ itemId: p.itemId, boxId: returnTargetBox.box_id }));
-      const res: any = await scanApi.returnBatch(items);
+      const res: any = await scanApi.returnBatch(items, transferImage || undefined);
       const { totalSucceeded, totalFailed } = res.data;
+      if (res.data.transferRecordId) clearTransferImage();
 
       if (totalFailed > 0) {
         Toast.show({ icon: 'fail', content: t('scanner.returnPartialSuccess', { succeeded: totalSucceeded, failed: totalFailed }) });
@@ -506,6 +595,7 @@ export default function Scanner() {
     setReferenceOrders([]);
     setSelectedOrderId(null);
     setReferenceDropdownOpen(false);
+    clearTransferImage();
     // 操作完成后不再重启扫码器，摄像头已释放
   };
 
@@ -673,6 +763,49 @@ export default function Scanner() {
                 {actionLabel} ({actionCount})
               </Button>
             </ButtonRow>
+
+            <PhotoArea>
+              {transferImage && transferImagePreview ? (
+                <PhotoSelection>
+                  <PhotoPreview src={transferImagePreview} alt={t('scanner.transferPhoto')} />
+                  <PhotoName>{transferImage.name}</PhotoName>
+                  <PhotoAction
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    title={t('scanner.replaceTransferPhoto')}
+                    aria-label={t('scanner.replaceTransferPhoto')}
+                    disabled={actionLoading}
+                  >
+                    <PictureOutline fontSize={20} />
+                  </PhotoAction>
+                  <PhotoAction
+                    type="button"
+                    onClick={clearTransferImage}
+                    title={t('scanner.removeTransferPhoto')}
+                    aria-label={t('scanner.removeTransferPhoto')}
+                    disabled={actionLoading}
+                  >
+                    <CloseOutline fontSize={20} />
+                  </PhotoAction>
+                </PhotoSelection>
+              ) : (
+                <Button
+                  block
+                  fill="outline"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={actionLoading}
+                >
+                  <PictureOutline fontSize={18} />
+                  <span style={{ marginLeft: 6 }}>{t('scanner.uploadTransferPhoto')}</span>
+                </Button>
+              )}
+              <HiddenPhotoInput
+                ref={photoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handlePhotoChange}
+              />
+            </PhotoArea>
 
             <ResultListWrapper>
               {selectedOrder && (
