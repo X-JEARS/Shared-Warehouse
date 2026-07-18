@@ -247,6 +247,15 @@ const MemberCardMeta = styled.div`
   word-break: break-all;
 `;
 
+const MemberAdminBadge = styled.span`
+  display: inline-block;
+  margin-left: 4px;
+  padding: 0 6px;
+  font-size: 11px;
+  border-radius: var(--app-radius-s);
+  vertical-align: middle;
+`;
+
 const BoxGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -344,6 +353,7 @@ interface Member {
   user_login_name: string;
   member_name?: string;
   user_avatar?: string;
+  is_admin?: boolean;
 }
 
 interface JoinRequest {
@@ -378,6 +388,10 @@ export default function RoomSettings() {
   const [selectedTagIds, setSelectedTagIds] = useState<Set<number>>(new Set());
   const [memberDeleteMode, setMemberDeleteMode] = useState(false);
   const [selectedMemberIds, setSelectedMemberIds] = useState<Set<number>>(new Set());
+  const [adminEditMode, setAdminEditMode] = useState(false);
+  const [adminEditSelection, setAdminEditSelection] = useState<Set<number>>(new Set());
+  const [transferMode, setTransferMode] = useState(false);
+  const [selectedTransferId, setSelectedTransferId] = useState<number | null>(null);
 
   useEffect(() => {
     loadRoom();
@@ -657,6 +671,92 @@ export default function RoomSettings() {
     }
   };
 
+  const enterAdminEditMode = () => {
+    // Initialize selection to current non-primary admins
+    const initial = new Set<number>();
+    members.forEach((m) => {
+      if (m.member_user_id !== room?.room_admin && m.is_admin) {
+        initial.add(m.member_user_id);
+      }
+    });
+    setAdminEditSelection(initial);
+    setAdminEditMode(true);
+  };
+
+  const toggleAdminSelection = (userId: number) => {
+    setAdminEditSelection((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
+  };
+
+  const handleConfirmAdmins = async () => {
+    const target = new Set(adminEditSelection);
+    const currentNonPrimary = new Set(
+      members.filter((m) => m.member_user_id !== room?.room_admin && m.is_admin).map((m) => m.member_user_id)
+    );
+    const toAdd = Array.from(target).filter((u) => !currentNonPrimary.has(u));
+    const toRemove = Array.from(currentNonPrimary).filter((u) => !target.has(u));
+    if (toAdd.length === 0 && toRemove.length === 0) {
+      setAdminEditMode(false);
+      return;
+    }
+    try {
+      await Promise.all([
+        ...toAdd.map((u) => roomApi.addAdmin(parseInt(id!), u)),
+        ...toRemove.map((u) => roomApi.removeAdmin(parseInt(id!), u)),
+      ]);
+      setMembers(members.map((m) =>
+        m.member_user_id === room?.room_admin
+          ? m
+          : { ...m, is_admin: target.has(m.member_user_id) }
+      ));
+      setAdminEditMode(false);
+      setAdminEditSelection(new Set());
+      Toast.show({ icon: 'success', content: t('roomSettings.adminEditSuccess') });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || t('roomSettings.operationFailed') });
+    }
+  };
+
+  const enterTransferMode = () => {
+    setAdminEditMode(false);
+    setAdminEditSelection(new Set());
+    setTransferMode(true);
+    setSelectedTransferId(null);
+  };
+
+  const handleConfirmTransfer = async () => {
+    if (selectedTransferId == null) return;
+    const target = members.find((m) => m.member_user_id === selectedTransferId);
+    const targetName = target?.member_name || target?.user_nickname || '';
+    const c1 = await Dialog.confirm({
+      content: t('roomSettings.transferConfirm1', { name: targetName }),
+    });
+    if (!c1) return;
+    const c2 = await Dialog.confirm({
+      content: t('roomSettings.transferConfirm2'),
+    });
+    if (!c2) return;
+    try {
+      await roomApi.transferPrimaryAdmin(parseInt(id!), selectedTransferId);
+      // Update local state: new primary, old primary (current user) becomes admin
+      setMembers(members.map((m) => {
+        if (m.member_user_id === selectedTransferId) return { ...m, is_admin: false };
+        if (m.member_user_id === room?.room_admin) return { ...m, is_admin: true };
+        return m;
+      }));
+      setRoom({ ...room, room_admin: selectedTransferId });
+      setTransferMode(false);
+      setSelectedTransferId(null);
+      Toast.show({ icon: 'success', content: t('roomSettings.transferSuccess') });
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || t('roomSettings.operationFailed') });
+    }
+  };
+
   const handleApproveRequest = async (request: JoinRequest) => {
     try {
       await roomApi.approveJoinRequest(parseInt(id!), request.request_id);
@@ -702,7 +802,7 @@ export default function RoomSettings() {
   }
 
   // 权限检查：只有管理员可以访问
-  if (!room || room.room_admin !== user?.user_id) {
+  if (!room || !room.is_admin) {
     return (
       <Container>
         <Header>
@@ -908,8 +1008,33 @@ export default function RoomSettings() {
             >
               <CloseOutline /> {t('common.cancel')}
             </Button>
+          ) : adminEditMode ? (
+            <Button
+              size="small"
+              onClick={() => {
+                setAdminEditMode(false);
+                setAdminEditSelection(new Set());
+              }}
+            >
+              <CloseOutline /> {t('common.cancel')}
+            </Button>
+          ) : transferMode ? (
+            <Button
+              size="small"
+              onClick={() => {
+                setTransferMode(false);
+                setSelectedTransferId(null);
+              }}
+            >
+              <CloseOutline /> {t('common.cancel')}
+            </Button>
           ) : (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              {room?.room_admin === user?.user_id && (
+                <Button size="small" onClick={enterAdminEditMode}>
+                  {t('roomSettings.adminManagement')}
+                </Button>
+              )}
               <Button size="small" onClick={() => setMemberDeleteMode(true)}>
                 <TrashIcon style={{ color: 'var(--app-color-danger)' }} />
               </Button>
@@ -921,41 +1046,79 @@ export default function RoomSettings() {
             {t('roomSettings.noMembers')}
           </div>
         ) : (
-          <MemberGrid>
+          <>
+            {adminEditMode && (
+              <div style={{ padding: '0 16px 8px', fontSize: 12, color: 'var(--app-color-text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span>{t('roomSettings.adminEditHint')}</span>
+                <Button size='mini' onClick={enterTransferMode}>→ {t('roomSettings.transferPrimaryAdmin')}</Button>
+              </div>
+            )}
+            {transferMode && (
+              <div style={{ padding: '0 16px 8px', fontSize: 12, color: 'var(--app-color-info)', fontWeight: 500 }}>
+                {t('roomSettings.transferHint')}
+              </div>
+            )}
+            <MemberGrid>
             {members.map((member) => {
-                const isSelected = memberDeleteMode && selectedMemberIds.has(member.member_user_id);
-                const isSelectable = memberDeleteMode && member.member_user_id !== room?.room_admin;
+                const isPrimary = member.member_user_id === room?.room_admin;
+                const isSelected = transferMode
+                  ? selectedTransferId === member.member_user_id
+                  : adminEditMode && (isPrimary || adminEditSelection.has(member.member_user_id));
+                const isSelectable = transferMode
+                  ? !isPrimary
+                  : adminEditMode && !isPrimary;
+                const isDeleteSelected = memberDeleteMode && selectedMemberIds.has(member.member_user_id);
+                const isDeleteSelectable = memberDeleteMode && member.member_user_id !== room?.room_admin && (!member.is_admin || room?.room_admin === user?.user_id);
+                const cardBackground = transferMode
+                  ? (isSelected ? 'var(--app-color-success)' : 'var(--app-color-hover)')
+                  : adminEditMode
+                    ? (isSelected ? 'var(--app-color-primary)' : 'var(--app-color-hover)')
+                    : isDeleteSelected
+                      ? 'var(--app-color-danger)'
+                      : isDeleteSelectable
+                        ? 'var(--app-color-hover)'
+                        : undefined;
+                const showPointer = transferMode ? isSelectable : adminEditMode ? isSelectable : !!isDeleteSelectable;
+                const handleClick = transferMode
+                  ? (isSelectable ? () => setSelectedTransferId(member.member_user_id) : undefined)
+                  : adminEditMode
+                    ? (isSelectable ? () => toggleAdminSelection(member.member_user_id) : undefined)
+                    : isDeleteSelectable
+                      ? () => toggleMemberSelection(member.member_user_id)
+                      : undefined;
                 return (
                   <MemberCard
                     key={member.member_id}
-                    style={
-                      isSelectable
-                        ? {
-                            background: isSelected ? 'var(--app-color-danger)' : 'var(--app-color-hover)',
-                            cursor: 'pointer',
-                          }
-                        : undefined
-                    }
-                    onClick={
-                      isSelectable
-                        ? () => toggleMemberSelection(member.member_user_id)
-                        : undefined
-                    }
+                    style={cardBackground ? { background: cardBackground, ...(showPointer ? { cursor: 'pointer' } : {}) } : undefined}
+                    onClick={handleClick}
                   >
                     <MemberCardLeft>
                       {member.user_avatar ? (
                         <MemberAvatar src={member.user_avatar} alt="" />
                       ) : (
-                        <MemberAvatarPlaceholder style={isSelected ? { background: 'var(--app-color-placeholder)' } : undefined}>
+                        <MemberAvatarPlaceholder style={(isSelected || isDeleteSelected) ? { background: 'var(--app-color-placeholder)' } : undefined}>
                           {(member.member_name || member.user_nickname)?.charAt(0) || '?'}
                         </MemberAvatarPlaceholder>
                       )}
                       <MemberCardInfo>
-                        <MemberCardName style={isSelected ? { color: 'var(--app-color-surface)' } : undefined}>
+                        <MemberCardName style={(isSelected || isDeleteSelected) ? { color: 'var(--app-color-surface)' } : undefined}>
                           {member.member_name || member.user_nickname}
-                          {member.member_user_id === room?.room_admin && ` (${t('roomSettings.admin')})`}
+                          {(isPrimary || member.is_admin) && (
+                            <MemberAdminBadge
+                              style={{
+                                background: isPrimary
+                                  ? 'var(--app-color-primary)'
+                                  : 'var(--app-color-info-bg, rgba(0,122,255,0.1))',
+                                color: isPrimary
+                                  ? '#fff'
+                                  : 'var(--app-color-primary)',
+                              }}
+                            >
+                              {isPrimary ? t('roomSettings.primaryAdmin') : t('roomSettings.adminBadge')}
+                            </MemberAdminBadge>
+                          )}
                         </MemberCardName>
-                        <MemberCardMeta style={isSelected ? { color: 'var(--app-color-surface)' } : undefined}>
+                        <MemberCardMeta style={(isSelected || isDeleteSelected) ? { color: 'var(--app-color-surface)' } : undefined}>
                           @{member.user_login_name}
                         </MemberCardMeta>
                       </MemberCardInfo>
@@ -964,6 +1127,7 @@ export default function RoomSettings() {
                 );
               })}
           </MemberGrid>
+          </>
         )}
         {memberDeleteMode && (
           <DeleteBar>
@@ -983,6 +1147,47 @@ export default function RoomSettings() {
               disabled={selectedMemberIds.size === 0}
             >
               {t('roomSettings.confirmDelete', { count: selectedMemberIds.size > 0 ? ` (${selectedMemberIds.size})` : '' })}
+            </Button>
+          </DeleteBar>
+        )}
+        {adminEditMode && (
+          <DeleteBar>
+            <Button
+              block
+              onClick={() => {
+                setAdminEditMode(false);
+                setAdminEditSelection(new Set());
+              }}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              block
+              color="primary"
+              onClick={handleConfirmAdmins}
+            >
+              {t('common.confirm')}
+            </Button>
+          </DeleteBar>
+        )}
+        {transferMode && (
+          <DeleteBar>
+            <Button
+              block
+              onClick={() => {
+                setTransferMode(false);
+                setSelectedTransferId(null);
+              }}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              block
+              color="primary"
+              onClick={handleConfirmTransfer}
+              disabled={selectedTransferId == null}
+            >
+              {t('common.confirm')}
             </Button>
           </DeleteBar>
         )}

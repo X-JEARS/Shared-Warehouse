@@ -48,6 +48,7 @@ psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 Users → Boxes (personal box: user_box_id)
 Rooms → Boxes → Items
 Room_Members (user-room many-to-many)
+Room_Admins (additional/secondary admins per room; primary admin is rooms.room_admin)
 Room_Join_Requests (join requests requiring admin approval)
 Items ↔ Tags (via item_room_tag_map, tags are room-specific)
 Items → Histories (transfer records)
@@ -57,6 +58,8 @@ Items → Reservations → Orders
 ### Key Domain Concepts
 - **Room (仓库)**: A warehouse/workspace that users can join (requires admin approval)
 - **Box (盒子)**: Storage container within a room, or user's personal box (user_box_id)
+- **Room Admin (管理员)**: Two tiers — a single **primary admin** (`rooms.room_admin`, the room creator) plus zero or more **additional admins** (`room_admins` table). Both tiers share the same routine management permissions (update room, add/rename/delete boxes, tags, approve/reject join requests, remove members). Only the primary admin can manage other admins (promote/demote/transfer). Room admin membership is tracked via `room_admins` table; the primary admin is NOT duplicated into `room_admins` (their admin status comes from `rooms.room_admin`).
+- **Transfer Primary Admin**: `POST /api/rooms/:id/transfer-admin` (primary admin only). Moves `rooms.room_admin` to a chosen member; the old primary becomes an additional admin (inserted into `room_admins`), and the new primary is removed from `room_admins` if present. Both parties receive a notification.
 - **Item (物品)**: Physical asset with QR code, can be taken by scanning its QR code
 - **Tags**: Room-specific, items have different tags in different rooms
 - **Cart**: Client-side only, persisted to localStorage via Zustand. Store includes `orderTitle` (editable order title, default generated as `用户名+的预约单#+日期简写`) and `setOrderTitle` action. `clearCart` resets `orderTitle` along with items and time.
@@ -100,7 +103,7 @@ Items → Reservations → Orders
 ### Notification Flow
 - Notifications are per-user (each user has their own notification list with independent read status)
 - **取走（borrow）**: If operator ≠ item owner, notify the item owner with content like "张三 取走了 笔记本电脑". If operator = item owner, no notification.
-- **放入（return）**: If operator ≠ item owner, notify the item owner with content like "张三 将 笔记本电脑 放入了 盒子A". Also notify the target room's admin (if admin ≠ operator and admin ≠ item owner) with content including room name. If operator = item owner, no notification.
+- **放入（return）**: If operator ≠ item owner, notify the item owner with content like "张三 将 笔记本电脑 放入了 盒子A". Also notify ALL room admins (primary + additional, from `getRoomAdminUserIds`) excluding operator and item owner, with content including room name. If operator = item owner, no owner notification.
 - Notification data stored in `notifications` table with `notification_content` field for detailed info
 - Unread count shown as red badge on notification bell icon in Profile page top-right corner, fetched via `GET /api/notifications/unread-count`, managed in `notificationStore` (Zustand). Notification page is a standalone route (not in tab bar), accessible from Profile page with unified sub-page Header (sticky, with ← back button).
 
@@ -126,14 +129,18 @@ Items → Reservations → Orders
 - Pages requiring sticky header (RoomSettings, Notifications) add `position: sticky; top: 0; z-index: 100`
 
 ### Room Settings Page
-- Located at `client/src/pages/RoomSettings.tsx`, only accessible by room admin
+- Located at `client/src/pages/RoomSettings.tsx`, accessible by any room admin (primary or additional). Entry guard uses `room.is_admin` (computed by backend in `getRooms`/`getRoomById` as `room_admin === userId OR EXISTS room_admins row`).
 - Header is sticky at top (position: sticky), stays fixed when scrolling page content
 - Uses card-based layout: each section (room info, join requests, boxes, tags, members) wrapped in a `Card` component (background: var(--app-color-surface), border-radius: var(--app-radius-l), box-shadow: var(--app-shadow-card))
 - **Room info card**: Displays room name directly (no "仓库名称：" prefix), with a blue outline-style edit icon button (SVG pencil+square, same as Profile nickname edit) inline to the right. Room ID shown below in gray.
 - **Join requests card**: Shows pending requests in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name/date on the right, approve/reject buttons at card bottom
 - **Box management card**: Boxes in two-per-row grid, click to rename, trash icon to delete
 - **Tag management card**: Tags in wrap layout, click to rename, batch delete mode
-- **Member management card**: Members in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name on the right (wraps on long names). Member count shown inline next to title. Batch delete mode (same pattern as tag management): click trash icon to enter delete mode, select members to remove, confirm batch deletion. Admin cannot be selected for deletion.
+- **Member management card**: Members in two-per-row grid cards with user avatar (or nickname initial placeholder) on the left, name/login name on the right (wraps on long names). Member count shown inline next to title. Each admin shows a badge: 「主管理员」 (primary, `var(--app-color-primary)` filled) or 「管理员」 (additional). Three header modes:
+  - Default: shows "管理员" button (visible only to PRIMARY admin, via `room.room_admin === user.user_id`) and trash icon (delete members).
+  - Member delete mode: trash icon → enter delete mode, select members to remove, confirm batch deletion. Admins are only deletable by the primary admin (additional admins cannot remove other admins); primary admin is never selectable. Removing a member also clears their `room_admins` row if they were an admin.
+  - Admin edit mode: "管理员" button → enter admin edit mode. Hint text shown with a `→ 转移主管理员` button on its right. Already-admin members show blue background (`var(--app-color-primary)`); primary admin is blue but not clickable. Non-primary members are clickable to toggle admin selection. Bottom 「取消 / 确定」 bar; confirm computes diff vs current admin set and batch calls `POST /api/rooms/:id/admins` (add) and `DELETE /api/rooms/:id/admins/:userId` (remove).
+  - Transfer primary mode: `→ 转移主管理员` button (in admin edit mode hint) → enter transfer mode. Click a non-primary member to select (green highlight `var(--app-color-success)`). Bottom confirm triggers TWO `Dialog.confirm` confirmations, then `POST /api/rooms/:id/transfer-admin`. After transfer, old primary becomes additional admin, new primary takes over; local `room.room_admin` updated optimistically.
 
 ### Scanner Component
 - Located at `client/src/components/Scanner.tsx`
@@ -187,7 +194,7 @@ Items → Reservations → Orders
 - **BoxDetail page**: Shows box info (name, room, item count, notice) and item list. Has "存入物品" button that opens scanner modal in batch mode. Scanned items accumulate in pending list, "放入" button triggers batch return.
 
 ### Warehouse Page Header Layout
-- Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin). When pending join requests exist, a red badge with the request count is shown on the gear icon.
+- Left side: WarehouseSelector dropdown + settings icon (gear, only visible for room admin, i.e. `currentRoom.is_admin`). When pending join requests exist, a red badge with the request count is shown on the gear icon.
 - Right side: Search button (magnifier icon) + Add item button (+ icon)
 - Search bar hidden by default, click search button to show with auto-focus
 - FAB (bottom right): Cart button (only visible when cart has items)
@@ -265,6 +272,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - System language changes detected via `window.addEventListener('languagechange')`
 - Use `useTranslation()` hook in components to access `t()` function and `i18n` instance
 - All user-facing text must use `t('key')` instead of hardcoded strings. When adding new UI text, add keys to both `zh-CN.json` and `en-US.json`
+- Antd-mobile built-in component text (Dialog confirm/cancel, Calendar, DatePicker, etc.) is NOT driven by `i18next`. Imperative `Dialog.confirm`/`Dialog.alert` read antd-mobile's module-level default config via `getDefaultConfig()`, NOT React context — so `<ConfigProvider>` alone does not localize them. `App.tsx` wraps the tree in `<ConfigProvider locale={...}>` (for context-driven components) AND calls `setDefaultConfig({ locale })` in a `useEffect` keyed on `effectiveLanguage` so imperative Dialogs follow the current language too. When adding antd-mobile locale work, re-import locales from `antd-mobile/es/locales/zh-CN` / `antd-mobile/es/locales/en-US`.
 - Date/time formatting: use `i18n.language === 'en-US' ? 'en-US' : 'zh-CN'` for locale parameter in `toLocaleString()` / `toLocaleDateString()` calls
 - Sorting: use `i18n.language === 'en-US' ? 'en' : 'zh'` for `localeCompare()` locale parameter
 

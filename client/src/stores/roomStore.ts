@@ -9,6 +9,7 @@ interface Room {
   room_notice?: string;
   member_name?: string;
   item_count?: number;
+  is_admin?: boolean;
 }
 
 interface RoomState {

@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
+import { getRoomAdminUserIds } from '../utils/admin';
+import { createNotification } from './notificationController';
 
 export const scanQrcode = async (req: AuthRequest, res: Response) => {
   try {
@@ -324,20 +326,28 @@ export const returnItemsBatch = async (req: AuthRequest, res: Response) => {
 
         // Notify item owner if returner is not the owner
         if (item.item_belong_user_id !== userId) {
-          await query(
-            `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
-             VALUES ($1, 'return', $2, $3, $4, $5)`,
-            [item.item_belong_user_id, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}`, itemId, createTime]
+          await createNotification(
+            item.item_belong_user_id,
+            'return',
+            '物品被放入',
+            `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}`,
+            itemId
           );
         }
 
-        // Notify room admin if returner is not the admin and not the owner (avoid duplicate)
-        if (targetBox.room_admin && targetBox.room_admin !== userId && targetBox.room_admin !== item.item_belong_user_id) {
-          await query(
-            `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
-             VALUES ($1, 'return', $2, $3, $4, $5)`,
-            [targetBox.room_admin, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}（${targetBox.room_name}）`, itemId, createTime]
-          );
+        // Notify all room admins (excluding operator and item owner to avoid duplicates)
+        if (targetBox.room_id) {
+          const adminIds = await getRoomAdminUserIds(targetBox.room_id);
+          for (const adminId of adminIds) {
+            if (adminId === userId || adminId === item.item_belong_user_id) continue;
+            await createNotification(
+              adminId,
+              'return',
+              '物品被放入',
+              `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}（${targetBox.room_name}）`,
+              itemId
+            );
+          }
         }
 
         results.push({ itemId, success: true, message: '放入成功' });
@@ -414,20 +424,28 @@ export const returnItem = async (req: AuthRequest, res: Response) => {
 
     // Notify item owner if returner is not the owner
     if (item.item_belong_user_id !== userId) {
-      await query(
-        `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
-         VALUES ($1, 'return', $2, $3, $4, $5)`,
-        [item.item_belong_user_id, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}`, itemId, createTime]
+      await createNotification(
+        item.item_belong_user_id,
+        'return',
+        '物品被放入',
+        `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}`,
+        itemId
       );
     }
 
-    // Notify room admin if returner is not the admin and not the owner (avoid duplicate)
-    if (targetBox.room_admin && targetBox.room_admin !== userId && targetBox.room_admin !== item.item_belong_user_id) {
-      await query(
-        `INSERT INTO notifications (notification_user_id, notification_type, notification_title, notification_content, notification_related_id, notification_create_time)
-         VALUES ($1, 'return', $2, $3, $4, $5)`,
-        [targetBox.room_admin, '物品被放入', `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}（${targetBox.room_name}）`, itemId, createTime]
-      );
+    // Notify all room admins (excluding operator and item owner to avoid duplicates)
+    if (targetBox.room_id) {
+      const adminIds = await getRoomAdminUserIds(targetBox.room_id);
+      for (const adminId of adminIds) {
+        if (adminId === userId || adminId === item.item_belong_user_id) continue;
+        await createNotification(
+          adminId,
+          'return',
+          '物品被放入',
+          `${returnerName} 将 ${item.item_name} 放入了 ${targetBox.box_name}（${targetBox.room_name}）`,
+          itemId
+        );
+      }
     }
 
     return success(res, null, 'Item returned successfully');

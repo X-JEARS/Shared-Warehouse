@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
+import { isRoomAdmin, isPrimaryAdmin } from '../utils/admin';
+import { createNotification } from './notificationController';
 
 export const getRooms = async (req: AuthRequest, res: Response) => {
   try {
@@ -11,7 +13,11 @@ export const getRooms = async (req: AuthRequest, res: Response) => {
       `SELECT r.*, rm.member_name,
         (SELECT COUNT(*) FROM items i
          JOIN boxes b ON i.item_current_box_id = b.box_id
-         WHERE b.box_belong_room_id = r.room_id) as item_count
+         WHERE b.box_belong_room_id = r.room_id) as item_count,
+        (r.room_admin = $1 OR EXISTS (
+           SELECT 1 FROM room_admins ra
+           WHERE ra.admin_room_id = r.room_id AND ra.admin_user_id = $1
+         )) as is_admin
        FROM rooms r
        JOIN room_members rm ON r.room_id = rm.member_room_id
        WHERE rm.member_user_id = $1
@@ -42,11 +48,15 @@ export const getRoomById = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      `SELECT r.*, u.user_nickname as admin_nickname
+      `SELECT r.*, u.user_nickname as admin_nickname,
+        (r.room_admin = $2 OR EXISTS (
+           SELECT 1 FROM room_admins ra
+           WHERE ra.admin_room_id = r.room_id AND ra.admin_user_id = $2
+         )) as is_admin
        FROM rooms r
        JOIN users u ON r.room_admin = u.user_id
        WHERE r.room_id = $1`,
-      [id]
+      [id, userId]
     );
 
     if (result.rows.length === 0) {
@@ -54,7 +64,7 @@ export const getRoomById = async (req: AuthRequest, res: Response) => {
     }
 
     const room = result.rows[0];
-    room.isAdmin = room.room_admin === userId;
+    room.isAdmin = !!room.is_admin;
 
     return success(res, room);
   } catch (err) {
@@ -115,18 +125,9 @@ export const updateRoom = async (req: AuthRequest, res: Response) => {
     const userId = req.user?.userId;
     const { id } = req.params;
     const { name, notice } = req.body;
+    const roomId = parseInt(id);
 
-    // Check if user is admin
-    const roomCheck = await query(
-      'SELECT room_admin FROM rooms WHERE room_id = $1',
-      [id]
-    );
-
-    if (roomCheck.rows.length === 0) {
-      return error(res, 'Room not found', 404);
-    }
-
-    if (roomCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(roomId, userId))) {
       return error(res, 'Only admin can update room', 403);
     }
 
@@ -218,9 +219,13 @@ export const getMembers = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await query(
-      `SELECT rm.*, u.user_login_name, u.user_nickname, u.user_avatar
+      `SELECT rm.*, u.user_login_name, u.user_nickname, u.user_avatar,
+        (r.room_admin = rm.member_user_id OR ra.admin_user_id IS NOT NULL) AS is_admin
        FROM room_members rm
        JOIN users u ON rm.member_user_id = u.user_id
+       JOIN rooms r ON rm.member_room_id = r.room_id
+       LEFT JOIN room_admins ra
+         ON ra.admin_room_id = rm.member_room_id AND ra.admin_user_id = rm.member_user_id
        WHERE rm.member_room_id = $1
        ORDER BY rm.member_join_time ASC`,
       [id]
@@ -237,28 +242,31 @@ export const removeMember = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
     const { id, memberId } = req.params;
+    const roomId = parseInt(id);
+    const targetUserId = parseInt(memberId);
 
-    // Check if user is admin
-    const roomCheck = await query(
-      'SELECT room_admin FROM rooms WHERE room_id = $1',
-      [id]
-    );
-
-    if (roomCheck.rows.length === 0) {
-      return error(res, 'Room not found', 404);
-    }
-
-    if (roomCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(roomId, userId))) {
       return error(res, 'Only admin can remove members', 403);
     }
 
-    // Cannot remove admin
-    if (parseInt(memberId) === roomCheck.rows[0].room_admin) {
+    // Cannot remove the primary admin
+    if (await isPrimaryAdmin(roomId, targetUserId)) {
       return error(res, 'Cannot remove admin from room');
     }
 
+    // Removing another admin requires primary admin
+    const targetIsAdmin = await isRoomAdmin(roomId, targetUserId);
+    if (targetIsAdmin && !(await isPrimaryAdmin(roomId, userId))) {
+      return error(res, 'Only primary admin can remove other admins', 403);
+    }
+
+    // Remove membership and any admin role for this user in this room
     await query(
-      'DELETE FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+      `DELETE FROM room_members WHERE member_room_id = $1 AND member_user_id = $2`,
+      [id, memberId]
+    );
+    await query(
+      `DELETE FROM room_admins WHERE admin_room_id = $1 AND admin_user_id = $2`,
       [id, memberId]
     );
 
@@ -332,18 +340,9 @@ export const getJoinRequests = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
     const { id } = req.params;
+    const roomId = parseInt(id);
 
-    // Check if user is admin
-    const roomCheck = await query(
-      'SELECT room_admin FROM rooms WHERE room_id = $1',
-      [id]
-    );
-
-    if (roomCheck.rows.length === 0) {
-      return error(res, 'Room not found', 404);
-    }
-
-    if (roomCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(roomId, userId))) {
       return error(res, 'Only admin can view join requests', 403);
     }
 
@@ -368,18 +367,9 @@ export const approveJoinRequest = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
     const { id, requestId } = req.params;
+    const roomId = parseInt(id);
 
-    // Check if user is admin
-    const roomCheck = await query(
-      'SELECT room_admin FROM rooms WHERE room_id = $1',
-      [id]
-    );
-
-    if (roomCheck.rows.length === 0) {
-      return error(res, 'Room not found', 404);
-    }
-
-    if (roomCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(roomId, userId))) {
       return error(res, 'Only admin can approve requests', 403);
     }
 
@@ -441,18 +431,9 @@ export const rejectJoinRequest = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
     const { id, requestId } = req.params;
+    const roomId = parseInt(id);
 
-    // Check if user is admin
-    const roomCheck = await query(
-      'SELECT room_admin FROM rooms WHERE room_id = $1',
-      [id]
-    );
-
-    if (roomCheck.rows.length === 0) {
-      return error(res, 'Room not found', 404);
-    }
-
-    if (roomCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(roomId, userId))) {
       return error(res, 'Only admin can reject requests', 403);
     }
 
@@ -507,5 +488,199 @@ export const getJoinRequestStatus = async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error('Get join request status error:', err);
     return error(res, 'Failed to get join request status', 500);
+  }
+};
+
+// Add a secondary admin (primary admin only)
+export const addAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+    const { userId: targetUserId } = req.body;
+    const roomId = parseInt(id);
+    const target = parseInt(targetUserId);
+
+    if (!target) {
+      return error(res, 'userId is required');
+    }
+
+    if (!(await isPrimaryAdmin(roomId, userId))) {
+      return error(res, 'Only primary admin can add admins', 403);
+    }
+
+    if (target === userId) {
+      return error(res, 'You are already the primary admin');
+    }
+
+    // Target must be a member of the room
+    const memberCheck = await query(
+      'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+      [id, target]
+    );
+    if (memberCheck.rows.length === 0) {
+      return error(res, 'Target user is not a member of this room');
+    }
+
+    // Target must not already be primary or secondary admin
+    if (await isPrimaryAdmin(roomId, target)) {
+      return error(res, 'User is already an admin');
+    }
+    const existing = await query(
+      'SELECT 1 FROM room_admins WHERE admin_room_id = $1 AND admin_user_id = $2',
+      [id, target]
+    );
+    if (existing.rows.length > 0) {
+      return error(res, 'User is already an admin');
+    }
+
+    const roomResult = await query(
+      'SELECT room_name FROM rooms WHERE room_id = $1',
+      [id]
+    );
+    const roomName = roomResult.rows[0]?.room_name || '';
+
+    await query(
+      `INSERT INTO room_admins (admin_user_id, admin_room_id, admin_add_time)
+       VALUES ($1, $2, $3)`,
+      [target, id, Date.now()]
+    );
+
+    // Notify the new admin
+    const operatorResult = await query(
+      'SELECT user_nickname FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const operatorName = operatorResult.rows[0]?.user_nickname || '管理员';
+    await createNotification(
+      target,
+      'admin',
+      '成为管理员',
+      `${operatorName} 将你设为了 ${roomName} 的管理员`,
+      roomId
+    );
+
+    return success(res, null, 'Admin added');
+  } catch (err) {
+    console.error('Add admin error:', err);
+    return error(res, 'Failed to add admin', 500);
+  }
+};
+
+// Remove a secondary admin (primary admin only)
+export const removeAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id, userId: targetUserId } = req.params;
+    const roomId = parseInt(id);
+    const target = parseInt(targetUserId);
+
+    if (!(await isPrimaryAdmin(roomId, userId))) {
+      return error(res, 'Only primary admin can remove admins', 403);
+    }
+
+    if (await isPrimaryAdmin(roomId, target)) {
+      return error(res, 'Cannot remove the primary admin');
+    }
+
+    const result = await query(
+      'DELETE FROM room_admins WHERE admin_room_id = $1 AND admin_user_id = $2 RETURNING *',
+      [id, target]
+    );
+
+    if (result.rows.length === 0) {
+      return error(res, 'User is not an admin of this room', 404);
+    }
+
+    return success(res, null, 'Admin removed');
+  } catch (err) {
+    console.error('Remove admin error:', err);
+    return error(res, 'Failed to remove admin', 500);
+  }
+};
+
+// Transfer primary admin to another member (primary admin only).
+// Old primary becomes a normal admin; new primary is removed from room_admins (if present).
+export const transferPrimaryAdmin = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { id } = req.params;
+    const { userId: targetUserId } = req.body;
+    const roomId = parseInt(id);
+    const target = parseInt(targetUserId);
+
+    if (!target) {
+      return error(res, 'userId is required');
+    }
+
+    if (!(await isPrimaryAdmin(roomId, userId))) {
+      return error(res, 'Only primary admin can transfer ownership', 403);
+    }
+
+    if (target === userId) {
+      return error(res, 'You are already the primary admin');
+    }
+
+    // Target must be a member
+    const memberCheck = await query(
+      'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+      [id, target]
+    );
+    if (memberCheck.rows.length === 0) {
+      return error(res, 'Target user is not a member of this room');
+    }
+
+    // Promote old primary to normal admin (ignore if already present)
+    await query(
+      `INSERT INTO room_admins (admin_user_id, admin_room_id, admin_add_time)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (admin_user_id, admin_room_id) DO NOTHING`,
+      [userId, id, Date.now()]
+    );
+
+    // Hand over primary ownership (ON CONFLICT is impossible since target != old primary,
+    // and primary constraint uniqueness is across the table only as a single value)
+    await query(
+      'UPDATE rooms SET room_admin = $1 WHERE room_id = $2',
+      [target, id]
+    );
+
+    // Remove new primary from room_admins (cannot be both primary and secondary)
+    await query(
+      'DELETE FROM room_admins WHERE admin_room_id = $1 AND admin_user_id = $2',
+      [id, target]
+    );
+
+    // Fetch names + room name for notifications
+    const namesResult = await query(
+      `SELECT
+        (SELECT user_nickname FROM users WHERE user_id = $1) AS old_name,
+        (SELECT user_nickname FROM users WHERE user_id = $2) AS new_name,
+        (SELECT room_name FROM rooms WHERE room_id = $3) AS room_name`,
+      [userId, target, id]
+    );
+    const oldName = namesResult.rows[0]?.old_name || '我';
+    const newName = namesResult.rows[0]?.new_name || '';
+    const roomName = namesResult.rows[0]?.room_name || '';
+
+    // Notify new primary and old primary
+    await createNotification(
+      target,
+      'admin',
+      '成为主管理员',
+      `${oldName} 已将 ${roomName} 的主管理员转让给你`,
+      roomId ?? null
+    );
+    await createNotification(
+      userId!,
+      'admin',
+      '已转让主管理员',
+      `你已将 ${roomName} 的主管理员转让给 ${newName}`,
+      roomId ?? null
+    );
+
+    return success(res, null, 'Primary admin transferred');
+  } catch (err) {
+    console.error('Transfer primary admin error:', err);
+    return error(res, 'Failed to transfer primary admin', 500);
   }
 };

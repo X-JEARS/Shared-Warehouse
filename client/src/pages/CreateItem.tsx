@@ -5,7 +5,6 @@ import { Form, Input, Button, TextArea, Toast, Selector } from 'antd-mobile';
 import styled from 'styled-components';
 import { itemApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
-import { useAuthStore } from '../stores/authStore';
 import Scanner from '../components/Scanner';
 
 const Container = styled.div`
@@ -73,7 +72,6 @@ export default function CreateItem() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { currentRoom } = useRoomStore();
-  const { user } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [boxes, setBoxes] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>([]);
@@ -218,7 +216,7 @@ export default function CreateItem() {
             <WarningText>
               {t('createItem.noBoxesDesc')}
             </WarningText>
-            {currentRoom?.room_admin === user?.user_id && (
+            {currentRoom?.is_admin && (
               <Button
                 color="primary"
                 onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}

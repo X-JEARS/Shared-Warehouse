@@ -46,6 +46,12 @@ export const roomApi = {
   getMembers: (id: number) => request.get(`/rooms/${id}/members`),
   removeMember: (roomId: number, memberId: number) =>
     request.delete(`/rooms/${roomId}/members/${memberId}`),
+  addAdmin: (roomId: number, userId: number) =>
+    request.post(`/rooms/${roomId}/admins`, { userId }),
+  removeAdmin: (roomId: number, userId: number) =>
+    request.delete(`/rooms/${roomId}/admins/${userId}`),
+  transferPrimaryAdmin: (roomId: number, targetUserId: number) =>
+    request.post(`/rooms/${roomId}/transfer-admin`, { userId: targetUserId }),
 };
 
 // Box API
