@@ -24,6 +24,7 @@ npm run preview      # Preview production build
 
 # Database
 psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
+psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/upgrade_room_admins_and_transfer_records.sql  # Upgrade an existing pre-admin database
 ```
 
 ## Architecture

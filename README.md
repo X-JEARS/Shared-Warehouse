@@ -43,11 +43,13 @@ createdb warehouse
 psql -d warehouse -f ../sql/init.sql
 ```
 
-已有数据库升级时，按编号执行 `sql/migrations/` 中尚未应用的迁移。例如转移记录功能需要执行：
+已有数据库如果同时缺少 `room_admins` 和转移记录相关结构，使用合并升级脚本：
 
 ```bash
-psql -d warehouse -f ../sql/migrations/002_transfer_records.sql
+psql -v ON_ERROR_STOP=1 -d warehouse -f ../sql/upgrade_room_admins_and_transfer_records.sql
 ```
+
+该脚本可重复执行，不会回填或修改已有业务数据。如果数据库已经有 `room_admins`，也可以继续使用单独的 `sql/migrations/002_transfer_records.sql`。
 
 ### 3. 配置环境变量
 
@@ -127,6 +129,7 @@ warehouse/
 │
 └── sql/
     ├── init.sql           # 数据库初始化脚本
+    ├── upgrade_room_admins_and_transfer_records.sql # 已有数据库合并升级脚本
     └── migrations/        # 现有数据库增量迁移脚本
 ```
 
