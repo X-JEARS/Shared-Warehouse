@@ -135,6 +135,15 @@ CREATE TABLE IF NOT EXISTS notifications (
     notification_create_time BIGINT NOT NULL
 );
 
+-- Room admins table (additional/secondary admins per room; primary admin is rooms.room_admin)
+CREATE TABLE IF NOT EXISTS room_admins (
+    admin_id SERIAL PRIMARY KEY,
+    admin_user_id INT NOT NULL REFERENCES users(user_id),
+    admin_room_id INT NOT NULL REFERENCES rooms(room_id),
+    admin_add_time BIGINT NOT NULL,
+    UNIQUE(admin_user_id, admin_room_id)
+);
+
 -- Room join requests table
 CREATE TABLE IF NOT EXISTS room_join_requests (
     request_id SERIAL PRIMARY KEY,
@@ -157,6 +166,9 @@ CREATE INDEX IF NOT EXISTS idx_boxes_qrcode ON boxes(box_qrcode);
 
 CREATE INDEX IF NOT EXISTS idx_room_members_room ON room_members(member_room_id);
 CREATE INDEX IF NOT EXISTS idx_room_members_user ON room_members(member_user_id);
+
+CREATE INDEX IF NOT EXISTS idx_room_admins_room ON room_admins(admin_room_id);
+CREATE INDEX IF NOT EXISTS idx_room_admins_user ON room_admins(admin_user_id);
 
 CREATE INDEX IF NOT EXISTS idx_tags_room ON tags(tag_belong_room_id);
 

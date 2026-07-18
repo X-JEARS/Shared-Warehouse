@@ -12,6 +12,9 @@ import {
   approveJoinRequest,
   rejectJoinRequest,
   getJoinRequestStatus,
+  addAdmin,
+  removeAdmin,
+  transferPrimaryAdmin,
 } from '../controllers/roomController';
 import { auth } from '../middlewares/auth';
 
@@ -29,5 +32,8 @@ router.post('/:id/join-requests/:requestId/approve', auth, approveJoinRequest);
 router.post('/:id/join-requests/:requestId/reject', auth, rejectJoinRequest);
 router.get('/:id/members', auth, getMembers);
 router.delete('/:id/members/:memberId', auth, removeMember);
+router.post('/:id/admins', auth, addAdmin);
+router.delete('/:id/admins/:userId', auth, removeAdmin);
+router.post('/:id/transfer-admin', auth, transferPrimaryAdmin);
 
 export default router;

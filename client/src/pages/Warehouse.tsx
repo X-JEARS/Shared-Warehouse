@@ -7,7 +7,6 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { useRoomStore } from '../stores/roomStore';
 import { useCartStore } from '../stores/cartStore';
-import { useAuthStore } from '../stores/authStore';
 import { itemApi, roomApi } from '../services/api';
 import WarehouseSelector from '../components/WarehouseSelector';
 import FilterBar from '../components/FilterBar';
@@ -159,7 +158,6 @@ export default function Warehouse() {
   const { t, i18n } = useTranslation();
   const { currentRoom, rooms } = useRoomStore();
   const { items: cartItems } = useCartStore();
-  const { user } = useAuthStore();
   const [inStockItems, setInStockItems] = useState<any[]>([]);
   const [outOfStockItems, setOutOfStockItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -200,7 +198,7 @@ export default function Warehouse() {
   };
 
   const loadJoinRequestCount = async () => {
-    if (!currentRoom || currentRoom.room_admin !== user?.user_id) {
+    if (!currentRoom || !currentRoom.is_admin) {
       setPendingRequestCount(0);
       return;
     }
@@ -255,7 +253,7 @@ export default function Warehouse() {
       <Header>
         <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <WarehouseSelector />
-          {currentRoom && currentRoom.room_admin === user?.user_id && (
+          {currentRoom && currentRoom.is_admin && (
             <IconButton onClick={() => navigate(`/room-settings/${currentRoom.room_id}`)}>
               {pendingRequestCount > 0 ? (
                 <div style={{ position: 'relative' }}>

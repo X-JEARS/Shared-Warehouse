@@ -1,5 +1,10 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ConfigProvider, setDefaultConfig } from 'antd-mobile';
+import zhCN from 'antd-mobile/es/locales/zh-CN';
+import enUS from 'antd-mobile/es/locales/en-US';
+import { useEffect } from 'react';
 import { useAuthStore } from './stores/authStore';
+import { useThemeStore } from './stores/themeStore';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import MainLayout from './components/MainLayout';
@@ -28,9 +33,15 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const effectiveLanguage = useThemeStore((s) => s.effectiveLanguage);
+  const locale = effectiveLanguage === 'en-US' ? enUS : zhCN;
+  useEffect(() => {
+    setDefaultConfig({ locale });
+  }, [locale]);
   return (
-    <BrowserRouter>
-      <Routes>
+    <ConfigProvider locale={locale}>
+      <BrowserRouter>
+        <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
@@ -160,7 +171,8 @@ function App() {
           }
         />
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </ConfigProvider>
   );
 }
 

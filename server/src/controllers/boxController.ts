@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
+import { isRoomAdmin } from '../utils/admin';
 
 export const getBoxById = async (req: AuthRequest, res: Response) => {
   try {
@@ -92,17 +93,7 @@ export const createBox = async (req: AuthRequest, res: Response) => {
     const { roomId } = req.params;
     const { name, qrcode, notice } = req.body;
 
-    // Check if user is admin
-    const roomCheck = await query(
-      'SELECT room_admin FROM rooms WHERE room_id = $1',
-      [roomId]
-    );
-
-    if (roomCheck.rows.length === 0) {
-      return error(res, 'Room not found', 404);
-    }
-
-    if (roomCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(parseInt(roomId), userId))) {
       return error(res, 'Only admin can create boxes', 403);
     }
 
@@ -155,7 +146,7 @@ export const updateBox = async (req: AuthRequest, res: Response) => {
 
     // Get box and check permission
     const boxCheck = await query(
-      `SELECT b.box_belong_room_id, r.room_admin
+      `SELECT b.box_belong_room_id
        FROM boxes b
        JOIN rooms r ON b.box_belong_room_id = r.room_id
        WHERE b.box_id = $1`,
@@ -166,7 +157,7 @@ export const updateBox = async (req: AuthRequest, res: Response) => {
       return error(res, 'Box not found', 404);
     }
 
-    if (boxCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(boxCheck.rows[0].box_belong_room_id, userId))) {
       return error(res, 'Only admin can update boxes', 403);
     }
 
@@ -210,7 +201,7 @@ export const deleteBox = async (req: AuthRequest, res: Response) => {
 
     // Get box and check permission
     const boxCheck = await query(
-      `SELECT b.box_belong_room_id, b.box_name, r.room_admin
+      `SELECT b.box_belong_room_id, b.box_name
        FROM boxes b
        JOIN rooms r ON b.box_belong_room_id = r.room_id
        WHERE b.box_id = $1`,
@@ -221,7 +212,7 @@ export const deleteBox = async (req: AuthRequest, res: Response) => {
       return error(res, 'Box not found', 404);
     }
 
-    if (boxCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(boxCheck.rows[0].box_belong_room_id, userId))) {
       return error(res, 'Only admin can delete boxes', 403);
     }
 

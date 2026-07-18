@@ -3,6 +3,7 @@ import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 import { createNotification } from './notificationController';
+import { isRoomAdmin } from '../utils/admin';
 
 // 获取用户的预约订单列表
 export const getOrders = async (req: AuthRequest, res: Response) => {
@@ -538,17 +539,7 @@ export const createTag = async (req: AuthRequest, res: Response) => {
       return error(res, 'Tag name must be 12 characters or less');
     }
 
-    // Check if admin
-    const roomCheck = await query(
-      'SELECT room_admin FROM rooms WHERE room_id = $1',
-      [roomId]
-    );
-
-    if (roomCheck.rows.length === 0) {
-      return error(res, 'Room not found', 404);
-    }
-
-    if (roomCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(parseInt(roomId), userId))) {
       return error(res, 'Only admin can create tags', 403);
     }
 
@@ -583,7 +574,7 @@ export const deleteTag = async (req: AuthRequest, res: Response) => {
 
     // Check if admin
     const tagCheck = await query(
-      `SELECT t.tag_belong_room_id, r.room_admin
+      `SELECT t.tag_belong_room_id
        FROM tags t
        JOIN rooms r ON t.tag_belong_room_id = r.room_id
        WHERE t.tag_id = $1`,
@@ -594,7 +585,7 @@ export const deleteTag = async (req: AuthRequest, res: Response) => {
       return error(res, 'Tag not found', 404);
     }
 
-    if (tagCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(tagCheck.rows[0].tag_belong_room_id, userId))) {
       return error(res, 'Only admin can delete tags', 403);
     }
 
@@ -624,7 +615,7 @@ export const updateTag = async (req: AuthRequest, res: Response) => {
     }
 
     const tagCheck = await query(
-      `SELECT t.tag_belong_room_id, r.room_admin
+      `SELECT t.tag_belong_room_id
        FROM tags t
        JOIN rooms r ON t.tag_belong_room_id = r.room_id
        WHERE t.tag_id = $1`,
@@ -635,7 +626,7 @@ export const updateTag = async (req: AuthRequest, res: Response) => {
       return error(res, 'Tag not found', 404);
     }
 
-    if (tagCheck.rows[0].room_admin !== userId) {
+    if (!(await isRoomAdmin(tagCheck.rows[0].tag_belong_room_id, userId))) {
       return error(res, 'Only admin can update tags', 403);
     }
 
