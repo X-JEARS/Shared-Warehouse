@@ -1,13 +1,37 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Toast, SpinLoading, Dialog } from 'antd-mobile';
+import { Button, Toast, SpinLoading, Dialog, Dropdown, DropdownRef } from 'antd-mobile';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import ScannerComponent, { ScannerHandle } from '../components/Scanner';
 import ScanResultList, { PendingItem } from '../components/ScanResultList';
-import { scanApi } from '../services/api';
+import { reservationApi, scanApi } from '../services/api';
+import { useRoomStore } from '../stores/roomStore';
 
 type ScanMode = 'idle' | 'borrow' | 'return';
+
+interface ReferenceReservation {
+  reservation_id: number;
+  reservation_item_id: number;
+  item_name: string;
+  item_qrcode: string;
+  current_box_id: number | null;
+  current_box_name: string | null;
+  current_room_id: number | null;
+  current_room_name: string | null;
+  holder_user_id: number | null;
+  holder_nickname: string | null;
+  is_in_user_hand: boolean;
+}
+
+interface ReferenceOrder {
+  order_id: number;
+  order_create_time: number | string;
+  order_title: string | null;
+  reservations: ReferenceReservation[];
+}
+
+type ReferenceStatus = 'borrow-scanned' | 'return-scanned' | 'in-hand' | 'attention' | 'none';
 
 const Container = styled.div`
   height: 100dvh;
@@ -81,10 +105,160 @@ const ButtonRow = styled.div`
   flex-shrink: 0;
 `;
 
+const ReferenceDropdownHost = styled.div<{ $open: boolean }>`
+  width: 100%;
+  flex-shrink: 0;
+
+  .adm-dropdown-item-title-arrow {
+    transition: none !important;
+  }
+
+  .adm-dropdown-popup-body {
+    display: ${({ $open }) => $open ? 'block' : 'none'} !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .adm-dropdown-popup-mask {
+    display: ${({ $open }) => $open ? 'block' : 'none'} !important;
+    opacity: ${({ $open }) => $open ? 1 : 0} !important;
+    transition: none !important;
+    animation: none !important;
+  }
+`;
+
+const ReferenceDropdown = styled(Dropdown)`
+  width: 100%;
+  margin-bottom: 12px;
+  border: 1px solid var(--app-color-border);
+  border-radius: var(--app-radius-m);
+  background: var(--app-color-surface);
+  flex-shrink: 0;
+  overflow: hidden;
+
+  .adm-dropdown-nav {
+    min-height: 40px;
+  }
+
+  .adm-dropdown-item {
+    justify-content: flex-start;
+  }
+
+  .adm-dropdown-item-title {
+    width: 100%;
+    justify-content: space-between;
+    padding: 10px 12px;
+    color: var(--app-color-text);
+  }
+`;
+
+const ReferenceDropdownContent = styled.div`
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px 16px;
+`;
+
+const ReferenceOption = styled.button<{ $active?: boolean }>`
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid var(--app-color-border);
+  background: transparent;
+  color: ${({ $active }) => $active ? 'var(--app-color-primary)' : 'var(--app-color-text)'};
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:active {
+    opacity: 0.7;
+  }
+`;
+
+const ReferenceMenuMessage = styled.div`
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--app-color-text-secondary);
+  font-size: 14px;
+`;
+
 const ResultListWrapper = styled.div`
   flex: 1;
   overflow-y: auto;
   margin-top: 12px;
+`;
+
+const ListSectionTitle = styled.div`
+  color: var(--app-color-text-weak);
+  font-size: 13px;
+  font-weight: 500;
+  margin: 4px 0 8px;
+`;
+
+const ReferenceList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+`;
+
+const ReferenceItem = styled.div`
+  min-width: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: var(--app-color-surface);
+  border-radius: var(--app-radius-m);
+`;
+
+const StatusSlot = styled.div`
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+`;
+
+const StatusDot = styled.div<{ $status: Exclude<ReferenceStatus, 'none'> }>`
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: ${({ $status }) => {
+    if ($status === 'in-hand') return 'var(--app-color-success)';
+    if ($status === 'borrow-scanned') return 'var(--app-color-primary)';
+    if ($status === 'return-scanned') return 'var(--app-color-warning)';
+    return 'var(--app-color-danger)';
+  }};
+`;
+
+const ReferenceItemInfo = styled.div`
+  min-width: 0;
+  flex: 1;
+  padding: 7px 0;
+`;
+
+const ReferenceItemName = styled.div`
+  color: var(--app-color-text);
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const ReferenceItemLocation = styled.div`
+  color: var(--app-color-text-secondary);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const LoadingOverlay = styled.div`
@@ -101,17 +275,55 @@ const LoadingOverlay = styled.div`
 `;
 
 export default function Scanner() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const currentRoom = useRoomStore(state => state.currentRoom);
   const scannerRef = useRef<ScannerHandle>(null);
+  const referenceDropdownRef = useRef<DropdownRef>(null);
+  const referenceDropdownHostRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<ScanMode>('idle');
   const [pendingItems, setPendingItems] = useState<PendingItem[]>([]);
   const [returnTargetBox, setReturnTargetBox] = useState<any>(null);
   const [scanLoading, setScanLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [referenceRoomId, setReferenceRoomId] = useState<number | null>(null);
+  const [referenceOrders, setReferenceOrders] = useState<ReferenceOrder[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
+  const [referenceLoading, setReferenceLoading] = useState(false);
+  const [referenceDropdownOpen, setReferenceDropdownOpen] = useState(false);
   // 用 ref 持有最新 pendingItems，避免闭包陈旧导致去重失效
   const pendingItemsRef = useRef<PendingItem[]>([]);
   pendingItemsRef.current = pendingItems;
+
+  useEffect(() => {
+    if (mode === 'idle' || !referenceRoomId) {
+      setReferenceOrders([]);
+      setSelectedOrderId(null);
+      return;
+    }
+
+    let canceled = false;
+    setReferenceLoading(true);
+    setSelectedOrderId(null);
+
+    reservationApi.getRecentRoomOrders(referenceRoomId)
+      .then((res: any) => {
+        if (!canceled) setReferenceOrders(res.data || []);
+      })
+      .catch((error: any) => {
+        if (canceled) return;
+        console.error('Failed to load recent reservation orders:', error);
+        setReferenceOrders([]);
+        Toast.show({ icon: 'fail', content: t('scanner.referenceOrdersLoadFailed') });
+      })
+      .finally(() => {
+        if (!canceled) setReferenceLoading(false);
+      });
+
+    return () => {
+      canceled = true;
+    };
+  }, [mode, referenceRoomId, t]);
 
   const addItemToList = (item: any, qrcode: string) => {
     const exists = pendingItemsRef.current.some(p => p.qrcode === qrcode);
@@ -185,11 +397,13 @@ export default function Scanner() {
         // 进入放入模式
         setMode('return');
         setReturnTargetBox(res.data.box);
+        setReferenceRoomId(currentRoom?.room_id || null);
         return false; // 继续扫描
       }
 
       // 进入取走模式
       setMode('borrow');
+      setReferenceRoomId(currentRoom?.room_id || null);
       addItemToList(res.data.item, qrcode);
       return false; // 继续扫描
     } catch (error: any) {
@@ -288,7 +502,61 @@ export default function Scanner() {
     setMode('idle');
     setPendingItems([]);
     setReturnTargetBox(null);
+    setReferenceRoomId(null);
+    setReferenceOrders([]);
+    setSelectedOrderId(null);
+    setReferenceDropdownOpen(false);
     // 操作完成后不再重启扫码器，摄像头已释放
+  };
+
+  const selectedOrder = referenceOrders.find(order => order.order_id === selectedOrderId) || null;
+
+  const formatOrderLabel = (order: ReferenceOrder) => {
+    const timestamp = typeof order.order_create_time === 'string'
+      ? parseInt(order.order_create_time, 10)
+      : order.order_create_time;
+    const date = new Date(timestamp).toLocaleDateString(
+      i18n.language === 'en-US' ? 'en-US' : 'zh-CN',
+      { month: 'numeric', day: 'numeric' }
+    );
+    const title = order.order_title || t('scanner.orderFallbackTitle', { id: order.order_id });
+    return `${title} · ${date}`;
+  };
+
+  const getReferenceStatus = (reservation: ReferenceReservation): ReferenceStatus => {
+    const isScanned = pendingItems.some(item => item.itemId === reservation.reservation_item_id);
+
+    if (mode === 'borrow') {
+      if (reservation.is_in_user_hand) return 'in-hand';
+      return isScanned ? 'borrow-scanned' : 'none';
+    }
+
+    if (isScanned) return 'return-scanned';
+    if (reservation.is_in_user_hand) return 'in-hand';
+    if (reservation.current_room_id === referenceRoomId) return 'none';
+    return 'attention';
+  };
+
+  const getStatusLabel = (status: ReferenceStatus) => {
+    if (status === 'borrow-scanned') return t('scanner.statusReadyToBorrow');
+    if (status === 'return-scanned') return t('scanner.statusReadyToReturn');
+    if (status === 'in-hand') return t('scanner.statusInHand');
+    if (status === 'attention') return t('scanner.statusAttention');
+    return undefined;
+  };
+
+  const getReferenceLocation = (reservation: ReferenceReservation) => {
+    if (reservation.holder_nickname) return reservation.holder_nickname;
+    if (reservation.current_room_name && reservation.current_box_name) {
+      return `${reservation.current_room_name} / ${reservation.current_box_name}`;
+    }
+    return reservation.current_room_name || reservation.current_box_name || t('common.unknown');
+  };
+
+  const selectReferenceOrder = (orderId: number | null) => {
+    setSelectedOrderId(orderId);
+    setReferenceDropdownOpen(false);
+    referenceDropdownRef.current?.close();
   };
 
   const navTitle = mode === 'borrow' ? t('scanner.scanBorrow') : mode === 'return' ? t('scanner.scanReturn') : t('scanner.scanQRCode');
@@ -330,6 +598,61 @@ export default function Scanner() {
 
         {mode !== 'idle' && (
           <BatchActionArea>
+            <ReferenceDropdownHost ref={referenceDropdownHostRef} $open={referenceDropdownOpen}>
+              <ReferenceDropdown
+                ref={referenceDropdownRef}
+                activeKey={referenceDropdownOpen ? 'reference-order' : null}
+                getContainer={() => referenceDropdownHostRef.current || document.body}
+                onChange={(key) => setReferenceDropdownOpen(key === 'reference-order')}
+              >
+                <Dropdown.Item
+                  key="reference-order"
+                  highlight={selectedOrderId !== null}
+                  title={
+                    referenceLoading
+                      ? t('scanner.loadingReferenceOrders')
+                      : selectedOrder
+                        ? formatOrderLabel(selectedOrder)
+                        : mode === 'borrow'
+                          ? t('scanner.freeBorrow')
+                          : t('scanner.freeReturn')
+                  }
+                >
+                  <ReferenceDropdownContent>
+                    {referenceLoading ? (
+                      <ReferenceMenuMessage>
+                        <SpinLoading style={{ '--size': '16px' }} />
+                        {t('scanner.loadingReferenceOrders')}
+                      </ReferenceMenuMessage>
+                    ) : (
+                      <>
+                        <ReferenceOption
+                          type="button"
+                          $active={selectedOrderId === null}
+                          onClick={() => selectReferenceOrder(null)}
+                        >
+                          {mode === 'borrow' ? t('scanner.freeBorrow') : t('scanner.freeReturn')}
+                        </ReferenceOption>
+                        {referenceOrders.map(order => (
+                          <ReferenceOption
+                            key={order.order_id}
+                            type="button"
+                            $active={selectedOrderId === order.order_id}
+                            onClick={() => selectReferenceOrder(order.order_id)}
+                          >
+                            {formatOrderLabel(order)}
+                          </ReferenceOption>
+                        ))}
+                        {referenceOrders.length === 0 && (
+                          <ReferenceMenuMessage>{t('scanner.noReferenceOrders')}</ReferenceMenuMessage>
+                        )}
+                      </>
+                    )}
+                  </ReferenceDropdownContent>
+                </Dropdown.Item>
+              </ReferenceDropdown>
+            </ReferenceDropdownHost>
+
             <ButtonRow>
               <Button
                 block
@@ -352,6 +675,35 @@ export default function Scanner() {
             </ButtonRow>
 
             <ResultListWrapper>
+              {selectedOrder && (
+                <>
+                  <ListSectionTitle>{t('scanner.reservationChecklist')}</ListSectionTitle>
+                  <ReferenceList>
+                    {selectedOrder.reservations.map(reservation => {
+                      const status = getReferenceStatus(reservation);
+                      const statusLabel = getStatusLabel(status);
+                      return (
+                        <ReferenceItem key={reservation.reservation_id}>
+                          <StatusSlot>
+                            {status !== 'none' && (
+                              <StatusDot
+                                $status={status}
+                                aria-label={statusLabel}
+                                title={statusLabel}
+                              />
+                            )}
+                          </StatusSlot>
+                          <ReferenceItemInfo>
+                            <ReferenceItemName>{reservation.item_name}</ReferenceItemName>
+                            <ReferenceItemLocation>{getReferenceLocation(reservation)}</ReferenceItemLocation>
+                          </ReferenceItemInfo>
+                        </ReferenceItem>
+                      );
+                    })}
+                  </ReferenceList>
+                  <ListSectionTitle>{t('scanner.scannedItems')}</ListSectionTitle>
+                </>
+              )}
               <ScanResultList
                 items={pendingItems}
                 onRemoveItem={handleRemoveItem}

@@ -150,7 +150,20 @@
     "scanItemHint": "扫描物品二维码加入取走列表",
     "putInto": "将物品放入",
     "borrow": "取走",
-    "putIn": "放入"
+    "putIn": "放入",
+    "referenceOrder": "参考预约单",
+    "loadingReferenceOrders": "正在加载预约单...",
+    "referenceOrdersLoadFailed": "预约单加载失败，已切换为自由操作",
+    "noReferenceOrders": "该仓库暂无预约单",
+    "freeBorrow": "自由取物",
+    "freeReturn": "自由归还",
+    "orderFallbackTitle": "预约单 #{{id}}",
+    "reservationChecklist": "预约物品清单",
+    "scannedItems": "本次已扫码物品",
+    "statusReadyToBorrow": "本次已扫码，准备取出",
+    "statusReadyToReturn": "本次已扫码，准备归还",
+    "statusInHand": "已在手中",
+    "statusAttention": "物品在其他人手中或其他仓库"
   },
   "itemDetail": {
     "nameEmpty": "物品名称不能为空",

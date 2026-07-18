@@ -131,6 +131,8 @@ export const reservationApi = {
     request.get('/reservations/orders', { params: { status } }),
   getRoomOrders: (roomId: number, status?: 'active' | 'past') =>
     request.get(`/reservations/rooms/${roomId}/orders`, { params: { status } }),
+  getRecentRoomOrders: (roomId: number) =>
+    request.get(`/reservations/rooms/${roomId}/recent-orders`),
   getOrderDetail: (id: number) => request.get(`/reservations/orders/${id}`),
   cancelOrder: (id: number) => request.delete(`/reservations/orders/${id}`),
   updateOrderTitle: (id: number, title: string) =>

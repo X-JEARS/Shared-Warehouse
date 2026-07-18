@@ -143,6 +143,94 @@ export const getRoomOrders = async (req: AuthRequest, res: Response) => {
   }
 };
 
+// 获取当前用户在指定仓库最近创建的 5 个有效预约单，用于扫码取还时核对
+export const getRecentRoomOrders = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+    const { roomId } = req.params;
+
+    const memberCheck = await query(
+      'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+      [roomId, userId]
+    );
+
+    if (memberCheck.rows.length === 0) {
+      return error(res, 'Access denied', 403);
+    }
+
+    const ordersResult = await query(
+      `SELECT
+        o.order_id,
+        o.order_create_time,
+        o.order_title,
+        MIN(r.reservation_start_time) AS start_time,
+        MAX(r.reservation_end_time) AS end_time,
+        COUNT(r.reservation_id) AS room_item_count
+       FROM orders o
+       JOIN reservations r ON r.reservation_order_id = o.order_id
+       JOIN items i ON i.item_id = r.reservation_item_id
+       JOIN boxes belong_box ON belong_box.box_id = i.item_belong_box_id
+       WHERE o.order_user_id = $1
+         AND belong_box.box_belong_room_id = $2
+         AND o.order_is_canceled = false
+         AND r.reservation_is_canceled = false
+       GROUP BY o.order_id
+       ORDER BY o.order_create_time DESC
+       LIMIT 5`,
+      [userId, roomId]
+    );
+
+    if (ordersResult.rows.length === 0) {
+      return success(res, []);
+    }
+
+    const orderIds = ordersResult.rows.map((order: any) => order.order_id);
+    const reservationsResult = await query(
+      `SELECT
+        r.reservation_id,
+        r.reservation_order_id,
+        r.reservation_item_id,
+        r.reservation_start_time,
+        r.reservation_end_time,
+        i.item_name,
+        i.item_qrcode,
+        i.item_image,
+        current_box.box_id AS current_box_id,
+        current_box.box_name AS current_box_name,
+        current_box.box_belong_room_id AS current_room_id,
+        current_room.room_name AS current_room_name,
+        holder.user_id AS holder_user_id,
+        holder.user_nickname AS holder_nickname,
+        (i.item_current_box_id = viewer_user.user_box_id) AS is_in_user_hand
+       FROM reservations r
+       JOIN items i ON i.item_id = r.reservation_item_id
+       JOIN users viewer_user ON viewer_user.user_id = $1
+       LEFT JOIN boxes current_box ON current_box.box_id = i.item_current_box_id
+       LEFT JOIN rooms current_room ON current_room.room_id = current_box.box_belong_room_id
+       LEFT JOIN users holder ON holder.user_box_id = current_box.box_id
+       WHERE r.reservation_order_id = ANY($2::int[])
+         AND r.reservation_is_canceled = false
+       ORDER BY r.reservation_start_time ASC, r.reservation_id ASC`,
+      [userId, orderIds]
+    );
+
+    const reservationsByOrder = new Map<number, any[]>();
+    for (const reservation of reservationsResult.rows) {
+      const reservations = reservationsByOrder.get(reservation.reservation_order_id) || [];
+      reservations.push(reservation);
+      reservationsByOrder.set(reservation.reservation_order_id, reservations);
+    }
+
+    return success(res, ordersResult.rows.map((order: any) => ({
+      ...order,
+      reservations: reservationsByOrder.get(order.order_id) || [],
+    })));
+  } catch (err) {
+    console.error('Get recent room orders error:', err);
+    return error(res, 'Failed to get recent room orders', 500);
+  }
+};
+
 // 获取订单详情
 export const getOrderDetail = async (req: AuthRequest, res: Response) => {
   try {

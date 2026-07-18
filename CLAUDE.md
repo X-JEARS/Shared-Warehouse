@@ -166,6 +166,10 @@ Items → Reservations → Orders
 - **idle**: First scan determines mode. Item QR → borrow mode. Box QR → return mode (sets `returnTargetBox`, shows clickable box name link). Always returns `false` to keep scanning.
 - **borrow**: Scans accumulate in `pendingItems` list. Box QR codes rejected with toast. "取走" button triggers batch borrow via `POST /api/scan/borrow-batch`. Items with `isInHand` excluded from request but shown with badge.
 - **return**: Scans accumulate in `pendingItems` list. Box QR codes rejected with toast. "放入" button triggers batch return via `POST /api/scan/return-batch`. Box name clickable to navigate to BoxDetail.
+- **Reservation reference**: After entering borrow or return mode, an Ant Design Mobile Dropdown above the action buttons lets the user choose free operation or one of their 5 most recently created, non-canceled reservation orders associated with the currently selected room (`roomStore.currentRoom`). Ended and upcoming reservations are included; the list is not limited to currently active reservations. Data comes from `GET /api/reservations/rooms/:roomId/recent-orders` (room members only). Selecting an order shows all of its non-canceled reserved items in a two-column verification grid, but does not add them to `pendingItems`; only scanned items are submitted.
+  - Borrow dots: green = already in the current user's hand, blue = scanned in this batch and ready to borrow, no dot = other state.
+  - Return dots: yellow = scanned in this batch and ready to return (highest priority), green = in the current user's hand, no dot = currently in the selected room, red = held by another user or located in another room.
+  - The reference Dropdown renders its popup inside a local host and disables popup, mask, and arrow transitions on the scanner page to avoid animation jank while the live camera is rendering. Other Dropdown instances keep their normal animations.
 - Uses `pendingItemsRef` to avoid stale closure in dedup check
 - Partial success: failed items remain in list, succeeded items removed
 - "取消" button resets mode and restarts scanner
@@ -318,6 +322,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - **API Endpoints**:
   - `GET /api/reservations/orders` - Get current user's orders
   - `GET /api/reservations/rooms/:roomId/orders` - Get all orders for a room (members only)
+  - `GET /api/reservations/rooms/:roomId/recent-orders` - Get the current user's 5 most recently created non-canceled orders associated with a room, including ended reservations, plus live item location/holder state for scanner verification
   - `GET /api/reservations/orders/:id` - Get order detail (owner or room members can view)
   - `DELETE /api/reservations/orders/:id` - Cancel order (owner only)
   - `PUT /api/reservations/orders/:id/title` - Update order title (owner only)

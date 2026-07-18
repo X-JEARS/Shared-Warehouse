@@ -150,7 +150,20 @@
     "scanItemHint": "Scan item QR codes to add to borrow list",
     "putInto": "Return items to",
     "borrow": "Borrow",
-    "putIn": "Return"
+    "putIn": "Return",
+    "referenceOrder": "Reference reservation",
+    "loadingReferenceOrders": "Loading reservations...",
+    "referenceOrdersLoadFailed": "Reservations could not be loaded; free mode is active",
+    "noReferenceOrders": "No reservations for this warehouse",
+    "freeBorrow": "Free borrow",
+    "freeReturn": "Free return",
+    "orderFallbackTitle": "Reservation #{{id}}",
+    "reservationChecklist": "Reserved items",
+    "scannedItems": "Scanned items",
+    "statusReadyToBorrow": "Scanned and ready to borrow",
+    "statusReadyToReturn": "Scanned and ready to return",
+    "statusInHand": "In hand",
+    "statusAttention": "Held by someone else or in another warehouse"
   },
   "itemDetail": {
     "nameEmpty": "Item name cannot be empty",

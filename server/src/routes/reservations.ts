@@ -7,6 +7,7 @@ import {
   createOrder,
   getOrders,
   getRoomOrders,
+  getRecentRoomOrders,
   getOrderDetail,
   cancelOrder,
   updateOrderTitle,
@@ -35,6 +36,7 @@ router.put('/orders/:id/extend', auth, extendOrder);
 
 router.get('/items/:id', auth, getItemReservations);
 
+router.get('/rooms/:roomId/recent-orders', auth, getRecentRoomOrders);
 router.get('/rooms/:roomId/orders', auth, getRoomOrders);
 router.get('/rooms/:roomId/tags', auth, getTags);
 router.post('/rooms/:roomId/tags', auth, createTag);
