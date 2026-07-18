@@ -10,7 +10,8 @@
     "unknownTime": "未知时间",
     "scanCode": "扫码",
     "back": "←",
-    "more": "更多"
+    "more": "更多",
+    "retry": "重试"
   },
   "status": {
     "inStock": "在库",
@@ -74,6 +75,7 @@
     "myProfile": "我的资料",
     "myItems": "我的物品",
     "myReservations": "我的预约",
+    "myTransferRecords": "转移记录",
     "systemSettings": "系统设置",
     "about": "关于",
     "aboutContent": "共享仓库 v1.0.0\n扫码借还，高效管理"
@@ -163,7 +165,25 @@
     "statusReadyToBorrow": "本次已扫码，准备取出",
     "statusReadyToReturn": "本次已扫码，准备归还",
     "statusInHand": "已在手中",
-    "statusAttention": "物品在其他人手中或其他仓库"
+    "statusAttention": "物品在其他人手中或其他仓库",
+    "uploadTransferPhoto": "上传转移照片",
+    "transferPhoto": "转移照片",
+    "replaceTransferPhoto": "替换照片",
+    "removeTransferPhoto": "移除照片",
+    "invalidTransferImage": "仅支持 JPEG、PNG、GIF 或 WebP 图片",
+    "transferImageTooLarge": "照片不能超过 20MB"
+  },
+  "myTransferRecords": {
+    "title": "转移记录",
+    "loadFailed": "转移记录加载失败",
+    "empty": "暂无转移记录",
+    "borrow": "取走",
+    "return": "放入",
+    "itemCount": "{{count}} 件物品",
+    "destination": "转移至：{{location}}",
+    "inHand": "我的手中",
+    "photo": "转移照片",
+    "noItems": "相关物品记录已不存在"
   },
   "itemDetail": {
     "nameEmpty": "物品名称不能为空",

@@ -26,6 +26,7 @@ import ReservationOrderDetail from './pages/ReservationOrderDetail';
 import MyReservations from './pages/MyReservations';
 import MyProfile from './pages/MyProfile';
 import SystemSettings from './pages/SystemSettings';
+import MyTransferRecords from './pages/MyTransferRecords';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -167,6 +168,14 @@ function App() {
           element={
             <PrivateRoute>
               <SystemSettings />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/my-transfer-records"
+          element={
+            <PrivateRoute>
+              <MyTransferRecords />
             </PrivateRoute>
           }
         />

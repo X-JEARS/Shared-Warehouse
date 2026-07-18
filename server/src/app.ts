@@ -16,6 +16,7 @@ import reservationRoutes from './routes/reservations';
 import cartRoutes from './routes/cart';
 import notificationRoutes from './routes/notifications';
 import uploadRoutes from './routes/upload';
+import transferRecordRoutes from './routes/transferRecords';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files (avatars, images, etc.)
 app.use('/avatars', express.static(path.join(__dirname, '../public/avatars')));
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
+app.use('/transfer-images', express.static(path.join(__dirname, '../public/transfer-images')));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -48,6 +50,7 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/transfer-records', transferRecordRoutes);
 
 // Serve frontend static files (production)
 app.use(express.static(path.join(__dirname, '../public/frontend')));

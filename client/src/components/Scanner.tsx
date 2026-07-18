@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 const ScannerContainer = styled.div`
   position: relative;
   width: 100%;
-  height: 300px;
+  height: clamp(220px, 36dvh, 300px);
   background: #000;
   border-radius: var(--app-radius-l);
   overflow: hidden;
@@ -29,6 +29,11 @@ const Overlay = styled.div`
   border: 2px solid var(--app-color-primary);
   border-radius: var(--app-radius-l);
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+
+  @media (max-height: 650px) {
+    width: 170px;
+    height: 170px;
+  }
 `;
 
 const Hint = styled.div`
@@ -43,7 +48,7 @@ const Hint = styled.div`
 
 const PausedPlaceholder = styled.div`
   width: 100%;
-  height: 300px;
+  height: clamp(220px, 36dvh, 300px);
   background: #000;
   border-radius: var(--app-radius-l);
   display: flex;

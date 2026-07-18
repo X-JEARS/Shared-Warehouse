@@ -8,6 +8,7 @@ import {
   UserOutline,
   AppstoreOutline,
   CalendarOutline,
+  UnorderedListOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -128,7 +129,8 @@ export default function Profile() {
       <Section>
         <MenuItem icon={<UserOutline fontSize={18} />} text={t('profile.myProfile')} onClick={() => navigate('/my-profile')} showBorder />
         <MenuItem icon={<AppstoreOutline fontSize={18} />} text={t('profile.myItems')} onClick={() => window.location.href = '/my-items'} showBorder />
-        <MenuItem icon={<CalendarOutline fontSize={18} />} text={t('profile.myReservations')} onClick={() => navigate('/my-reservations')} />
+        <MenuItem icon={<CalendarOutline fontSize={18} />} text={t('profile.myReservations')} onClick={() => navigate('/my-reservations')} showBorder />
+        <MenuItem icon={<UnorderedListOutline fontSize={18} />} text={t('profile.myTransferRecords')} onClick={() => navigate('/my-transfer-records')} />
       </Section>
 
       <Section>

@@ -10,7 +10,8 @@
     "unknownTime": "Unknown time",
     "scanCode": "Scan",
     "back": "←",
-    "more": "More"
+    "more": "More",
+    "retry": "Retry"
   },
   "status": {
     "inStock": "In Stock",
@@ -74,6 +75,7 @@
     "myProfile": "My Profile",
     "myItems": "My Items",
     "myReservations": "My Reservations",
+    "myTransferRecords": "Transfer Records",
     "systemSettings": "Settings",
     "about": "About",
     "aboutContent": "Shared Warehouse v1.0.0\nScan to borrow & return, manage efficiently"
@@ -163,7 +165,25 @@
     "statusReadyToBorrow": "Scanned and ready to borrow",
     "statusReadyToReturn": "Scanned and ready to return",
     "statusInHand": "In hand",
-    "statusAttention": "Held by someone else or in another warehouse"
+    "statusAttention": "Held by someone else or in another warehouse",
+    "uploadTransferPhoto": "Upload Transfer Photo",
+    "transferPhoto": "Transfer photo",
+    "replaceTransferPhoto": "Replace photo",
+    "removeTransferPhoto": "Remove photo",
+    "invalidTransferImage": "Only JPEG, PNG, GIF, or WebP images are supported",
+    "transferImageTooLarge": "Photo must not exceed 20MB"
+  },
+  "myTransferRecords": {
+    "title": "Transfer Records",
+    "loadFailed": "Failed to load transfer records",
+    "empty": "No transfer records",
+    "borrow": "Borrow",
+    "return": "Return",
+    "itemCount": "{{count}} item(s)",
+    "destination": "Moved to: {{location}}",
+    "inHand": "In my hand",
+    "photo": "Transfer photo",
+    "noItems": "Related item records no longer exist"
   },
   "itemDetail": {
     "nameEmpty": "Item name cannot be empty",

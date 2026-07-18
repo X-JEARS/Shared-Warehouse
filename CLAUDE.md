@@ -30,7 +30,7 @@ psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 
 ### Backend (server/)
 - **Express + TypeScript** REST API on port 3000
-- **PostgreSQL** database with 14 tables (see sql/init.sql)
+- **PostgreSQL** database with 16 tables (see sql/init.sql)
 - **JWT authentication** via middleware in `src/middlewares/auth.ts`
 - **Route structure**: Each route file imports its controller, all routes use `/api` prefix
 - **Response format**: Use `success()` and `error()` helpers from `src/utils/response.ts`
@@ -51,7 +51,7 @@ Room_Members (user-room many-to-many)
 Room_Admins (additional/secondary admins per room; primary admin is rooms.room_admin)
 Room_Join_Requests (join requests requiring admin approval)
 Items ↔ Tags (via item_room_tag_map, tags are room-specific)
-Items → Histories (transfer records)
+Transfer_Records → Histories → Items
 Items → Reservations → Orders
 ```
 
@@ -88,6 +88,7 @@ Items → Reservations → Orders
 - Scanner page enters batch borrow mode: items accumulate in a pending list, scanner keeps running
 - `POST /api/scan/borrow` moves single item to user's personal box
 - `POST /api/scan/borrow-batch` moves multiple items to user's personal box (partial success supported)
+- Each successful scan submission creates one `transfer_records` row (`transfer_record_type = 1`) and binds all successful item histories through nullable `history_transfer_record_id`
 - Items already in user's hand are shown with "已在手中" badge and excluded from borrow request
 - Items can flow freely between people (anyone can take an item)
 - "我手中的" page shows items in user's personal box via `GET /api/items/in-hand`
@@ -97,6 +98,7 @@ Items → Reservations → Orders
 - Scanner page: scan box QR code → enters batch return mode (no longer navigates to BoxDetail). Target box name shown as clickable link.
 - `POST /api/scan/return` moves single item to a specified box
 - `POST /api/scan/return-batch` moves multiple items to specified boxes (partial success supported)
+- Each successful scan submission creates one `transfer_records` row (`transfer_record_type = 2`) and binds all successful item histories through nullable `history_transfer_record_id`
 - No requirement that user must hold the item to return it
 - Anyone can put an item into any box they have access to
 
@@ -172,6 +174,7 @@ Items → Reservations → Orders
   - The reference Dropdown renders its popup inside a local host and disables popup, mask, and arrow transitions on the scanner page to avoid animation jank while the live camera is rendering. Other Dropdown instances keep their normal animations.
 - Uses `pendingItemsRef` to avoid stale closure in dedup check
 - Partial success: failed items remain in list, succeeded items removed
+- **Transfer photo**: Borrow and return modes show an optional single-photo picker below the action buttons. JPEG, PNG, GIF, and WebP files up to 20MB are submitted with the batch as multipart data. The selected original file is not cropped, resized, compressed, or re-encoded. A record photo is cleared after a transfer record is created, while total request failures keep it available for retry.
 - "取消" button resets mode and restarts scanner
 - UI layout: Fixed viewport height flex column (`height: 100dvh`). Header pinned at top (`flex-shrink: 0`). Scanner frame → hint → button row (取消 + 取走/放入) are fixed and non-scrolling. ScanResultList wrapped in `ResultListWrapper` (`flex: 1; overflow-y: auto`) scrolls independently within remaining space.
 
@@ -252,8 +255,15 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Features:
   - Notification bell icon in top-right corner of header, with red badge showing unread count. Click navigates to `/notifications` (standalone route without tab bar).
   - Avatar and nickname displayed in header (display-only, no inline editing)
-  - Menu items use outline icons from `antd-mobile-icons`: 我的资料 (`UserOutline`), 我的物品 (`AppstoreOutline`), 我的预约 (`CalendarOutline`), 系统设置 (`SetOutline`), 关于 (`InformationCircleOutline`)
-  - Menu is divided into two sections: 我的资料 + 我的物品 + 我的预约 in the first group, 系统设置 in the second group (separated by gap), 关于 in a third group
+  - Menu items use outline icons from `antd-mobile-icons`: 我的资料 (`UserOutline`), 我的物品 (`AppstoreOutline`), 我的预约 (`CalendarOutline`), 转移记录 (`UnorderedListOutline`), 系统设置 (`SetOutline`), 关于 (`InformationCircleOutline`)
+  - Menu is divided into two sections: 我的资料 + 我的物品 + 我的预约 + 转移记录 in the first group, 系统设置 in the second group (separated by gap), 关于 in a third group
+
+### Transfer Records (转移记录)
+- `transfer_records` is the parent checklist for one borrow or return submission. `transfer_record_type` is `SMALLINT`: `1` = borrow, `2` = return.
+- `histories.history_transfer_record_id` is nullable so legacy histories and maintenance moves can remain ungrouped.
+- Optional original photos are stored under `/transfer-images/{transfer_record_id}.{ext}`; the database stores the public path in `transfer_record_image`.
+- `GET /api/transfer-records` returns only the authenticated user's records with nested item histories and pagination.
+- `client/src/pages/MyTransferRecords.tsx` is the standalone `/my-transfer-records` page, reached from Profile. It displays type, time, item checklist, destination, and an expandable record photo.
 
 ### Theme System
 - Located at `client/src/stores/themeStore.ts` (Zustand store with localStorage persistence)

@@ -85,13 +85,23 @@ CREATE TABLE IF NOT EXISTS item_remarks (
     UNIQUE(remark_item_id, remark_room_id)
 );
 
+-- Transfer records table (1 = borrow, 2 = return)
+CREATE TABLE IF NOT EXISTS transfer_records (
+    transfer_record_id SERIAL PRIMARY KEY,
+    transfer_record_user_id INT NOT NULL REFERENCES users(user_id),
+    transfer_record_type SMALLINT NOT NULL CHECK (transfer_record_type IN (1, 2)),
+    transfer_record_time BIGINT NOT NULL,
+    transfer_record_image VARCHAR(128)
+);
+
 -- Histories table
 CREATE TABLE IF NOT EXISTS histories (
     history_id SERIAL PRIMARY KEY,
     history_item_id INT NOT NULL REFERENCES items(item_id),
     history_user_id INT NOT NULL REFERENCES users(user_id),
     history_box_id INT NOT NULL REFERENCES boxes(box_id),
-    history_time BIGINT NOT NULL
+    history_time BIGINT NOT NULL,
+    history_transfer_record_id INT REFERENCES transfer_records(transfer_record_id) ON DELETE SET NULL
 );
 
 -- Comments table
@@ -180,6 +190,9 @@ CREATE INDEX IF NOT EXISTS idx_remarks_room ON item_remarks(remark_room_id);
 
 CREATE INDEX IF NOT EXISTS idx_histories_item ON histories(history_item_id);
 CREATE INDEX IF NOT EXISTS idx_histories_time ON histories(history_time);
+CREATE INDEX IF NOT EXISTS idx_histories_transfer_record ON histories(history_transfer_record_id);
+
+CREATE INDEX IF NOT EXISTS idx_transfer_records_user_time ON transfer_records(transfer_record_user_id, transfer_record_time DESC);
 
 CREATE INDEX IF NOT EXISTS idx_comments_item ON comments(comment_item_id);
 
