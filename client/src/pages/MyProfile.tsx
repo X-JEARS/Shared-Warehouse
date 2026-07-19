@@ -162,12 +162,9 @@ export default function MyProfile() {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
-  const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
   const imgRef = useRef<HTMLImageElement>(null);
 
-  const avatarUrl = user?.user_avatar
-    ? `${user.user_avatar}?t=${avatarTimestamp}`
-    : undefined;
+  const avatarUrl = user?.user_avatar || undefined;
 
   const handleAvatarClick = () => {
     fileInputRef.current?.click();
@@ -258,7 +255,6 @@ export default function MyProfile() {
 
       const res: any = await userApi.uploadAvatar(formData);
       updateUser({ user_avatar: res.data.avatar });
-      setAvatarTimestamp(Date.now());
       Toast.show({ icon: 'success', content: t('myProfile.avatarUpdated') });
       setCropPopupVisible(false);
       setImageSrc(null);

@@ -242,7 +242,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Supports search functionality
 - Uses `GET /api/items/my` API endpoint
 - **Item Image Upload**: Click item image to upload new image, supports cropping (react-image-crop), compressed to 200x200 JPEG
-- Image stored at `/images/{item_id}.jpg` on server
+- Each upload gets a new random filename under `/images/`; after the database switches to the new path, the previous item image is deleted
 - Uses `POST /api/upload/items/:id/image` for image upload (multipart/form-data)
 - **Item Operations**: Click "操作" button to show action sheet from bottom with options:
   - Edit name: Edit item name via center dialog
@@ -312,6 +312,12 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
   - Change password: Click opens `Dialog.confirm` with current/new password inputs
 - Logout button: Red solid background with white text, at bottom of page
 - Uses `POST /api/upload/avatar` for avatar upload, `PUT /users/profile` for nickname/phone updates, `PUT /users/password` for password changes
+
+### Avatar and Item Image Caching
+- Avatar and item image uploads use new random filenames on every update; the database stores the versioned public path and the previous file is deleted after a successful switch
+- Upload database changes use row locks so concurrent updates serialize and do not leave an intermediate image behind
+- `/avatars` and `/images` are served with `Cache-Control: public, max-age=31536000, immutable`; clients must use the returned path directly and must not append per-render timestamps
+- Production reverse proxies that serve or cache these paths must preserve equivalent immutable caching behavior, and the service process needs write/delete permission for both upload directories
 
 ### Reservation Conflict Detection
 - Backend checks time overlap in `reservationController.ts` before creating reservations
