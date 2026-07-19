@@ -34,6 +34,15 @@ const SearchContainer = styled.div`
   background: var(--app-color-surface);
 `;
 
+const WarehouseMain = styled.div`
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
@@ -328,14 +337,15 @@ export default function Warehouse() {
         </SearchContainer>
       )}
 
-      {currentRoom && (
-        <FilterBar
-          roomId={currentRoom.room_id}
-          onFilterChange={handleFilterChange}
-        />
-      )}
+      <WarehouseMain>
+        {currentRoom && (
+          <FilterBar
+            roomId={currentRoom.room_id}
+            onFilterChange={handleFilterChange}
+          />
+        )}
 
-      <Content>
+        <Content>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <SpinLoading />
@@ -403,7 +413,8 @@ export default function Warehouse() {
             )}
           </ItemList>
         )}
-      </Content>
+        </Content>
+      </WarehouseMain>
 
       <FAB>
         {cartItems.length > 0 && (
