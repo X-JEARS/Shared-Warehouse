@@ -1,5 +1,6 @@
 import express from 'express';
 import cors, { CorsOptions } from 'cors';
+import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -17,8 +18,10 @@ import cartRoutes from './routes/cart';
 import notificationRoutes from './routes/notifications';
 import uploadRoutes from './routes/upload';
 import transferRecordRoutes from './routes/transferRecords';
+import { assertJwtConfigured } from './utils/jwt';
 
 dotenv.config();
+assertJwtConfigured();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,6 +77,7 @@ app.use((req, res, next) => {
   return cors(corsOptions)(req, res, next);
 });
 app.use(compression());
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

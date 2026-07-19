@@ -7,7 +7,7 @@ import 'react-image-crop/dist/ReactCrop.css';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
-import { userApi } from '../services/api';
+import { authApi, userApi } from '../services/api';
 
 const Container = styled.div`
   min-height: 100%;
@@ -380,6 +380,8 @@ export default function MyProfile() {
     try {
       await userApi.updatePassword({ currentPassword, newPassword });
       Toast.show({ icon: 'success', content: t('myProfile.passwordUpdated') });
+      logout();
+      window.location.href = '/login';
     } catch (error: any) {
       Toast.show({ icon: 'fail', content: error.message || t('myProfile.updateFailed') });
     }
@@ -388,9 +390,13 @@ export default function MyProfile() {
   const handleLogout = () => {
     Dialog.confirm({
       content: t('myProfile.confirmLogout'),
-      onConfirm: () => {
-        logout();
-        window.location.href = '/login';
+      onConfirm: async () => {
+        try {
+          await authApi.logout();
+        } finally {
+          logout();
+          window.location.href = '/login';
+        }
       },
     });
   };

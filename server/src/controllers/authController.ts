@@ -1,14 +1,17 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcrypt';
-import jwt, { SignOptions } from 'jsonwebtoken';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
-
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required');
-}
+import { signAuthToken } from '../utils/jwt';
+import {
+  clearRefreshTokenCookie,
+  issueRefreshToken,
+  REFRESH_TOKEN_COOKIE,
+  revokeRefreshToken,
+  rotateRefreshToken,
+  setRefreshTokenCookie,
+} from '../utils/refreshToken';
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -58,13 +61,13 @@ export const register = async (req: Request, res: Response) => {
 
     const user = result.rows[0];
 
-    // Generate token with version
-    const signOptions: SignOptions = { expiresIn: '7d' };
-    const token = jwt.sign(
-      { userId: user.user_id, loginName: user.user_login_name, tokenVersion: 0 },
-      JWT_SECRET,
-      signOptions
-    );
+    // Registration does not establish a long-lived session; the client directs
+    // the user to log in after registration.
+    const token = signAuthToken({
+      userId: user.user_id,
+      loginName: user.user_login_name,
+      tokenVersion: 0,
+    });
 
     return success(res, { user, token }, 'Registration successful', 201);
   } catch (err) {
@@ -100,12 +103,16 @@ export const login = async (req: Request, res: Response) => {
     }
 
     // Generate token with version
-    const signOptions: SignOptions = { expiresIn: '7d' };
-    const token = jwt.sign(
-      { userId: user.user_id, loginName: user.user_login_name, tokenVersion: user.token_version || 0 },
-      JWT_SECRET,
-      signOptions
+    const token = signAuthToken({
+      userId: user.user_id,
+      loginName: user.user_login_name,
+      tokenVersion: Number(user.token_version ?? 0),
+    });
+    const refreshToken = await issueRefreshToken(
+      user.user_id,
+      Number(user.token_version ?? 0)
     );
+    setRefreshTokenCookie(res, refreshToken);
 
     // Remove password from response
     delete user.user_password;
@@ -114,6 +121,53 @@ export const login = async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Login error:', err);
     return error(res, 'Login failed', 500);
+  }
+};
+
+export const refreshAccessToken = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+  if (!refreshToken || typeof refreshToken !== 'string') {
+    clearRefreshTokenCookie(res);
+    return error(res, 'Refresh token is required', 401);
+  }
+
+  try {
+    const rotated = await rotateRefreshToken(refreshToken);
+    if (rotated.status === 'retry') {
+      return error(res, 'Refresh token rotation is already in progress', 409);
+    }
+    if (rotated.status === 'invalid') {
+      clearRefreshTokenCookie(res);
+      return error(res, 'Refresh token is invalid or expired', 401);
+    }
+
+    const token = signAuthToken({
+      userId: rotated.userId,
+      loginName: rotated.loginName,
+      tokenVersion: rotated.tokenVersion,
+    });
+    setRefreshTokenCookie(res, rotated.token);
+    return success(res, { token }, 'Token refreshed');
+  } catch (err) {
+    console.error('Refresh token error:', err);
+    clearRefreshTokenCookie(res);
+    return error(res, 'Failed to refresh token', 500);
+  }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+
+  try {
+    if (refreshToken && typeof refreshToken === 'string') {
+      await revokeRefreshToken(refreshToken);
+    }
+    clearRefreshTokenCookie(res);
+    return success(res, null, 'Logged out');
+  } catch (err) {
+    console.error('Logout error:', err);
+    clearRefreshTokenCookie(res);
+    return error(res, 'Failed to log out', 500);
   }
 };
 

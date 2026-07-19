@@ -16,6 +16,7 @@ interface AuthState {
   isAuthenticated: boolean;
   login: (user: User, token: string) => void;
   logout: () => void;
+  setAccessToken: (token: string) => void;
   updateUser: (user: Partial<User>) => void;
 }
 
@@ -29,6 +30,8 @@ export const useAuthStore = create<AuthState>()(
         set({ user, token, isAuthenticated: true }),
       logout: () =>
         set({ user: null, token: null, isAuthenticated: false }),
+      setAccessToken: (token) =>
+        set((state) => state.isAuthenticated ? { token } : {}),
       updateUser: (userData) =>
         set((state) => ({
           user: state.user ? { ...state.user, ...userData } : null,
@@ -36,8 +39,15 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      version: 1,
-      migrate: (persistedState) => persistedState as AuthState,
+      version: 2,
+      partialize: (state) => ({
+        user: state.user,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      migrate: (persistedState) => ({
+        ...(persistedState as AuthState),
+        token: null,
+      }),
     }
   )
 );

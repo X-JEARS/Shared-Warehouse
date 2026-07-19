@@ -26,14 +26,15 @@ npm run preview      # Preview production build
 psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/upgrade_room_admins_and_transfer_records.sql  # Upgrade an existing pre-admin database
 psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/migrations/add_token_version.sql  # Add JWT revocation support to an existing database
+psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/migrations/003_refresh_tokens.sql  # Add rotating refresh-token sessions
 ```
 
 ## Architecture
 
 ### Backend (server/)
 - **Express + TypeScript** REST API on port 3000
-- **PostgreSQL** database with 16 tables (see sql/init.sql)
-- **JWT authentication** via middleware in `src/middlewares/auth.ts`; token versions are checked against the database so password changes revoke existing tokens
+- **PostgreSQL** database with 17 tables (see sql/init.sql)
+- **Authentication**: short-lived Access JWTs plus rotating, hashed Refresh Token sessions; token versions are checked against the database so password changes revoke all active credentials
 - **Request hardening**: same-origin requests are accepted automatically, cross-origin requests use the configured CORS allowlist, and login/registration are rate limited
 - **Route structure**: Each route file imports its controller, all routes use `/api` prefix
 - **Response format**: Use `success()` and `error()` helpers from `src/utils/response.ts`
@@ -41,7 +42,7 @@ psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/migrations/add_token_ver
 ### Frontend (client/)
 - **React + TypeScript + Vite** on port 5173
 - **Ant Design Mobile** for UI components with outline icons from `antd-mobile-icons`. New icons must be declared in `client/src/vite-env.d.ts`.
-- **Zustand** for state management with localStorage persistence (stores in `src/stores/`)
+- **Zustand** for state management with localStorage persistence (stores in `src/stores/`); auth persistence excludes the Access Token, which remains memory-only
 - **Theme system**: CSS variables defined in `src/styles/theme.css`, managed by `themeStore`. Supports light/dark/system color modes and default/rounded/compact style variants. Applied via `html[data-theme]` and `html[data-style]` attributes. All UI must use `var(--app-color-*)` / `var(--app-radius-*)` instead of hardcoded hex values.
 - **API layer**: Centralized in `src/services/api.ts`, uses axios wrapper in `src/utils/request.ts`; SWR-backed reads use `src/utils/swr.ts` and support both URL and `[url, axiosConfig]` keys
 - **Routing**: Protected routes use `PrivateRoute` wrapper checking `useAuthStore`
@@ -49,6 +50,7 @@ psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/migrations/add_token_ver
 ### Database Schema (Key Relationships)
 ```
 Users → Boxes (personal box: user_box_id)
+Users → Refresh_Tokens (rotating device sessions)
 Rooms → Boxes → Items
 Room_Members (user-room many-to-many)
 Room_Admins (additional/secondary admins per room; primary admin is rooms.room_admin)
@@ -72,11 +74,13 @@ Items → Reservations → Orders
 ## Important Patterns
 
 ### Authentication Flow
-1. Login/Register returns JWT token
-2. Token stored in Zustand (`authStore`) with localStorage persistence
-3. `request.ts` interceptor adds `Authorization: Bearer <token>` header
-4. Backend `auth` middleware validates token, injects `req.user`
-5. Password changes increment `users.token_version`, invalidating both legacy version-0 tokens and current versioned tokens
+1. Login returns a short-lived Access JWT in the response body and a 256-bit opaque Refresh Token in an `HttpOnly`, `Secure`-in-production, `SameSite=Lax` cookie scoped to `/api/auth`
+2. The database stores only the Refresh Token SHA-256 hash, its token family, current `token_version`, and a 7-day idle expiry; there is no absolute session expiry
+3. The Access Token is kept in Zustand memory only; persisted auth state excludes it. `request.ts` adds `Authorization: Bearer <token>` to API requests
+4. On an eligible `401`, the Axios interceptor makes one shared `POST /api/auth/refresh` request, persists the new Access Token in memory, and retries queued requests
+5. Every refresh atomically revokes the presented Refresh Token, creates its replacement with a new 7-day idle expiry, and sets the replacement cookie. Reuse outside a 10-second multi-tab concurrency grace revokes the entire token family; a grace-period collision returns `409` and the frontend retries after the shared cookie updates
+6. Normal refresh copies the current `token_version` and never increments it. Password changes and admin password resets increment `users.token_version` and revoke all Refresh Token sessions
+7. `POST /api/auth/logout` revokes the current token family and clears the Refresh Token cookie
 
 ### Room Join Request Flow
 - User submits join request via `POST /api/rooms/:id/request-join` with optional member name
@@ -357,11 +361,11 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 Backend requires `.env` file (copy from `.env.example`):
 ```
 DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
-JWT_SECRET, JWT_EXPIRES_IN
+JWT_SECRET, ACCESS_TOKEN_EXPIRES_IN
 PORT, NODE_ENV, ALLOWED_ORIGINS
 ```
 
-`JWT_SECRET` is required. Same-origin frontend/API deployments are accepted automatically. For a separately hosted frontend, `ALLOWED_ORIGINS` must contain its complete browser origins (scheme, host, and port, without paths), separated by commas. Origin comparison is normalized, including trailing slashes.
+`JWT_SECRET` is required. `ACCESS_TOKEN_EXPIRES_IN` defaults to `15m`. Refresh Tokens use a fixed sliding 7-day idle expiry with no absolute expiry. Production requires `NODE_ENV=production` and HTTPS because the Refresh Cookie is `Secure`. Same-origin frontend/API deployments are accepted automatically. Separately hosted frontend/API origins must remain same-site for the `SameSite=Lax` cookie (for example, `app.example.com` and `api.example.com`); `ALLOWED_ORIGINS` must contain complete frontend origins (scheme, host, and port, without paths), separated by commas. A fully cross-site deployment requires a separate `SameSite=None` plus CSRF design.
 
 ## PWA Notes
 

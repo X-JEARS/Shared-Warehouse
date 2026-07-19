@@ -156,10 +156,28 @@ async function resetPassword(): Promise<void> {
   if (!confirmed) { console.log('已取消'); return; }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
-  await pool.query(
-    'UPDATE users SET user_password = $1 WHERE user_id = $2',
-    [hashedPassword, userId]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query(
+      `UPDATE users
+       SET user_password = $1, token_version = token_version + 1
+       WHERE user_id = $2`,
+      [hashedPassword, userId]
+    );
+    await client.query(
+      `UPDATE refresh_tokens
+       SET refresh_token_revoked_at = COALESCE(refresh_token_revoked_at, $1)
+       WHERE refresh_token_user_id = $2`,
+      [Date.now(), userId]
+    );
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
   console.log('\n密码已重置');
   console.log(`新密码: ${newPassword}`);
   console.log('请将此密码告知用户，并提醒其尽快修改');
