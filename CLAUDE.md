@@ -175,13 +175,13 @@ Items → Reservations → Orders
   - The reference Dropdown renders its popup inside a local host and disables popup, mask, and arrow transitions on the scanner page to avoid animation jank while the live camera is rendering. Other Dropdown instances keep their normal animations.
 - Uses `pendingItemsRef` to avoid stale closure in dedup check
 - Partial success: failed items remain in list, succeeded items removed
-- **Transfer photo**: Borrow and return modes show an optional single-photo picker below the action buttons. JPEG, PNG, GIF, and WebP files up to 20MB are submitted with the batch as multipart data. The selected original file is not cropped, resized, compressed, or re-encoded. A record photo is cleared after a transfer record is created, while total request failures keep it available for retry.
+- **Transfer photo**: Borrow and return modes show an optional single-photo picker labeled "上传照片" on the left side of the action row. JPEG, PNG, GIF, and WebP files up to 20MB are submitted with the batch as multipart data. The selected original file is not cropped, resized, compressed, or re-encoded. A record photo is cleared after a transfer record is created, while total request failures keep it available for retry.
 - "取消" button resets mode and restarts scanner
-- UI layout: Fixed viewport height flex column (`height: 100dvh`). Header pinned at top (`flex-shrink: 0`). Scanner frame → hint → button row (取消 + 取走/放入) are fixed and non-scrolling. ScanResultList wrapped in `ResultListWrapper` (`flex: 1; overflow-y: auto`) scrolls independently within remaining space.
+- UI layout: Fixed viewport height flex column (`height: 100dvh`). Header pinned at top (`flex-shrink: 0`). Scanner frame → hint → action row (上传照片 on the left; 取消 + 取走/放入 on the right) are fixed and non-scrolling. All three actions stay on one row. ScanResultList wrapped in `ResultListWrapper` (`flex: 1; overflow-y: auto`) scrolls independently within remaining space.
 
 ### ScanResultList Component
 - Located at `client/src/components/ScanResultList.tsx`
-- Displays pending items in two-column grid layout
+- Displays pending items in a two-column `minmax(0, 1fr)` grid layout; cards can shrink within their columns and long item names are truncated with an ellipsis instead of widening the viewport
 - Each card: item image (36x36) + name + "已在手中" badge (below name, when applicable) + location + remove (X) button
 - `PendingItem` interface: `itemId`, `itemName`, `itemImage?`, `locationName`, `isInHand`, `qrcode` (for dedup)
 - Shared between Scanner page and BoxDetail page
@@ -256,8 +256,8 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - Features:
   - Notification bell icon in top-right corner of header, with red badge showing unread count. Click navigates to `/notifications` (standalone route without tab bar).
   - Avatar and nickname displayed in header (display-only, no inline editing)
-  - Menu items use outline icons from `antd-mobile-icons`: 我的资料 (`UserOutline`), 我的物品 (`AppstoreOutline`), 我的预约 (`CalendarOutline`), 转移记录 (`UnorderedListOutline`), 系统设置 (`SetOutline`), 关于 (`InformationCircleOutline`)
-  - Menu is divided into two sections: 我的资料 + 我的物品 + 我的预约 + 转移记录 in the first group, 系统设置 in the second group (separated by gap), 关于 in a third group
+  - Menu items use outline icons from `antd-mobile-icons`: 我的资料 (`UserOutline`), 我的物品 (`AppstoreOutline`), 我的预约 (`CalendarOutline`), 我的存取 (`UnorderedListOutline`), 系统设置 (`SetOutline`), 关于 (`InformationCircleOutline`)
+  - Menu is divided into three sections: 我的资料 + 我的物品 + 我的预约 + 我的存取 in the first group, 系统设置 in the second group (separated by gap), 关于 in the third group
 
 ### Transfer Records (转移记录)
 - `transfer_records` is the parent checklist for one borrow or return submission. `transfer_record_type` is `SMALLINT`: `1` = borrow, `2` = return.

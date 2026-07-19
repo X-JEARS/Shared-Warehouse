@@ -17,6 +17,9 @@ interface ScanResultListProps {
 }
 
 const ListContainer = styled.div`
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
   background: var(--app-color-surface);
   border-radius: var(--app-radius-l);
   padding: 8px;
@@ -24,11 +27,12 @@ const ListContainer = styled.div`
 
 const ItemGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
 `;
 
 const ItemCard = styled.div`
+  min-width: 0;
   display: flex;
   align-items: center;
   padding: 8px;
@@ -81,6 +85,7 @@ const ItemLocation = styled.div`
 `;
 
 const InHandBadge = styled.span`
+  max-width: 100%;
   font-size: 11px;
   color: var(--app-color-text-secondary);
   background: var(--app-color-img-placeholder);
@@ -88,6 +93,9 @@ const InHandBadge = styled.span`
   border-radius: var(--app-radius-s);
   display: inline-block;
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 `;
 
 const RemoveButton = styled.div`

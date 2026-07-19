@@ -75,7 +75,7 @@
     "myProfile": "我的资料",
     "myItems": "我的物品",
     "myReservations": "我的预约",
-    "myTransferRecords": "转移记录",
+    "myTransferRecords": "我的存取",
     "systemSettings": "系统设置",
     "about": "关于",
     "aboutContent": "共享仓库 v1.0.0\n扫码借还，高效管理"
@@ -166,7 +166,7 @@
     "statusReadyToReturn": "本次已扫码，准备归还",
     "statusInHand": "已在手中",
     "statusAttention": "物品在其他人手中或其他仓库",
-    "uploadTransferPhoto": "上传转移照片",
+    "uploadTransferPhoto": "上传照片",
     "transferPhoto": "转移照片",
     "replaceTransferPhoto": "替换照片",
     "removeTransferPhoto": "移除照片",
