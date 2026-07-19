@@ -8,8 +8,8 @@ export type StyleVariant = 'default' | 'rounded' | 'compact';
 export type LanguageMode = 'zh-CN' | 'en-US' | 'system';
 
 const THEME_COLORS: Record<EffectiveTheme, string> = {
-  light: '#f5f5f5',
-  dark: '#111111',
+  light: '#ffffff',
+  dark: '#1a1a1a',
 };
 
 function getSystemTheme(): EffectiveTheme {

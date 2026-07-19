@@ -530,6 +530,7 @@
     "tags": "Tags",
     "openTags": "Select tag",
     "closeTags": "Close tag filters",
+    "clearTagFilter": "Clear filter",
     "noTags": "No tags",
     "clear": "Clear",
     "boxId": "Box {{id}}"

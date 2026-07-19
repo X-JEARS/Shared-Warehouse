@@ -12,7 +12,7 @@ export default defineConfig({
         name: '共享仓库',
         short_name: '共享仓库',
         description: '共享仓库PWA应用，支持扫码借还物品',
-        theme_color: '#f5f5f5',
+        theme_color: '#ffffff',
         background_color: '#f5f5f5',
         display: 'standalone',
         orientation: 'portrait',

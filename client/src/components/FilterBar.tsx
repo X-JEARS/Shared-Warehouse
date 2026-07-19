@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
+import { RightOutline } from 'antd-mobile-icons';
 import { boxApi, tagApi } from '../services/api';
 
 const BoxTabBar = styled.div`
@@ -51,7 +52,7 @@ const TagBubble = styled.button<{ $active?: boolean }>`
   max-width: min(54vw, 240px);
   height: 36px;
   min-width: 64px;
-  padding: 0 14px;
+  padding: 0 ${(props) => (props.$active ? '14px' : '6px')} 0 14px;
   border: 1px solid ${(props) => (props.$active ? 'var(--app-color-primary)' : 'var(--app-color-border)')};
   border-radius: var(--app-radius-pill);
   background: ${(props) => (props.$active ? 'var(--app-color-primary)' : 'var(--app-color-surface)')};
@@ -81,6 +82,12 @@ const TagBubbleLabel = styled.span`
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+`;
+
+const TagBubbleIcon = styled(RightOutline)`
+  flex: 0 0 auto;
+  margin-left: 3px;
+  font-size: 13px;
 `;
 
 const TagDrawerLayer = styled.div<{ $visible: boolean }>`
@@ -153,6 +160,24 @@ const EmptyTags = styled.div`
   color: var(--app-color-text-secondary);
   font-size: 14px;
   text-align: center;
+`;
+
+const ClearTagFilterButton = styled.button`
+  flex: 0 0 auto;
+  height: 36px;
+  margin: 0 0 calc(16px + env(safe-area-inset-bottom, 0px));
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--app-color-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:active {
+    opacity: 0.7;
+  }
 `;
 
 interface FilterBarProps {
@@ -263,6 +288,7 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
             ? tags.find((tag) => tag.tag_id === selectedTag)?.tag_name || t('filterBar.tags')
             : t('filterBar.tags')}
         </TagBubbleLabel>
+        {selectedTag === undefined && <TagBubbleIcon aria-hidden="true" />}
       </TagBubble>
 
       <TagDrawerLayer $visible={tagDrawerVisible} aria-hidden={!tagDrawerVisible}>
@@ -275,15 +301,6 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
         />
         <TagDrawer $visible={tagDrawerVisible} role="dialog" aria-modal="true" aria-label={t('filterBar.tags')}>
           <TagList role="listbox" aria-label={t('filterBar.tags')}>
-            <TagItem
-              type="button"
-              role="option"
-              aria-selected={selectedTag === undefined}
-              $active={selectedTag === undefined}
-              onClick={() => handleTagChange(undefined)}
-            >
-              {t('filterBar.all')}
-            </TagItem>
             {tags.map((tag) => (
               <TagItem
                 key={tag.tag_id}
@@ -298,6 +315,11 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
             ))}
             {tags.length === 0 && <EmptyTags>{t('filterBar.noTags')}</EmptyTags>}
           </TagList>
+          {selectedTag !== undefined && (
+            <ClearTagFilterButton type="button" onClick={() => handleTagChange(undefined)}>
+              {t('filterBar.clearTagFilter')}
+            </ClearTagFilterButton>
+          )}
         </TagDrawer>
       </TagDrawerLayer>
     </>

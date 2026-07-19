@@ -23,4 +23,5 @@ declare module 'antd-mobile-icons' {
   export const BellOutline: FC<any>;
   export const AppstoreOutline: FC<any>;
   export const PictureOutline: FC<any>;
+  export const RightOutline: FC<any>;
 }
