@@ -34,6 +34,16 @@ export const getBoxById = async (req: AuthRequest, res: Response) => {
       if (memberCheck.rows.length === 0) {
         return error(res, 'Access denied', 403);
       }
+    } else {
+      // Personal box — only the owner can view
+      const userResult = await query(
+        'SELECT user_box_id FROM users WHERE user_id = $1',
+        [userId]
+      );
+      const userBoxId = userResult.rows[0]?.user_box_id;
+      if (box.box_id !== userBoxId) {
+        return error(res, 'Access denied', 403);
+      }
     }
 
     // Get items in this box

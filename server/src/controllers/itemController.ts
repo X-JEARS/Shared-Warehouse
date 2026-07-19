@@ -417,16 +417,32 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
 
     // Verify item exists and user has access
     const itemCheck = await query(
-      `SELECT i.item_id, b.box_belong_room_id
+      `SELECT i.item_id, i.item_belong_user_id, b.box_belong_room_id
        FROM items i
        JOIN boxes b ON i.item_current_box_id = b.box_id
-       LEFT JOIN room_members rm ON b.box_belong_room_id = rm.member_room_id AND rm.member_user_id = $2
        WHERE i.item_id = $1`,
-      [id, userId]
+      [id]
     );
 
     if (itemCheck.rows.length === 0) {
-      return error(res, 'Item not found or access denied', 404);
+      return error(res, 'Item not found', 404);
+    }
+
+    const item = itemCheck.rows[0];
+    // Authorization: verify user has access to this item
+    if (item.box_belong_room_id) {
+      const memberCheck = await query(
+        'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+        [item.box_belong_room_id, userId]
+      );
+      if (memberCheck.rows.length === 0) {
+        return error(res, 'Access denied', 403);
+      }
+    } else {
+      // Personal box item — only owner can view history
+      if (item.item_belong_user_id !== userId) {
+        return error(res, 'Access denied', 403);
+      }
     }
 
     const result = await query(
