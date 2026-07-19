@@ -10,9 +10,9 @@
 
 ## Executive Summary
 
-This is a fixed asset management PWA with JWT auth, room-based access control, and QR-code scanning for item borrow/return. The codebase has **solid foundations** — parameterized queries are used consistently, bcrypt password hashing, React auto-escaping, and proper ownership checks on most write operations.
+This is a fixed asset management PWA with short-lived Access JWTs, rotating Refresh Token sessions, room-based access control, and QR-code scanning for item borrow/return. The codebase has **solid foundations** — parameterized queries are used consistently, bcrypt password hashing, React auto-escaping, and proper ownership checks on most write operations.
 
-The audit initially revealed systematic authorization gaps on item, reservation, comment, history, and box reads, plus weak JWT lifecycle and request hardening. The implementation now applies shared item-access rules, personal-box ownership checks, token-version revocation, an origin allowlist, and authentication rate limiting. Remaining medium findings and the intentional QR capability model are documented below.
+The audit initially revealed systematic authorization gaps on item, reservation, comment, history, and box reads, plus weak JWT lifecycle and request hardening. The implementation now applies shared item-access rules, personal-box ownership checks, token-version revocation, short-lived Access JWTs, hashed rotating Refresh Tokens with reuse detection, an origin allowlist, and authentication rate limiting. Remaining medium findings and the intentional QR capability model are documented below.
 
 **Baseline comparable:** Inventory management systems like Snipe-IT and Asset Panda. Unlike strict tenant-only systems, this application's business rules intentionally allow physical QR possession to initiate item transfers between people and warehouses. Ordinary item reads remain restricted to owners, current holders, and members of the item's owning or current room.
 
@@ -386,7 +386,7 @@ The codebase does several things well:
 3. **React auto-escaping** — no `dangerouslySetInnerHTML` found
 4. **Proper ownership checks** on write operations (update/delete items, cancel reservations)
 5. **Room membership checks** on list endpoints (getItems, getBoxes, getMembers)
-6. **JWT middleware** properly extracts and verifies tokens
+6. **Authentication lifecycle** uses short-lived Access JWTs, hashed rotating Refresh Tokens, token-family reuse detection, and password-change revocation
 7. **Two-tier admin model** with clear separation of primary vs secondary admin
 8. **Transaction usage** for borrow operations with `FOR UPDATE` row locks
 9. **File upload filenames** generated with `crypto.randomBytes` (not user-controlled)
@@ -410,7 +410,7 @@ The codebase does several things well:
 | 8 | HIGH | JWT hardcoded fallback | `524d5eb` |
 | 9 | HIGH | IDOR history leak | `cdf3913` + follow-up shared access rule |
 | 10 | HIGH | IDOR personal box leak | `cdf3913` |
-| 11 | HIGH | No token revocation | `36bc859` + follow-up legacy-token check |
+| 11 | HIGH | No token revocation | `36bc859` + token-version checks + rotating Refresh Token sessions |
 | 12 | HIGH | CORS allows all origins | `b0912e5` |
 | 13 | HIGH | No rate limiting | `b0912e5` |
 | 14 | HIGH | Unauthorized borrow/return | `1d572e9` + follow-up domain-aligned target checks |

@@ -3,6 +3,10 @@ import bcrypt from 'bcrypt';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
+import {
+  clearRefreshTokenCookie,
+  revokeUserRefreshTokens,
+} from '../utils/refreshToken';
 
 export const searchUsers = async (req: AuthRequest, res: Response) => {
   try {
@@ -113,6 +117,8 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
       'UPDATE users SET user_password = $1, token_version = token_version + 1 WHERE user_id = $2',
       [hashedPassword, userId]
     );
+    await revokeUserRefreshTokens(userId!);
+    clearRefreshTokenCookie(res);
 
     return success(res, null, 'Password updated');
   } catch (err) {

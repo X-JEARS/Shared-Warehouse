@@ -1,33 +1,23 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
 import { error } from '../utils/response';
 import { query } from '../config/database';
-
-export interface JwtPayload {
-  userId: number;
-  loginName: string;
-  tokenVersion?: number;
-}
+import {
+  JwtPayload,
+  verifyAuthToken,
+} from '../utils/jwt';
 
 export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
-const getJwtSecret = (): string => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    throw new Error('JWT_SECRET environment variable is required');
-  }
-  return secret;
-};
-
-const isTokenActive = async (decoded: JwtPayload): Promise<boolean> => {
+const getActiveTokenVersion = async (userId: number): Promise<number | null> => {
   const userResult = await query(
     'SELECT token_version FROM users WHERE user_id = $1',
-    [decoded.userId]
+    [userId]
   );
-  const tokenVersion = decoded.tokenVersion ?? 0;
-  return userResult.rows.length > 0 && userResult.rows[0].token_version === tokenVersion;
+  return userResult.rows.length > 0
+    ? Number(userResult.rows[0].token_version)
+    : null;
 };
 
 export const auth = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -39,11 +29,10 @@ export const auth = async (req: AuthRequest, res: Response, next: NextFunction) 
     }
 
     const token = authHeader.split(' ')[1];
-    const secret = getJwtSecret();
+    const decoded = verifyAuthToken(token);
+    const activeTokenVersion = await getActiveTokenVersion(decoded.userId);
 
-    const decoded = jwt.verify(token, secret) as JwtPayload;
-
-    if (!await isTokenActive(decoded)) {
+    if (activeTokenVersion === null || activeTokenVersion !== (decoded.tokenVersion ?? 0)) {
       return error(res, 'Token has been revoked', 401);
     }
 
@@ -61,9 +50,9 @@ export const optionalAuth = async (req: AuthRequest, res: Response, next: NextFu
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const secret = getJwtSecret();
-      const decoded = jwt.verify(token, secret) as JwtPayload;
-      if (!await isTokenActive(decoded)) {
+      const decoded = verifyAuthToken(token);
+      const activeTokenVersion = await getActiveTokenVersion(decoded.userId);
+      if (activeTokenVersion === null || activeTokenVersion !== (decoded.tokenVersion ?? 0)) {
         return error(res, 'Token has been revoked', 401);
       }
       req.user = decoded;

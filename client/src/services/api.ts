@@ -6,6 +6,7 @@ export const authApi = {
     request.post('/auth/login', data),
   register: (data: { loginName: string; password: string; nickname?: string; tel?: string }) =>
     request.post('/auth/register', data),
+  logout: () => request.post('/auth/logout'),
   getMe: () => request.get('/auth/me'),
 };
 

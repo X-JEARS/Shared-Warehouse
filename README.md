@@ -7,7 +7,7 @@
 ### 后端
 - Node.js + Express + TypeScript
 - PostgreSQL 数据库
-- JWT 认证
+- 短期 Access JWT + 轮换 Refresh Token 认证
 
 ### 前端
 - React + TypeScript + Vite
@@ -57,6 +57,12 @@ psql -v ON_ERROR_STOP=1 -d warehouse -f ../sql/upgrade_room_admins_and_transfer_
 psql -v ON_ERROR_STOP=1 -d warehouse -f ../sql/migrations/add_token_version.sql
 ```
 
+启用 Access Token + Refresh Token 登录机制前，还必须创建 Refresh Token 会话表：
+
+```bash
+psql -v ON_ERROR_STOP=1 -d warehouse -f ../sql/migrations/003_refresh_tokens.sql
+```
+
 ### 3. 配置环境变量
 
 复制后端环境变量模板并修改：
@@ -67,7 +73,7 @@ cp .env.example .env
 # 编辑 .env 文件，填入数据库连接信息
 ```
 
-`JWT_SECRET` 为必填项。前后端同域部署时，API 会自动放行同源请求；如果前端单独部署，生产环境必须将 `ALLOWED_ORIGINS` 设置为前端的完整 Origin（包括协议和端口，不要填写路径），多个地址使用英文逗号分隔，例如 `https://warehouse.example.com`。
+`JWT_SECRET` 为必填项，`ACCESS_TOKEN_EXPIRES_IN` 控制短期 Access JWT 的有效期，默认 `15m`。Refresh Token 是存放在 `HttpOnly` Cookie 中的随机凭证，数据库只保存哈希；每次刷新都会轮换并重新获得 7 天闲置期限，不设置绝对过期时间，正常刷新不会修改 `token_version`。生产环境必须设置 `NODE_ENV=production` 并使用 HTTPS，否则带有 `Secure` 属性的 Refresh Cookie 不会生效。前后端同域部署时，API 会自动放行同源请求；分域部署必须保持同站点（例如 `app.example.com` 与 `api.example.com`），并将 `ALLOWED_ORIGINS` 设置为前端的完整 Origin（包括协议和端口，不要填写路径），多个地址使用英文逗号分隔。完全跨站点部署需要另行设计 `SameSite=None` Cookie 和 CSRF 防护。
 
 ### 4. 启动服务
 
@@ -147,6 +153,8 @@ warehouse/
 ### 认证
 - `POST /api/auth/register` - 注册
 - `POST /api/auth/login` - 登录
+- `POST /api/auth/refresh` - 轮换 Refresh Token 并签发新的 Access Token
+- `POST /api/auth/logout` - 撤销当前 Refresh Token 会话并退出登录
 - `GET /api/auth/me` - 获取当前用户信息
 
 ### 仓库
