@@ -1,9 +1,9 @@
 import express from 'express';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import compression from 'compression';
 import dotenv from 'dotenv';
 import path from 'path';
-import { errorHandler, notFound } from './middlewares/errorHandler';
+import { AppError, errorHandler, notFound } from './middlewares/errorHandler';
 
 // Import routes
 import authRoutes from './routes/auth';
@@ -24,19 +24,55 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
-  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'];
-app.use(cors({
+const normalizeOrigin = (origin: string) => {
+  try {
+    return new URL(origin).origin;
+  } catch {
+    return origin.trim().replace(/\/$/, '');
+  }
+};
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',')
+  : ['http://localhost:5173', 'http://127.0.0.1:5173', 'http://localhost:3000'])
+  .map(origin => origin.trim())
+  .filter(Boolean)
+  .map(normalizeOrigin);
+
+const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      const error = new Error('Not allowed by CORS') as AppError;
+      error.statusCode = 403;
+      callback(error);
     }
   },
   credentials: true,
-}));
+};
+
+// Requests from a frontend served by this same application do not need CORS.
+// Bypass the allowlist for them so production deployments work without having
+// to guess the public hostname in ALLOWED_ORIGINS.
+app.use((req, res, next) => {
+  const origin = req.get('origin');
+  if (!origin) {
+    return next();
+  }
+
+  const forwardedProtocol = req.get('x-forwarded-proto')?.split(',')[0].trim();
+  const forwardedHost = req.get('x-forwarded-host')?.split(',')[0].trim();
+  const requestOrigin = normalizeOrigin(
+    `${forwardedProtocol || req.protocol}://${forwardedHost || req.get('host')}`
+  );
+
+  if (normalizeOrigin(origin) === requestOrigin) {
+    return next();
+  }
+
+  return cors(corsOptions)(req, res, next);
+});
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

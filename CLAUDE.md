@@ -34,7 +34,7 @@ psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/migrations/add_token_ver
 - **Express + TypeScript** REST API on port 3000
 - **PostgreSQL** database with 16 tables (see sql/init.sql)
 - **JWT authentication** via middleware in `src/middlewares/auth.ts`; token versions are checked against the database so password changes revoke existing tokens
-- **Request hardening**: configured CORS allowlist plus rate limiting on login and registration
+- **Request hardening**: same-origin requests are accepted automatically, cross-origin requests use the configured CORS allowlist, and login/registration are rate limited
 - **Route structure**: Each route file imports its controller, all routes use `/api` prefix
 - **Response format**: Use `success()` and `error()` helpers from `src/utils/response.ts`
 
@@ -361,7 +361,7 @@ JWT_SECRET, JWT_EXPIRES_IN
 PORT, NODE_ENV, ALLOWED_ORIGINS
 ```
 
-`JWT_SECRET` is required. `ALLOWED_ORIGINS` is a comma-separated browser-origin allowlist; production deployments must set it to the deployed frontend origins.
+`JWT_SECRET` is required. Same-origin frontend/API deployments are accepted automatically. For a separately hosted frontend, `ALLOWED_ORIGINS` must contain its complete browser origins (scheme, host, and port, without paths), separated by commas. Origin comparison is normalized, including trailing slashes.
 
 ## PWA Notes
 

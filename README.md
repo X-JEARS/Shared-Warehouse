@@ -67,7 +67,7 @@ cp .env.example .env
 # 编辑 .env 文件，填入数据库连接信息
 ```
 
-`JWT_SECRET` 为必填项。生产环境还应将 `ALLOWED_ORIGINS` 设置为允许访问 API 的前端 Origin，多个地址使用英文逗号分隔。
+`JWT_SECRET` 为必填项。前后端同域部署时，API 会自动放行同源请求；如果前端单独部署，生产环境必须将 `ALLOWED_ORIGINS` 设置为前端的完整 Origin（包括协议和端口，不要填写路径），多个地址使用英文逗号分隔，例如 `https://warehouse.example.com`。
 
 ### 4. 启动服务
 
