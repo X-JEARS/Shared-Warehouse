@@ -257,4 +257,8 @@ npm run preview # 预览生产版本
 
 ## License
 
-MIT
+Copyright (C) 2026 X-JEARS.
+
+本项目采用 [GNU Affero General Public License v3.0](LICENSE)（`AGPL-3.0-only`）授权。
+允许使用、复制、修改、分发及商用；分发修改版本或通过网络向用户提供修改后的版本时，
+必须按照 AGPL-3.0 提供对应源代码，并保留原作者的版权及署名声明。

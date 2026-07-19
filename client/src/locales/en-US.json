@@ -78,7 +78,10 @@
     "myTransferRecords": "My Check-ins & Check-outs",
     "systemSettings": "Settings",
     "about": "About",
-    "aboutContent": "Shared Warehouse v1.0.0\nScan to borrow & return, manage efficiently"
+    "aboutContent": "Shared Warehouse v1.0.0\nScan to borrow & return, manage efficiently",
+    "copyright": "Copyright © 2026 X-JEARS",
+    "license": "Licensed under AGPL-3.0-only",
+    "sourceCode": "View source code"
   },
   "myProfile": {
     "title": "My Profile",

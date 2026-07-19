@@ -78,7 +78,10 @@
     "myTransferRecords": "我的存取",
     "systemSettings": "系统设置",
     "about": "关于",
-    "aboutContent": "共享仓库 v1.0.0\n扫码借还，高效管理"
+    "aboutContent": "共享仓库 v1.0.0\n扫码借还，高效管理",
+    "copyright": "版权所有 © 2026 X-JEARS",
+    "license": "采用 AGPL-3.0-only 协议授权",
+    "sourceCode": "查看源代码"
   },
   "myProfile": {
     "title": "我的资料",

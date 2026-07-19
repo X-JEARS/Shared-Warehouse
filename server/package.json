@@ -1,6 +1,7 @@
 {
   "name": "warehouse-server",
   "version": "1.0.0",
+  "license": "AGPL-3.0-only",
   "description": "Fixed Asset Management System - Backend",
   "main": "dist/app.js",
   "scripts": {
