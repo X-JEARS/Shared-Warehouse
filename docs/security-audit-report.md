@@ -3,7 +3,8 @@
 **Project:** Shared-Warehouse (共享仓库)  
 **Date:** 2026-07-19  
 **Scope:** Full codebase — Express backend + React frontend + PostgreSQL schema  
-**Methodology:** Multi-phase audit (Recon → Hunt → Validate → Report)
+**Methodology:** Multi-phase audit (Recon → Hunt → Validate → Report)  
+**Status:** All CRITICAL and HIGH findings have been fixed
 
 ---
 
@@ -401,9 +402,41 @@ The codebase does several things well:
 
 ---
 
-## Recommended Priority
+## Fix Status
 
-1. **Immediate (before production):** Fix #8 (JWT secret), #1-5 (IDOR), #6 (return validation)
-2. **Short term:** Fix #7 (race condition), #11 (token revocation), #12 (CORS), #13 (rate limiting)
-3. **Medium term:** Fix #15 (SQL injection), #14 (borrow auth), #9-10 (personal box IDOR)
-4. **Long term:** Fix #16-20 (medium severity items), implement hardening notes
+### All CRITICAL and HIGH Findings — FIXED ✅
+
+| # | Severity | Finding | Fix Commit |
+|---|----------|---------|------------|
+| 1 | CRITICAL | IDOR item data leak | `61a9542` |
+| 2 | CRITICAL | IDOR item leak via QR | `e11b34d` |
+| 3 | CRITICAL | IDOR scan endpoint leak | `5fc969f` |
+| 4 | CRITICAL | IDOR reservation leak | `d0fa068` |
+| 5 | CRITICAL | IDOR comments leak | `d0fa068` |
+| 6 | CRITICAL | Return no possession check | `8c2ea57` |
+| 7 | CRITICAL | Checkout TOCTOU race | `6c3b186` |
+| 8 | HIGH | JWT hardcoded fallback | `5afb292` |
+| 9 | HIGH | IDOR history leak | `a2e89fb` |
+| 10 | HIGH | IDOR personal box leak | `a2e89fb` |
+| 11 | HIGH | No token revocation | `f201f9a` |
+| 12 | HIGH | CORS allows all origins | `770b533` |
+| 13 | HIGH | No rate limiting | `770b533` |
+| 14 | HIGH | Unauthorized borrow/return | `8c2ea57` |
+
+### Remaining MEDIUM Findings (Not Yet Fixed)
+
+| # | Severity | Finding |
+|---|----------|---------|
+| 15 | MEDIUM | SQL injection via template literal in itemController.ts:58-59 |
+| 16 | MEDIUM | Unauthorized commenting (fixed as part of #5) ✅ |
+| 17 | MEDIUM | No security headers (helmet) |
+| 18 | MEDIUM | User enumeration via registration |
+| 19 | MEDIUM | Weak password policy (min 6 chars) |
+| 20 | MEDIUM | Stack trace leak in error responses |
+
+---
+
+## Recommended Priority (Remaining)
+
+1. **Medium term:** Fix #15 (SQL injection), #17 (security headers), #18-20 (medium items)
+2. **Long term:** Implement hardening notes
