@@ -523,7 +523,11 @@
     "notInStock": "Out of Stock",
     "all": "All",
     "box": "Box",
+    "boxes": "Box filters",
     "tags": "Tags",
+    "openTags": "Select tag",
+    "closeTags": "Close tag filters",
+    "noTags": "No tags",
     "clear": "Clear",
     "boxId": "Box {{id}}"
   },

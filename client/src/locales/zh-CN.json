@@ -523,7 +523,11 @@
     "notInStock": "不在库中",
     "all": "全部",
     "box": "盒子",
+    "boxes": "盒子筛选",
     "tags": "标签",
+    "openTags": "选择标签",
+    "closeTags": "关闭标签筛选",
+    "noTags": "暂无标签",
     "clear": "清除",
     "boxId": "盒子 {{id}}"
   },

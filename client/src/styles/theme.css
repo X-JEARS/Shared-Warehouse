@@ -191,6 +191,7 @@ html:not([data-style]) {
   --app-radius-btn: 8px;
   --app-radius-badge: 8px;
   --app-radius-avatar: 50%;
+  --app-radius-pill: 999px;
   --app-radius-input: 4px;
 
   --adm-radius-s: 4px;
@@ -207,6 +208,7 @@ html[data-style='rounded'] {
   --app-radius-btn: 24px;
   --app-radius-badge: 12px;
   --app-radius-avatar: 50%;
+  --app-radius-pill: 999px;
   --app-radius-input: 12px;
 
   --adm-radius-s: 8px;
@@ -223,6 +225,7 @@ html[data-style='compact'] {
   --app-radius-btn: 4px;
   --app-radius-badge: 4px;
   --app-radius-avatar: 50%;
+  --app-radius-pill: 999px;
   --app-radius-input: 2px;
 
   --adm-radius-s: 2px;

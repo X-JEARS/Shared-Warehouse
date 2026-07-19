@@ -296,6 +296,7 @@ export default function ReservationOrders() {
             value={searchText}
             onChange={(val) => setSearchText(val)}
             onSearch={(val) => setSearchText(val)}
+            showCancelButton
             onCancel={() => {
               setSearchText('');
               setShowSearch(false);
