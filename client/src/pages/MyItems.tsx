@@ -449,7 +449,7 @@ export default function MyItems() {
       // Update local state
       setItems(items.map(item =>
         item.item_id === uploadingItem.item_id
-          ? { ...item, item_image: `${newImagePath}?t=${Date.now()}` }
+          ? { ...item, item_image: newImagePath }
           : item
       ));
 

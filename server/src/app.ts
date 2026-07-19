@@ -30,8 +30,9 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files (avatars, images, etc.)
-app.use('/avatars', express.static(path.join(__dirname, '../public/avatars')));
-app.use('/images', express.static(path.join(__dirname, '../public/images')));
+const versionedImageOptions = { maxAge: '1y', immutable: true };
+app.use('/avatars', express.static(path.join(__dirname, '../public/avatars'), versionedImageOptions));
+app.use('/images', express.static(path.join(__dirname, '../public/images'), versionedImageOptions));
 app.use('/transfer-images', express.static(path.join(__dirname, '../public/transfer-images')));
 
 // Health check
