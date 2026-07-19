@@ -5,9 +5,11 @@ import type { InputRef } from 'antd-mobile/es/components/input';
 import { AddOutline, SearchOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
+import useSWR from 'swr';
 import { useRoomStore } from '../stores/roomStore';
 import { useCartStore } from '../stores/cartStore';
-import { itemApi, roomApi } from '../services/api';
+
+import { swrFetcher } from '../utils/swr';
 import WarehouseSelector from '../components/WarehouseSelector';
 import FilterBar from '../components/FilterBar';
 import ItemCard from '../components/ItemCard';
@@ -179,48 +181,41 @@ export default function Warehouse() {
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const searchInputRef = useRef<InputRef>(null);
 
+  const itemSearchKey = searchText || undefined;
+  const itemKey = currentRoom
+    ? ['/items', { params: { roomId: currentRoom.room_id, boxId: filters.boxId === 'out-of-stock' ? undefined : filters.boxId, tagId: filters.tagId, search: itemSearchKey } }]
+    : null;
+
+  const { data: itemsData, isLoading: itemsLoading } = useSWR(
+    itemKey,
+    swrFetcher,
+    { keepPreviousData: true, revalidateOnFocus: false }
+  );
+
+  const joinRequestKey = currentRoom?.is_admin
+    ? [`/rooms/${currentRoom.room_id}/join-requests`]
+    : null;
+
+  const { data: joinRequestsData } = useSWR(
+    joinRequestKey,
+    swrFetcher,
+    { revalidateOnFocus: false }
+  );
+
   useEffect(() => {
-    if (currentRoom) {
-      Promise.all([loadItems(), loadJoinRequestCount()]);
+    if (itemsData) {
+      setInStockItems(itemsData.inStock || []);
+      setOutOfStockItems(itemsData.outOfStock || []);
     }
-  }, [currentRoom, filters]);
+  }, [itemsData]);
 
-  const loadItems = async () => {
-    if (!currentRoom) return;
+  useEffect(() => {
+    setPendingRequestCount(joinRequestsData?.length || 0);
+  }, [joinRequestsData]);
 
-    try {
-      setLoading(true);
-      const res: any = await itemApi.getAll({
-        roomId: currentRoom.room_id,
-        boxId: filters.boxId === 'out-of-stock' ? undefined : filters.boxId,
-        tagId: filters.tagId,
-        search: searchText || undefined,
-      });
-      setInStockItems(res.data?.inStock || []);
-      setOutOfStockItems(res.data?.outOfStock || []);
-    } catch (error) {
-      console.error('Failed to load items:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadJoinRequestCount = async () => {
-    if (!currentRoom || !currentRoom.is_admin) {
-      setPendingRequestCount(0);
-      return;
-    }
-    try {
-      const res: any = await roomApi.getJoinRequests(currentRoom.room_id);
-      setPendingRequestCount(res.data?.length || 0);
-    } catch (error) {
-      console.error('Failed to load join requests:', error);
-    }
-  };
-
-  const handleSearch = () => {
-    loadItems();
-  };
+  useEffect(() => {
+    setLoading(itemsLoading);
+  }, [itemsLoading]);
 
   const handleFilterChange = (newFilters: { boxId?: number | 'out-of-stock'; tagId?: number }) => {
     setFilters(newFilters);
@@ -341,7 +336,6 @@ export default function Warehouse() {
             onChange={setSearchText}
             placeholder={t('warehouse.searchPlaceholder')}
             onSearch={() => {
-              handleSearch();
               setShowSearch(false);
             }}
             onBlur={() => {

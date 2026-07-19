@@ -7,10 +7,11 @@ import {
   ScanCodeOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useMemo, Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
+import useSWR from 'swr';
 import { useNotificationStore } from '../stores/notificationStore';
-import { itemApi } from '../services/api';
+import { swrFetcher } from '../utils/swr';
 
 const Container = styled.div`
   height: 100%;
@@ -265,21 +266,21 @@ export default function MainLayout() {
   const { pathname } = location;
   const { t } = useTranslation();
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
-  const [inHandCount, setInHandCount] = useState(0);
 
-  const tabs = tabsConfig.map(tab => ({
+  const tabs = useMemo(() => tabsConfig.map(tab => ({
     ...tab,
     title: t(tab.titleKey),
-  }));
+  })), [t]);
+
+  const { data: inHandData } = useSWR('/items/in-hand/count', swrFetcher, {
+    revalidateOnFocus: false,
+  });
 
   useEffect(() => {
-    Promise.all([
-      fetchUnreadCount(),
-      itemApi.getInHandCount().then((res: any) => {
-        setInHandCount(res.data?.count || 0);
-      }).catch(() => {}),
-    ]);
-  }, [pathname]);
+    fetchUnreadCount();
+  }, [fetchUnreadCount]);
+
+  const inHandCount = inHandData?.count || 0;
 
   const inHandIcon = inHandCount > 0
     ? <BadgeWrapper><UnorderedListOutline /><InHandBadge>{inHandCount > 99 ? '99+' : inHandCount}</InHandBadge></BadgeWrapper>
