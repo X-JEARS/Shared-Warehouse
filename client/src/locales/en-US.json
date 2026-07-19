@@ -75,7 +75,7 @@
     "myProfile": "My Profile",
     "myItems": "My Items",
     "myReservations": "My Reservations",
-    "myTransferRecords": "Transfer Records",
+    "myTransferRecords": "My Check-ins & Check-outs",
     "systemSettings": "Settings",
     "about": "About",
     "aboutContent": "Shared Warehouse v1.0.0\nScan to borrow & return, manage efficiently"
@@ -166,7 +166,7 @@
     "statusReadyToReturn": "Scanned and ready to return",
     "statusInHand": "In hand",
     "statusAttention": "Held by someone else or in another warehouse",
-    "uploadTransferPhoto": "Upload Transfer Photo",
+    "uploadTransferPhoto": "Upload Photo",
     "transferPhoto": "Transfer photo",
     "replaceTransferPhoto": "Replace photo",
     "removeTransferPhoto": "Remove photo",

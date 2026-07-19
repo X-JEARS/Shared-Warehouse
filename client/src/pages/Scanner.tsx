@@ -100,31 +100,69 @@ const BatchActionArea = styled.div`
   overflow: hidden;
 `;
 
-const ButtonRow = styled.div`
-  display: flex;
-  gap: 12px;
+const ActionRow = styled.div`
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: minmax(110px, 36%) minmax(0, 1fr);
+  gap: 8px;
   flex-shrink: 0;
+`;
+
+const ButtonRow = styled.div`
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+
+  .adm-button {
+    min-width: 0;
+    height: 100%;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 13px;
+  }
+
+  .adm-button-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 `;
 
 const PhotoArea = styled.div`
-  margin-top: 10px;
-  flex-shrink: 0;
+  min-width: 0;
+
+  .adm-button {
+    min-width: 0;
+    height: 100%;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 13px;
+  }
+
+  .adm-button-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 `;
 
 const PhotoSelection = styled.div`
-  height: 52px;
-  padding: 6px 8px;
+  min-width: 0;
+  height: 44px;
+  box-sizing: border-box;
+  padding: 4px;
   border: 1px solid var(--app-color-border);
   border-radius: var(--app-radius-m);
   background: var(--app-color-surface);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 4px;
 `;
 
 const PhotoPreview = styled.img`
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--app-radius-s);
   object-fit: cover;
   flex-shrink: 0;
@@ -134,15 +172,15 @@ const PhotoName = styled.div`
   flex: 1;
   min-width: 0;
   color: var(--app-color-text);
-  font-size: 13px;
+  font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 `;
 
 const PhotoAction = styled.button`
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 34px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -743,69 +781,69 @@ export default function Scanner() {
               </ReferenceDropdown>
             </ReferenceDropdownHost>
 
-            <ButtonRow>
-              <Button
-                block
-                fill="outline"
-                onClick={resetMode}
-                style={{ flex: 1 }}
-              >
-                {t('common.cancel')}
-              </Button>
-              <Button
-                block
-                color="primary"
-                disabled={actionCount === 0}
-                loading={actionLoading}
-                onClick={mode === 'borrow' ? handleBatchBorrow : handleBatchReturn}
-                style={{ flex: 1 }}
-              >
-                {actionLabel} ({actionCount})
-              </Button>
-            </ButtonRow>
-
-            <PhotoArea>
-              {transferImage && transferImagePreview ? (
-                <PhotoSelection>
-                  <PhotoPreview src={transferImagePreview} alt={t('scanner.transferPhoto')} />
-                  <PhotoName>{transferImage.name}</PhotoName>
-                  <PhotoAction
-                    type="button"
+            <ActionRow>
+              <PhotoArea>
+                {transferImage && transferImagePreview ? (
+                  <PhotoSelection>
+                    <PhotoPreview src={transferImagePreview} alt={t('scanner.transferPhoto')} />
+                    <PhotoName title={transferImage.name}>{transferImage.name}</PhotoName>
+                    <PhotoAction
+                      type="button"
+                      onClick={() => photoInputRef.current?.click()}
+                      title={t('scanner.replaceTransferPhoto')}
+                      aria-label={t('scanner.replaceTransferPhoto')}
+                      disabled={actionLoading}
+                    >
+                      <PictureOutline fontSize={18} />
+                    </PhotoAction>
+                    <PhotoAction
+                      type="button"
+                      onClick={clearTransferImage}
+                      title={t('scanner.removeTransferPhoto')}
+                      aria-label={t('scanner.removeTransferPhoto')}
+                      disabled={actionLoading}
+                    >
+                      <CloseOutline fontSize={18} />
+                    </PhotoAction>
+                  </PhotoSelection>
+                ) : (
+                  <Button
+                    block
+                    fill="outline"
                     onClick={() => photoInputRef.current?.click()}
-                    title={t('scanner.replaceTransferPhoto')}
-                    aria-label={t('scanner.replaceTransferPhoto')}
                     disabled={actionLoading}
                   >
-                    <PictureOutline fontSize={20} />
-                  </PhotoAction>
-                  <PhotoAction
-                    type="button"
-                    onClick={clearTransferImage}
-                    title={t('scanner.removeTransferPhoto')}
-                    aria-label={t('scanner.removeTransferPhoto')}
-                    disabled={actionLoading}
-                  >
-                    <CloseOutline fontSize={20} />
-                  </PhotoAction>
-                </PhotoSelection>
-              ) : (
+                    <PictureOutline fontSize={18} />
+                    <span style={{ marginLeft: 4 }}>{t('scanner.uploadTransferPhoto')}</span>
+                  </Button>
+                )}
+                <HiddenPhotoInput
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handlePhotoChange}
+                />
+              </PhotoArea>
+
+              <ButtonRow>
                 <Button
                   block
                   fill="outline"
-                  onClick={() => photoInputRef.current?.click()}
-                  disabled={actionLoading}
+                  onClick={resetMode}
                 >
-                  <PictureOutline fontSize={18} />
-                  <span style={{ marginLeft: 6 }}>{t('scanner.uploadTransferPhoto')}</span>
+                  {t('common.cancel')}
                 </Button>
-              )}
-              <HiddenPhotoInput
-                ref={photoInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                onChange={handlePhotoChange}
-              />
-            </PhotoArea>
+                <Button
+                  block
+                  color="primary"
+                  disabled={actionCount === 0}
+                  loading={actionLoading}
+                  onClick={mode === 'borrow' ? handleBatchBorrow : handleBatchReturn}
+                >
+                  {actionLabel} ({actionCount})
+                </Button>
+              </ButtonRow>
+            </ActionRow>
 
             <ResultListWrapper>
               {selectedOrder && (
