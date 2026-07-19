@@ -181,8 +181,7 @@ export default function Warehouse() {
 
   useEffect(() => {
     if (currentRoom) {
-      loadItems();
-      loadJoinRequestCount();
+      Promise.all([loadItems(), loadJoinRequestCount()]);
     }
   }, [currentRoom, filters]);
 
