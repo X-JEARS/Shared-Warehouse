@@ -21,6 +21,7 @@
     "react-image-crop": "^11.0.10",
     "react-router-dom": "^6.21.1",
     "styled-components": "^6.3.12",
+    "swr": "^2.4.2",
     "zustand": "^4.4.7"
   },
   "devDependencies": {

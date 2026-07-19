@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Toast, SpinLoading, Dialog, Dropdown, DropdownRef } from 'antd-mobile';
 import { CloseOutline, PictureOutline } from 'antd-mobile-icons';
@@ -651,8 +651,10 @@ export default function Scanner() {
     return `${title} · ${date}`;
   };
 
+  const scannedIds = useMemo(() => new Set(pendingItems.map(p => p.itemId)), [pendingItems]);
+
   const getReferenceStatus = (reservation: ReferenceReservation): ReferenceStatus => {
-    const isScanned = pendingItems.some(item => item.itemId === reservation.reservation_item_id);
+    const isScanned = scannedIds.has(reservation.reservation_item_id);
 
     if (mode === 'borrow') {
       if (reservation.is_in_user_hand) return 'in-hand';

@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
+import pool from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 import { createNotification } from './notificationController';
 import { isRoomAdmin } from '../utils/admin';
+import { hasItemAccess } from '../utils/access';
 
 // 获取用户的预约订单列表
 export const getOrders = async (req: AuthRequest, res: Response) => {
@@ -457,8 +459,13 @@ export const cancelReservation = async (req: AuthRequest, res: Response) => {
 
 export const getItemReservations = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
     const { id } = req.params;
     const { includePast } = req.query;
+
+    if (!userId || !await hasItemAccess(userId, Number(id))) {
+      return error(res, 'Access denied', 403);
+    }
 
     let sql = `
       SELECT r.*, u.user_nickname
@@ -493,93 +500,136 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
       return error(res, 'Items array is required');
     }
 
-    // First, check all items for conflicts before creating any reservations
-    const conflicts: { itemId: number; itemName?: string }[] = [];
+    // Use a transaction with row-level locking to prevent TOCTOU race conditions
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    for (const item of items) {
-      const conflictCheck = await query(
-        `SELECT r.*, i.item_name
-         FROM reservations r
-         JOIN items i ON r.reservation_item_id = i.item_id
-         WHERE r.reservation_item_id = $1
-           AND r.reservation_is_canceled = false
-           AND (
-             (r.reservation_start_time <= $2 AND r.reservation_end_time >= $2)
-             OR (r.reservation_start_time <= $3 AND r.reservation_end_time >= $3)
-             OR (r.reservation_start_time >= $2 AND r.reservation_end_time <= $3)
-           )`,
-        [item.itemId, item.startTime, item.endTime]
-      );
-
-      if (conflictCheck.rows.length > 0) {
-        conflicts.push({
-          itemId: item.itemId,
-          itemName: conflictCheck.rows[0].item_name,
-        });
+      // Lock all items upfront to prevent concurrent reservation creation
+      const itemIds = items.map(i => Number(i.itemId));
+      const uniqueItemIds = [...new Set(itemIds)].sort((a, b) => a - b);
+      if (
+        itemIds.some(id => !Number.isInteger(id) || id <= 0)
+        || uniqueItemIds.length !== itemIds.length
+      ) {
+        await client.query('ROLLBACK');
+        return error(res, 'Invalid or duplicate item IDs');
       }
-    }
 
-    // If there are any conflicts, return error without creating any reservations
-    if (conflicts.length > 0) {
-      return error(res, `以下物品在所选时间已被预约：${conflicts.map(c => c.itemName || `物品${c.itemId}`).join('、')}`);
-    }
+      if (uniqueItemIds.length > 0) {
+        const lockedItems = await client.query(
+          `SELECT item_id FROM items WHERE item_id = ANY($1) FOR UPDATE`,
+          [uniqueItemIds]
+        );
+        if (lockedItems.rows.length !== uniqueItemIds.length) {
+          await client.query('ROLLBACK');
+          return error(res, 'Item not found', 404);
+        }
+      }
 
-    const createTime = Date.now();
+      for (const itemId of uniqueItemIds) {
+        if (!userId || !await hasItemAccess(userId, itemId, client)) {
+          await client.query('ROLLBACK');
+          return error(res, 'Access denied', 403);
+        }
+      }
 
-    // Create order
-    const orderResult = await query(
-      `INSERT INTO orders (order_create_time, order_user_id, order_title, order_is_canceled)
-       VALUES ($1, $2, $3, false)
-       RETURNING *`,
-      [createTime, userId, title || null]
-    );
+      // Check all items for conflicts (now safe from concurrent inserts due to locks)
+      const conflicts: { itemId: number; itemName?: string }[] = [];
 
-    const order = orderResult.rows[0];
+      for (const item of items) {
+        const conflictCheck = await client.query(
+          `SELECT r.*, i.item_name
+           FROM reservations r
+           JOIN items i ON r.reservation_item_id = i.item_id
+           WHERE r.reservation_item_id = $1
+             AND r.reservation_is_canceled = false
+             AND (
+               (r.reservation_start_time <= $2 AND r.reservation_end_time >= $2)
+               OR (r.reservation_start_time <= $3 AND r.reservation_end_time >= $3)
+               OR (r.reservation_start_time >= $2 AND r.reservation_end_time <= $3)
+             )`,
+          [item.itemId, item.startTime, item.endTime]
+        );
 
-    // Create reservations for each item
-    const reservations = [];
-    const itemNames: string[] = [];
+        if (conflictCheck.rows.length > 0) {
+          conflicts.push({
+            itemId: item.itemId,
+            itemName: conflictCheck.rows[0].item_name,
+          });
+        }
+      }
 
-    for (const item of items) {
-      const result = await query(
-        `INSERT INTO reservations (reservation_item_id, reservation_start_time, reservation_end_time, reservation_user_id, reservation_order_id, reservation_is_canceled)
-         VALUES ($1, $2, $3, $4, $5, false)
+      // If there are any conflicts, return error without creating any reservations
+      if (conflicts.length > 0) {
+        await client.query('ROLLBACK');
+        return error(res, `以下物品在所选时间已被预约：${conflicts.map(c => c.itemName || `物品${c.itemId}`).join('、')}`);
+      }
+
+      const createTime = Date.now();
+
+      // Create order
+      const orderResult = await client.query(
+        `INSERT INTO orders (order_create_time, order_user_id, order_title, order_is_canceled)
+         VALUES ($1, $2, $3, false)
          RETURNING *`,
-        [item.itemId, item.startTime, item.endTime, userId, order.order_id]
+        [createTime, userId, title || null]
       );
 
-      reservations.push(result.rows[0]);
+      const order = orderResult.rows[0];
 
-      // 获取物品名称
-      const itemResult = await query('SELECT item_name FROM items WHERE item_id = $1', [item.itemId]);
-      if (itemResult.rows.length > 0) {
-        itemNames.push(itemResult.rows[0].item_name);
+      // Create reservations for each item
+      const reservations = [];
+      const itemNames: string[] = [];
+
+      for (const item of items) {
+        const result = await client.query(
+          `INSERT INTO reservations (reservation_item_id, reservation_start_time, reservation_end_time, reservation_user_id, reservation_order_id, reservation_is_canceled)
+           VALUES ($1, $2, $3, $4, $5, false)
+           RETURNING *`,
+          [item.itemId, item.startTime, item.endTime, userId, order.order_id]
+        );
+
+        reservations.push(result.rows[0]);
+
+        // 获取物品名称
+        const itemResult = await client.query('SELECT item_name FROM items WHERE item_id = $1', [item.itemId]);
+        if (itemResult.rows.length > 0) {
+          itemNames.push(itemResult.rows[0].item_name);
+        }
       }
+
+      await client.query('COMMIT');
+
+      // 创建预约成功通知
+      const formatDate = (timestamp: number) => {
+        const date = new Date(timestamp);
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+      };
+
+      // 获取最小开始时间和最大结束时间
+      const startTime = Math.min(...items.map(i => i.startTime));
+      const endTime = Math.max(...items.map(i => i.endTime));
+      const timeStr = `${formatDate(startTime)} 至 ${formatDate(endTime)}`;
+      const content = `预约时间：${timeStr}\n预约器材：${itemNames.join('、')}`;
+
+      if (userId) {
+        await createNotification(
+          userId,
+          'reservation',
+          '预约成功',
+          content,
+          order.order_id
+        );
+      }
+
+      return success(res, { order, reservations }, 'Order created', 201);
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
     }
-
-    // 创建预约成功通知
-    const formatDate = (timestamp: number) => {
-      const date = new Date(timestamp);
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-    };
-
-    // 获取最小开始时间和最大结束时间
-    const startTime = Math.min(...items.map(i => i.startTime));
-    const endTime = Math.max(...items.map(i => i.endTime));
-    const timeStr = `${formatDate(startTime)} 至 ${formatDate(endTime)}`;
-    const content = `预约时间：${timeStr}\n预约器材：${itemNames.join('、')}`;
-
-    if (userId) {
-      await createNotification(
-        userId,
-        'reservation',
-        '预约成功',
-        content,
-        order.order_id
-      );
-    }
-
-    return success(res, { order, reservations }, 'Order created', 201);
   } catch (err) {
     console.error('Create order error:', err);
     return error(res, 'Failed to create order', 500);

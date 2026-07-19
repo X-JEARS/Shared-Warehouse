@@ -83,6 +83,8 @@ export const useCartStore = create<CartState>()(
       }),
     {
       name: 'cart-storage',
+      version: 1,
+      migrate: (persistedState) => persistedState as CartState,
     }
   )
 );

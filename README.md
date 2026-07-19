@@ -51,6 +51,12 @@ psql -v ON_ERROR_STOP=1 -d warehouse -f ../sql/upgrade_room_admins_and_transfer_
 
 该脚本可重复执行，不会回填或修改已有业务数据。如果数据库已经有 `room_admins`，也可以继续使用单独的 `sql/migrations/002_transfer_records.sql`。
 
+已有数据库还需要执行 JWT 令牌版本迁移，以支持改密后撤销旧令牌：
+
+```bash
+psql -v ON_ERROR_STOP=1 -d warehouse -f ../sql/migrations/add_token_version.sql
+```
+
 ### 3. 配置环境变量
 
 复制后端环境变量模板并修改：
@@ -60,6 +66,8 @@ cd server
 cp .env.example .env
 # 编辑 .env 文件，填入数据库连接信息
 ```
+
+`JWT_SECRET` 为必填项。生产环境还应将 `ALLOWED_ORIGINS` 设置为允许访问 API 的前端 Origin，多个地址使用英文逗号分隔。
 
 ### 4. 启动服务
 

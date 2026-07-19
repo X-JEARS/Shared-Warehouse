@@ -7,10 +7,24 @@ import {
   ScanCodeOutline,
 } from 'antd-mobile-icons';
 import styled from 'styled-components';
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useMemo, Fragment, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import useSWR from 'swr';
 import { useNotificationStore } from '../stores/notificationStore';
-import { itemApi } from '../services/api';
+import { swrFetcher } from '../utils/swr';
+
+const routePreloadMap: Record<string, () => Promise<any>> = {
+  '/scanner': () => import('../pages/Scanner'),
+  '/create-item': () => import('../pages/CreateItem'),
+  '/create-room': () => import('../pages/CreateRoom'),
+  '/join-room': () => import('../pages/JoinRoom'),
+  '/my-items': () => import('../pages/MyItems'),
+  '/my-profile': () => import('../pages/MyProfile'),
+  '/my-reservations': () => import('../pages/MyReservations'),
+  '/my-transfer-records': () => import('../pages/MyTransferRecords'),
+  '/system-settings': () => import('../pages/SystemSettings'),
+  '/cart': () => import('../pages/Cart'),
+};
 
 const Container = styled.div`
   height: 100%;
@@ -265,19 +279,26 @@ export default function MainLayout() {
   const { pathname } = location;
   const { t } = useTranslation();
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
-  const [inHandCount, setInHandCount] = useState(0);
 
-  const tabs = tabsConfig.map(tab => ({
+  const tabs = useMemo(() => tabsConfig.map(tab => ({
     ...tab,
     title: t(tab.titleKey),
-  }));
+  })), [t]);
+
+  const { data: inHandData } = useSWR('/items/in-hand/count', swrFetcher, {
+    revalidateOnFocus: false,
+  });
 
   useEffect(() => {
     fetchUnreadCount();
-    itemApi.getInHandCount().then((res: any) => {
-      setInHandCount(res.data?.count || 0);
-    }).catch(() => {});
-  }, [pathname]);
+  }, [fetchUnreadCount]);
+
+  const inHandCount = inHandData?.count || 0;
+
+  const preloadRoute = useCallback((path: string) => {
+    const loader = routePreloadMap[path];
+    if (loader) loader();
+  }, []);
 
   const inHandIcon = inHandCount > 0
     ? <BadgeWrapper><UnorderedListOutline /><InHandBadge>{inHandCount > 99 ? '99+' : inHandCount}</InHandBadge></BadgeWrapper>
@@ -290,7 +311,7 @@ export default function MainLayout() {
         <MobileTabBar>
           <CustomTabBar>
             <ScanDome />
-            <ScanButton onClick={() => navigate('/scanner')}>
+            <ScanButton onClick={() => navigate('/scanner')} onMouseEnter={() => preloadRoute('/scanner')} onFocus={() => preloadRoute('/scanner')}>
               <ScanCodeOutline />
             </ScanButton>
             {tabs.filter(t => t.type !== 'scan').map((item, index) => {
@@ -302,6 +323,8 @@ export default function MainLayout() {
                   <RegularTabItem
                     $active={isActive}
                     onClick={() => navigate(item.key)}
+                    onMouseEnter={() => preloadRoute(item.key)}
+                    onFocus={() => preloadRoute(item.key)}
                   >
                     <RegularTabIcon>{icon}</RegularTabIcon>
                     <RegularTabTitle>{item.title}</RegularTabTitle>
@@ -314,7 +337,7 @@ export default function MainLayout() {
 
         {/* 桌面端侧边栏 */}
         <SideTabBar>
-          <SideScanButton onClick={() => navigate('/scanner')}>
+          <SideScanButton onClick={() => navigate('/scanner')} onMouseEnter={() => preloadRoute('/scanner')} onFocus={() => preloadRoute('/scanner')}>
             <ScanCodeOutline />
           </SideScanButton>
           {tabs.filter(t => t.type !== 'scan').map((item) => {
@@ -325,6 +348,8 @@ export default function MainLayout() {
                 key={item.key}
                 $active={isActive}
                 onClick={() => navigate(item.key)}
+                onMouseEnter={() => preloadRoute(item.key)}
+                onFocus={() => preloadRoute(item.key)}
               >
                 <SideTabIcon>{icon}</SideTabIcon>
                 <SideTabTitle>{item.title}</SideTabTitle>
