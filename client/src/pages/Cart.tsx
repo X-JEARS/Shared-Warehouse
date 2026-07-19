@@ -165,7 +165,14 @@ export default function Cart() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
-  const { items, startTime, endTime, setTime, removeItem, clearCart, orderTitle, setOrderTitle } = useCartStore();
+  const items = useCartStore((s) => s.items);
+  const startTime = useCartStore((s) => s.startTime);
+  const endTime = useCartStore((s) => s.endTime);
+  const orderTitle = useCartStore((s) => s.orderTitle);
+  const setTime = useCartStore((s) => s.setTime);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const clearCart = useCartStore((s) => s.clearCart);
+  const setOrderTitle = useCartStore((s) => s.setOrderTitle);
   const [loading, setLoading] = useState(false);
 
   const dateStr = new Date().toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', { month: '2-digit', day: '2-digit' }).replace(/\//g, '');
