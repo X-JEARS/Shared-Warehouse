@@ -264,6 +264,18 @@ const processBorrowItems = async (
         continue;
       }
 
+      // Authorization: verify user is a member of the room containing the item
+      if (item.box_belong_room_id) {
+        const memberCheck = await client.query(
+          'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+          [item.box_belong_room_id, userId]
+        );
+        if (memberCheck.rows.length === 0) {
+          results.push({ itemId, success: false, message: '您不是该仓库的成员' });
+          continue;
+        }
+      }
+
       results.push({ itemId, success: true, message: '取走成功' });
       candidates.push({ itemId, item });
     }
@@ -382,6 +394,13 @@ const processReturnItems = async (
     );
     returnerName = userResult.rows[0]?.user_nickname || returnerName;
 
+    // Get user's personal box ID for possession validation
+    const userBoxResult = await client.query(
+      'SELECT user_box_id FROM users WHERE user_id = $1',
+      [userId]
+    );
+    const userBoxId = userBoxResult.rows[0]?.user_box_id;
+
     for (const rawItem of items) {
       const value = rawItem && typeof rawItem === 'object' ? rawItem as any : {};
       const itemId = Number(value.itemId);
@@ -402,6 +421,12 @@ const processReturnItems = async (
       );
       if (itemResult.rows.length === 0) {
         results.push({ itemId, success: false, message: '物品不存在' });
+        continue;
+      }
+
+      // Authorization: verify item is in user's possession
+      if (itemResult.rows[0].item_current_box_id !== userBoxId) {
+        results.push({ itemId, success: false, message: '物品不在您手中' });
         continue;
       }
 
