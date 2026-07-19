@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     user_id SERIAL PRIMARY KEY,
     user_login_name VARCHAR(16) NOT NULL UNIQUE,
     user_password VARCHAR(72) NOT NULL,
+    token_version INT NOT NULL DEFAULT 0,
     user_box_id INT NOT NULL,
     user_nickname VARCHAR(16) NOT NULL,
     user_avatar VARCHAR(32),

@@ -110,7 +110,7 @@ const SourceLink = styled.a`
 export default function Profile() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const fetchUnreadCount = useNotificationStore((s) => s.fetchUnreadCount);
   const avatarUrl = user?.user_avatar || undefined;

@@ -25,6 +25,7 @@ npm run preview      # Preview production build
 # Database
 psql -U postgres -d warehouse -f sql/init.sql  # Initialize database
 psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/upgrade_room_admins_and_transfer_records.sql  # Upgrade an existing pre-admin database
+psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/migrations/add_token_version.sql  # Add JWT revocation support to an existing database
 ```
 
 ## Architecture
@@ -32,7 +33,8 @@ psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/upgrade_room_admins_and_
 ### Backend (server/)
 - **Express + TypeScript** REST API on port 3000
 - **PostgreSQL** database with 16 tables (see sql/init.sql)
-- **JWT authentication** via middleware in `src/middlewares/auth.ts`
+- **JWT authentication** via middleware in `src/middlewares/auth.ts`; token versions are checked against the database so password changes revoke existing tokens
+- **Request hardening**: configured CORS allowlist plus rate limiting on login and registration
 - **Route structure**: Each route file imports its controller, all routes use `/api` prefix
 - **Response format**: Use `success()` and `error()` helpers from `src/utils/response.ts`
 
@@ -41,7 +43,7 @@ psql -v ON_ERROR_STOP=1 -U postgres -d warehouse -f sql/upgrade_room_admins_and_
 - **Ant Design Mobile** for UI components with outline icons from `antd-mobile-icons`. New icons must be declared in `client/src/vite-env.d.ts`.
 - **Zustand** for state management with localStorage persistence (stores in `src/stores/`)
 - **Theme system**: CSS variables defined in `src/styles/theme.css`, managed by `themeStore`. Supports light/dark/system color modes and default/rounded/compact style variants. Applied via `html[data-theme]` and `html[data-style]` attributes. All UI must use `var(--app-color-*)` / `var(--app-radius-*)` instead of hardcoded hex values.
-- **API layer**: Centralized in `src/services/api.ts`, uses axios wrapper in `src/utils/request.ts`
+- **API layer**: Centralized in `src/services/api.ts`, uses axios wrapper in `src/utils/request.ts`; SWR-backed reads use `src/utils/swr.ts` and support both URL and `[url, axiosConfig]` keys
 - **Routing**: Protected routes use `PrivateRoute` wrapper checking `useAuthStore`
 
 ### Database Schema (Key Relationships)
@@ -74,6 +76,7 @@ Items → Reservations → Orders
 2. Token stored in Zustand (`authStore`) with localStorage persistence
 3. `request.ts` interceptor adds `Authorization: Bearer <token>` header
 4. Backend `auth` middleware validates token, injects `req.user`
+5. Password changes increment `users.token_version`, invalidating both legacy version-0 tokens and current versioned tokens
 
 ### Room Join Request Flow
 - User submits join request via `POST /api/rooms/:id/request-join` with optional member name
@@ -101,7 +104,7 @@ Items → Reservations → Orders
 - `POST /api/scan/return-batch` moves multiple items to specified boxes (partial success supported)
 - Each successful scan submission creates one `transfer_records` row (`transfer_record_type = 2`) and binds all successful item histories through nullable `history_transfer_record_id`
 - No requirement that user must hold the item to return it
-- Anyone can put an item into any box they have access to
+- Anyone can put an item into any box they have access to; regular boxes require room membership and personal boxes require ownership
 
 ### Notification Flow
 - Notifications are per-user (each user has their own notification list with independent read status)
@@ -355,8 +358,10 @@ Backend requires `.env` file (copy from `.env.example`):
 ```
 DB_HOST, DB_PORT, DB_NAME, DB_USER, DB_PASSWORD
 JWT_SECRET, JWT_EXPIRES_IN
-PORT, NODE_ENV
+PORT, NODE_ENV, ALLOWED_ORIGINS
 ```
+
+`JWT_SECRET` is required. `ALLOWED_ORIGINS` is a comma-separated browser-origin allowlist; production deployments must set it to the deployed frontend origins.
 
 ## PWA Notes
 

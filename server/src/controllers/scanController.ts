@@ -111,6 +111,25 @@ export const scanQrcode = async (req: AuthRequest, res: Response) => {
 
       const box = boxResult.rows[0];
 
+      // Authorization: verify user is a member of the room this box belongs to
+      if (box.box_belong_room_id) {
+        const memberCheck = await query(
+          'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+          [box.box_belong_room_id, userId]
+        );
+        if (memberCheck.rows.length === 0) {
+          return error(res, 'Access denied', 403);
+        }
+      } else {
+        const ownerCheck = await query(
+          'SELECT 1 FROM users WHERE user_box_id = $1 AND user_id = $2',
+          [box.box_id, userId]
+        );
+        if (ownerCheck.rows.length === 0) {
+          return error(res, 'Access denied', 403);
+        }
+      }
+
       // Get items in this box
       const itemsResult = await query(
         `SELECT i.*, u.user_nickname as owner_nickname
@@ -234,6 +253,18 @@ const processBorrowItems = async (
       if (item.item_current_box_id === userBoxId) {
         results.push({ itemId, success: true, message: '物品已在手中' });
         continue;
+      }
+
+      // Authorization: verify user is a member of the room containing the item
+      if (item.box_belong_room_id) {
+        const memberCheck = await client.query(
+          'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+          [item.box_belong_room_id, userId]
+        );
+        if (memberCheck.rows.length === 0) {
+          results.push({ itemId, success: false, message: '您不是该仓库的成员' });
+          continue;
+        }
       }
 
       results.push({ itemId, success: true, message: '取走成功' });
@@ -389,8 +420,29 @@ const processReturnItems = async (
         continue;
       }
 
+      const targetBox = boxResult.rows[0];
+      if (targetBox.box_belong_room_id) {
+        const memberCheck = await client.query(
+          'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+          [targetBox.box_belong_room_id, userId]
+        );
+        if (memberCheck.rows.length === 0) {
+          results.push({ itemId, success: false, message: '您不是目标仓库的成员' });
+          continue;
+        }
+      } else {
+        const ownerCheck = await client.query(
+          'SELECT 1 FROM users WHERE user_box_id = $1 AND user_id = $2',
+          [boxId, userId]
+        );
+        if (ownerCheck.rows.length === 0) {
+          results.push({ itemId, success: false, message: '无权访问目标盒子' });
+          continue;
+        }
+      }
+
       results.push({ itemId, success: true, message: '放入成功' });
-      candidates.push({ itemId, boxId, item: itemResult.rows[0], targetBox: boxResult.rows[0] });
+      candidates.push({ itemId, boxId, item: itemResult.rows[0], targetBox });
     }
 
     if (candidates.length > 0) {

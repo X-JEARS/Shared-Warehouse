@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
+import { hasItemAccess } from '../utils/access';
 
 export const getItems = async (req: AuthRequest, res: Response) => {
   try {
@@ -55,8 +56,8 @@ export const getItems = async (req: AuthRequest, res: Response) => {
         u.user_nickname as owner_nickname,
         r.room_name as belong_room_name,
         cr.room_name as current_room_name,
-        CASE WHEN cb.box_belong_room_id = ${roomId} THEN true ELSE false END as is_in_stock,
-        CASE WHEN bb.box_belong_room_id != ${roomId} THEN true ELSE false END as is_foreign,
+        CASE WHEN cb.box_belong_room_id = $1 THEN true ELSE false END as is_in_stock,
+        CASE WHEN bb.box_belong_room_id != $1 THEN true ELSE false END as is_foreign,
         CASE WHEN bb.box_belong_room_id IS DISTINCT FROM cb.box_belong_room_id THEN
           (SELECT u2.user_nickname FROM boxes b2
            LEFT JOIN users u2 ON u2.user_box_id = b2.box_id
@@ -107,9 +108,9 @@ export const getItems = async (req: AuthRequest, res: Response) => {
     // Query 2: Items that belong to this room but are NOT currently in this room
     // These are items borrowed out to other rooms/users
     if (!boxId) { // Only show out-of-stock items when not filtering by specific box
-      let outOfStockSql = selectClause + ` WHERE bb.box_belong_room_id = $1 AND (cb.box_belong_room_id IS NULL OR cb.box_belong_room_id != $2)`;
-      const outOfStockValues: any[] = [roomId, roomId];
-      let outOfStockParamCount = 3;
+      let outOfStockSql = selectClause + ` WHERE bb.box_belong_room_id = $1 AND (cb.box_belong_room_id IS NULL OR cb.box_belong_room_id != $1)`;
+      const outOfStockValues: any[] = [roomId];
+      let outOfStockParamCount = 2;
 
       if (tagId) {
         outOfStockSql += ` AND EXISTS (
@@ -236,6 +237,10 @@ export const getItemById = async (req: AuthRequest, res: Response) => {
     }
 
     const item = result.rows[0];
+
+    if (!userId || !await hasItemAccess(userId, Number(id))) {
+      return error(res, 'Access denied', 403);
+    }
 
     // Determine which room's tags/remark to show
     // If roomId is provided, use it; otherwise fall back to belong_room_id
@@ -401,16 +406,19 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
 
     // Verify item exists and user has access
     const itemCheck = await query(
-      `SELECT i.item_id, b.box_belong_room_id
+      `SELECT i.item_id, i.item_belong_user_id, b.box_belong_room_id
        FROM items i
        JOIN boxes b ON i.item_current_box_id = b.box_id
-       LEFT JOIN room_members rm ON b.box_belong_room_id = rm.member_room_id AND rm.member_user_id = $2
        WHERE i.item_id = $1`,
-      [id, userId]
+      [id]
     );
 
     if (itemCheck.rows.length === 0) {
-      return error(res, 'Item not found or access denied', 404);
+      return error(res, 'Item not found', 404);
+    }
+
+    if (!userId || !await hasItemAccess(userId, Number(id))) {
+      return error(res, 'Access denied', 403);
     }
 
     const result = await query(
@@ -436,7 +444,12 @@ export const getHistory = async (req: AuthRequest, res: Response) => {
 
 export const getComments = async (req: AuthRequest, res: Response) => {
   try {
+    const userId = req.user?.userId;
     const { id } = req.params;
+
+    if (!userId || !await hasItemAccess(userId, Number(id))) {
+      return error(res, 'Access denied', 403);
+    }
 
     const result = await query(
       `SELECT c.*, u.user_nickname, u.user_avatar
@@ -466,6 +479,10 @@ export const addComment = async (req: AuthRequest, res: Response) => {
 
     if (content.length > 120) {
       return error(res, 'Comment must be 120 characters or less');
+    }
+
+    if (!userId || !await hasItemAccess(userId, Number(id))) {
+      return error(res, 'Access denied', 403);
     }
 
     const createTime = Date.now();
@@ -502,6 +519,10 @@ export const getItemByQrcode = async (req: AuthRequest, res: Response) => {
     }
 
     const item = result.rows[0];
+
+    if (!userId || !await hasItemAccess(userId, item.item_id)) {
+      return error(res, 'Access denied', 403);
+    }
 
     item.isOwner = item.item_belong_user_id === userId;
 

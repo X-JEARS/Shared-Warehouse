@@ -5,7 +5,10 @@ import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default_secret';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 export const register = async (req: Request, res: Response) => {
   try {
@@ -55,10 +58,10 @@ export const register = async (req: Request, res: Response) => {
 
     const user = result.rows[0];
 
-    // Generate token
+    // Generate token with version
     const signOptions: SignOptions = { expiresIn: '7d' };
     const token = jwt.sign(
-      { userId: user.user_id, loginName: user.user_login_name },
+      { userId: user.user_id, loginName: user.user_login_name, tokenVersion: 0 },
       JWT_SECRET,
       signOptions
     );
@@ -96,10 +99,10 @@ export const login = async (req: Request, res: Response) => {
       return error(res, 'Invalid credentials', 401);
     }
 
-    // Generate token
+    // Generate token with version
     const signOptions: SignOptions = { expiresIn: '7d' };
     const token = jwt.sign(
-      { userId: user.user_id, loginName: user.user_login_name },
+      { userId: user.user_id, loginName: user.user_login_name, tokenVersion: user.token_version || 0 },
       JWT_SECRET,
       signOptions
     );

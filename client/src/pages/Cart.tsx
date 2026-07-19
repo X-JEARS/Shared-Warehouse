@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useCartStore } from '../stores/cartStore';
 import { useAuthStore } from '../stores/authStore';
 import { reservationApi } from '../services/api';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import TrashIcon from '../components/icons/TrashIcon';
 
 function EditIcon({ size = 16 }: { size?: number }) {
@@ -165,18 +165,29 @@ export default function Cart() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
-  const { items, startTime, endTime, setTime, removeItem, clearCart, orderTitle, setOrderTitle } = useCartStore();
+  const items = useCartStore((s) => s.items);
+  const startTime = useCartStore((s) => s.startTime);
+  const endTime = useCartStore((s) => s.endTime);
+  const orderTitle = useCartStore((s) => s.orderTitle);
+  const setTime = useCartStore((s) => s.setTime);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const clearCart = useCartStore((s) => s.clearCart);
+  const setOrderTitle = useCartStore((s) => s.setOrderTitle);
   const [loading, setLoading] = useState(false);
 
-  const dateStr = new Date().toLocaleDateString(i18n.language === 'en-US' ? 'en-US' : 'zh-CN', { month: '2-digit', day: '2-digit' }).replace(/\//g, '');
-  const defaultTitle = t('cart.defaultTitle', { nickname: user?.user_nickname || 'User', date: dateStr });
+  const locale = i18n.language === 'en-US' ? 'en-US' : 'zh-CN';
+  const defaultTitle = useMemo(() => {
+    const dateStr = new Date().toLocaleDateString(locale, { month: '2-digit', day: '2-digit' }).replace(/\//g, '');
+    return t('cart.defaultTitle', { nickname: user?.user_nickname || 'User', date: dateStr });
+  }, [locale, user?.user_nickname, t]);
 
   const handleEditTitle = async () => {
+    let editedTitle = orderTitle || '';
     const result = await Dialog.confirm({
       title: t('cart.editTitle'),
       content: <input
-        id="order-title-input"
-        defaultValue={orderTitle || ''}
+        defaultValue={editedTitle}
+        onChange={(e) => { editedTitle = e.target.value; }}
         placeholder={t('cart.titlePlaceholder')}
         style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--app-color-border)', borderRadius: 'var(--app-radius-s)', fontSize: '14px', outline: 'none' }}
       />,
@@ -185,8 +196,7 @@ export default function Cart() {
     });
 
     if (result) {
-      const input = document.getElementById('order-title-input') as HTMLInputElement;
-      const newTitle = input?.value?.trim() || '';
+      const newTitle = editedTitle.trim();
       setOrderTitle(newTitle || undefined);
     }
   };

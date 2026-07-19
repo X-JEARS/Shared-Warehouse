@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, SearchBar, SpinLoading } from 'antd-mobile';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import { itemApi } from '../services/api';
+import useSWR from 'swr';
+import { swrFetcher } from '../utils/swr';
 import ItemCard from '../components/ItemCard';
 import ItemDetail from '../components/ItemDetail';
 
@@ -54,44 +55,31 @@ const EmptyText = styled.p`
 export default function InHand() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const [items, setItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { data, isLoading } = useSWR('/items/in-hand', swrFetcher, {
+    revalidateOnFocus: false,
+  });
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const res: any = await itemApi.getInHand();
-      setItems(res.data || []);
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const items = data || [];
 
   const handleItemClick = (itemId: number) => {
     setSelectedItem(itemId);
     setDetailVisible(true);
   };
 
-  // 前端搜索过滤
-  const filteredItems = items.filter((item) => {
-    if (!searchText) return true;
+  const filteredItems = useMemo(() => {
+    if (!searchText) return items;
     const text = searchText.toLowerCase();
-    return (
+    return items.filter((item: any) =>
       item.item_name?.toLowerCase().includes(text) ||
       item.item_notice?.toLowerCase().includes(text)
     );
-  });
+  }, [items, searchText]);
 
-  if (loading) {
+  if (isLoading) {
     return (
       <Container>
         <Header>
@@ -135,7 +123,7 @@ export default function InHand() {
           </EmptyContainer>
         ) : (
           <ItemGrid>
-            {filteredItems.map((item) => (
+            {filteredItems.map((item: any) => (
               <ItemCard
                 key={item.item_id}
                 item={item}

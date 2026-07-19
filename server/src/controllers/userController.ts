@@ -110,7 +110,7 @@ export const updatePassword = async (req: AuthRequest, res: Response) => {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     await query(
-      'UPDATE users SET user_password = $1 WHERE user_id = $2',
+      'UPDATE users SET user_password = $1, token_version = token_version + 1 WHERE user_id = $2',
       [hashedPassword, userId]
     );
 

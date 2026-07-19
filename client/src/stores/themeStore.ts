@@ -80,6 +80,9 @@ export const useThemeStore = create<ThemeState>()(
         set({ language, effectiveLanguage });
       },
 
+      // NOTE: This must only be called ONCE per app lifecycle.
+      // Called from main.tsx before React renders.
+      // If called multiple times, event listeners will accumulate.
       _init: () => {
         const { theme, style, language } = get();
         const effectiveTheme = theme === 'system' ? getSystemTheme() : theme;
@@ -117,6 +120,8 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'theme-storage',
+      version: 1,
+      migrate: (persistedState) => persistedState as ThemeState,
       partialize: (state) => ({ theme: state.theme, style: state.style, language: state.language }),
     }
   )

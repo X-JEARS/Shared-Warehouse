@@ -50,6 +50,8 @@ export const useRoomStore = create<RoomState>()(
     }),
     {
       name: 'room-storage',
+      version: 1,
+      migrate: (persistedState) => persistedState as RoomState,
     }
   )
 );
