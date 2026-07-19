@@ -158,7 +158,6 @@ export default function Profile() {
               content: (
                 <AboutContent>
                   <div>{t('profile.aboutContent')}</div>
-                  <div>{t('profile.copyright')}</div>
                   <div>{t('profile.license')}</div>
                   <SourceLink
                     href="https://github.com/X-JEARS/Shared-Warehouse"
@@ -167,6 +166,7 @@ export default function Profile() {
                   >
                     {t('profile.sourceCode')}
                   </SourceLink>
+                  <div>{t('profile.copyright')}</div>
                 </AboutContent>
               ),
             })

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, SearchBar, SpinLoading } from 'antd-mobile';
 import type { InputRef } from 'antd-mobile/es/components/input';
@@ -43,11 +44,14 @@ const WarehouseMain = styled.div`
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overscroll-behavior-x: none;
 `;
 
 const Content = styled.div`
   flex: 1;
   overflow-y: auto;
+  touch-action: pan-y;
+  overscroll-behavior-x: none;
   padding: 12px 16px;
   padding-bottom: calc(12px + 50px + 48px + 16px + env(safe-area-inset-bottom, 0px));
 
@@ -164,14 +168,32 @@ const ActionButtons = styled.div`
   gap: 12px;
 `;
 
+interface WarehouseBox {
+  box_id: number;
+  box_name: string;
+}
+
+interface PointerStart {
+  x: number;
+  y: number;
+  target: EventTarget | null;
+  pointerId: number;
+  captured: boolean;
+}
+
+const isSwipeIgnoredTarget = (target: EventTarget | null) => (
+  target instanceof Element
+  && Boolean(target.closest('button, a, input, textarea, [role="tablist"], [role="dialog"]'))
+);
+
 export default function Warehouse() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { currentRoom, rooms } = useRoomStore();
   const cartItemCount = useCartStore((s) => s.items.length);
-  const [inStockItems, setInStockItems] = useState<any[]>([]);
-  const [outOfStockItems, setOutOfStockItems] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [allInStockItems, setAllInStockItems] = useState<any[]>([]);
+  const [allOutOfStockItems, setAllOutOfStockItems] = useState<any[]>([]);
+  const [boxes, setBoxes] = useState<WarehouseBox[]>([]);
   const [searchText, setSearchText] = useState('');
   const [filters, setFilters] = useState<{ boxId?: number | 'out-of-stock'; tagId?: number }>({});
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
@@ -181,13 +203,17 @@ export default function Warehouse() {
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
   const searchInputRef = useRef<InputRef>(null);
+  const warehouseMainRef = useRef<HTMLDivElement>(null);
+  const pointerStartRef = useRef<PointerStart | null>(null);
+  const suppressClickRef = useRef(false);
+  const boxesRef = useRef<WarehouseBox[]>([]);
+  const filtersRef = useRef(filters);
 
-  const itemSearchKey = searchQuery || undefined;
   const itemKey = currentRoom
-    ? ['/items', { params: { roomId: currentRoom.room_id, boxId: filters.boxId === 'out-of-stock' ? undefined : filters.boxId, tagId: filters.tagId, search: itemSearchKey } }]
+    ? ['/items', { params: { roomId: currentRoom.room_id } }]
     : null;
 
-  const { data: itemsData, isLoading: itemsLoading } = useSWR(
+  const { data: itemsData, isLoading: itemsLoading, mutate: refreshItems } = useSWR(
     itemKey,
     swrFetcher,
     { keepPreviousData: true, revalidateOnFocus: false }
@@ -205,8 +231,8 @@ export default function Warehouse() {
 
   useEffect(() => {
     if (itemsData) {
-      setInStockItems(itemsData.inStock || []);
-      setOutOfStockItems(itemsData.outOfStock || []);
+      setAllInStockItems(itemsData.inStock || []);
+      setAllOutOfStockItems(itemsData.outOfStock || []);
     }
   }, [itemsData]);
 
@@ -214,13 +240,139 @@ export default function Warehouse() {
     setPendingRequestCount(joinRequestsData?.length || 0);
   }, [joinRequestsData]);
 
-  useEffect(() => {
-    setLoading(itemsLoading);
-  }, [itemsLoading]);
-
   const handleFilterChange = (newFilters: { boxId?: number | 'out-of-stock'; tagId?: number }) => {
+    filtersRef.current = newFilters;
     setFilters(newFilters);
   };
+
+  const handleBoxesChange = (nextBoxes: WarehouseBox[]) => {
+    boxesRef.current = nextBoxes;
+    setBoxes(nextBoxes);
+  };
+
+  const switchFilterByDirection = (direction: 1 | -1) => {
+    const availableBoxes = boxesRef.current;
+    const availableFilters: Array<number | 'out-of-stock' | undefined> = [
+      undefined,
+      'out-of-stock',
+      ...availableBoxes.map((box) => box.box_id),
+    ];
+    if (availableFilters.length < 2) return false;
+
+    const currentFilters = filtersRef.current;
+    const currentIndex = availableFilters.findIndex((boxId) => boxId === currentFilters.boxId);
+    const baseIndex = currentIndex >= 0 ? currentIndex : 0;
+    const nextIndex = (baseIndex + direction + availableFilters.length) % availableFilters.length;
+    const nextFilters = {
+      boxId: availableFilters[nextIndex],
+      tagId: currentFilters.tagId,
+    };
+
+    filtersRef.current = nextFilters;
+    setFilters(nextFilters);
+    return true;
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!event.isPrimary || event.button !== 0 || isSwipeIgnoredTarget(event.target)) {
+      pointerStartRef.current = null;
+      return;
+    }
+
+    pointerStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      target: event.target,
+      pointerId: event.pointerId,
+      captured: false,
+    };
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = pointerStartRef.current;
+    if (!start) return;
+
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    if (Math.abs(deltaX) >= 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+      if (!start.captured) {
+        event.currentTarget.setPointerCapture?.(start.pointerId);
+        start.captured = true;
+      }
+      event.preventDefault();
+    }
+  };
+
+  const handlePointerEnd = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const start = pointerStartRef.current;
+    pointerStartRef.current = null;
+    if (!start) {
+      return;
+    }
+
+    const deltaX = event.clientX - start.x;
+    const deltaY = event.clientY - start.y;
+    const isHorizontalSwipe = Math.abs(deltaX) >= 56 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2;
+    if (!isHorizontalSwipe || isSwipeIgnoredTarget(start.target)) return;
+
+    event.preventDefault();
+    suppressClickRef.current = true;
+    switchFilterByDirection(deltaX < 0 ? 1 : -1);
+  };
+
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  useEffect(() => {
+    boxesRef.current = boxes;
+  }, [boxes]);
+
+  useEffect(() => {
+    const warehouseMain = warehouseMainRef.current;
+    if (!warehouseMain) return;
+
+    let accumulatedDeltaX = 0;
+    let lastWheelAt = 0;
+    let lastSwitchAt = 0;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (isSwipeIgnoredTarget(event.target)) return;
+
+      const horizontalDelta = Math.abs(event.deltaX);
+      const verticalDelta = Math.abs(event.deltaY);
+      if (horizontalDelta < 1 || horizontalDelta <= verticalDelta) {
+        accumulatedDeltaX = 0;
+        return;
+      }
+
+      // Keep horizontal trackpad gestures inside the warehouse instead of letting
+      // the browser interpret them as history navigation.
+      event.preventDefault();
+      event.stopPropagation();
+
+      const now = performance.now();
+      if (now - lastWheelAt > 450) accumulatedDeltaX = 0;
+      lastWheelAt = now;
+
+      if (now - lastSwitchAt < 650) {
+        accumulatedDeltaX = 0;
+        return;
+      }
+
+      accumulatedDeltaX += event.deltaX;
+      if (Math.abs(accumulatedDeltaX) < 70) return;
+
+      accumulatedDeltaX = 0;
+      lastSwitchAt = now;
+      // Trackpad wheel deltas follow the opposite direction from the user's
+      // finger movement, so invert the mapping for the expected navigation feel.
+      switchFilterByDirection(event.deltaX < 0 ? -1 : 1);
+    };
+
+    warehouseMain.addEventListener('wheel', handleWheel, { passive: false });
+    return () => warehouseMain.removeEventListener('wheel', handleWheel);
+  }, []);
 
   const handleItemClick = (itemId: number) => {
     setSelectedItem(itemId);
@@ -228,6 +380,39 @@ export default function Warehouse() {
   };
 
   const locale = i18n.language === 'en-US' ? 'en' : 'zh';
+
+  const { inStockItems, outOfStockItems } = useMemo(() => {
+    const normalizedSearch = searchQuery.toLocaleLowerCase(locale);
+    const matchesCommonFilters = (item: any) => {
+      const matchesTag = filters.tagId === undefined
+        || (Array.isArray(item.tag_ids) && item.tag_ids.some((tagId: unknown) => Number(tagId) === filters.tagId));
+      if (!matchesTag) return false;
+
+      if (!normalizedSearch) return true;
+      const name = String(item.item_name || '').toLocaleLowerCase(locale);
+      const notice = String(item.item_notice || '').toLocaleLowerCase(locale);
+      return name.includes(normalizedSearch) || notice.includes(normalizedSearch);
+    };
+
+    if (filters.boxId === 'out-of-stock') {
+      return {
+        inStockItems: [],
+        outOfStockItems: allOutOfStockItems.filter(matchesCommonFilters),
+      };
+    }
+
+    const filteredInStock = allInStockItems.filter((item) =>
+      matchesCommonFilters(item)
+      && (filters.boxId === undefined || Number(item.item_current_box_id) === filters.boxId)
+    );
+
+    return {
+      inStockItems: filteredInStock,
+      outOfStockItems: filters.boxId === undefined
+        ? allOutOfStockItems.filter(matchesCommonFilters)
+        : [],
+    };
+  }, [allInStockItems, allOutOfStockItems, filters, locale, searchQuery]);
 
   const groupedInStockItems = useMemo(() => {
     const grouped: Record<string, { name: string; items: any[] }> = {};
@@ -356,16 +541,33 @@ export default function Warehouse() {
         </SearchContainer>
       )}
 
-      <WarehouseMain>
+      <WarehouseMain
+        ref={warehouseMainRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerEnd}
+        onPointerCancel={() => {
+          pointerStartRef.current = null;
+        }}
+        onClickCapture={(event) => {
+          if (!suppressClickRef.current) return;
+          suppressClickRef.current = false;
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+      >
         {currentRoom && (
           <FilterBar
             roomId={currentRoom.room_id}
+            selectedBox={filters.boxId}
+            selectedTag={filters.tagId}
             onFilterChange={handleFilterChange}
+            onBoxesChange={handleBoxesChange}
           />
         )}
 
         <Content>
-        {loading ? (
+        {itemsLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <SpinLoading />
           </div>
@@ -451,6 +653,7 @@ export default function Warehouse() {
         itemId={selectedItem}
         roomId={currentRoom?.room_id}
         onClose={() => setDetailVisible(false)}
+        onUpdate={() => void refreshItems()}
       />
 
       <CartPopup

@@ -78,10 +78,10 @@
     "myTransferRecords": "My Check-ins & Check-outs",
     "systemSettings": "Settings",
     "about": "About",
-    "aboutContent": "Shared Warehouse v1.0.0\nScan to borrow & return, manage efficiently",
+    "aboutContent": "Shared Warehouse Ver.260720",
     "copyright": "Copyright © 2026 X-JEARS",
     "license": "Licensed under AGPL-3.0-only",
-    "sourceCode": "View source code"
+    "sourceCode": "View project GitHub page"
   },
   "myProfile": {
     "title": "My Profile",
@@ -177,7 +177,7 @@
     "transferImageTooLarge": "Photo must not exceed 20MB"
   },
   "myTransferRecords": {
-    "title": "Transfer Records",
+    "title": "My Check-ins & Check-outs",
     "loadFailed": "Failed to load transfer records",
     "empty": "No transfer records",
     "borrow": "Borrow",
