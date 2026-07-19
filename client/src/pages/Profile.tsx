@@ -95,6 +95,17 @@ const Section = styled.div`
   margin-bottom: 12px;
 `;
 
+const AboutContent = styled.div`
+  line-height: 1.7;
+  white-space: pre-line;
+`;
+
+const SourceLink = styled.a`
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--app-color-primary);
+`;
+
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -144,7 +155,20 @@ export default function Profile() {
           onClick={() =>
             Dialog.alert({
               title: t('profile.about'),
-              content: t('profile.aboutContent'),
+              content: (
+                <AboutContent>
+                  <div>{t('profile.aboutContent')}</div>
+                  <div>{t('profile.copyright')}</div>
+                  <div>{t('profile.license')}</div>
+                  <SourceLink
+                    href="https://github.com/X-JEARS/Shared-Warehouse"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('profile.sourceCode')}
+                  </SourceLink>
+                </AboutContent>
+              ),
             })
           }
         />
