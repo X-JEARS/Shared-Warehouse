@@ -11,6 +11,14 @@ export interface AuthRequest extends Request {
   user?: JwtPayload;
 }
 
+const getJwtSecret = (): string => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET environment variable is required');
+  }
+  return secret;
+};
+
 export const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const authHeader = req.headers.authorization;
@@ -20,7 +28,7 @@ export const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const secret = process.env.JWT_SECRET || 'default_secret';
+    const secret = getJwtSecret();
 
     const decoded = jwt.verify(token, secret) as JwtPayload;
     req.user = decoded;
@@ -37,7 +45,7 @@ export const optionalAuth = (req: AuthRequest, res: Response, next: NextFunction
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const secret = process.env.JWT_SECRET || 'default_secret';
+      const secret = getJwtSecret();
       const decoded = jwt.verify(token, secret) as JwtPayload;
       req.user = decoded;
     }
