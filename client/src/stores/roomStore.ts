@@ -50,6 +50,7 @@ export const useRoomStore = create<RoomState>()(
     }),
     {
       name: 'room-storage',
+      version: 1,
     }
   )
 );
