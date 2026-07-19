@@ -7,6 +7,11 @@ export type EffectiveTheme = 'light' | 'dark';
 export type StyleVariant = 'default' | 'rounded' | 'compact';
 export type LanguageMode = 'zh-CN' | 'en-US' | 'system';
 
+const THEME_COLORS: Record<EffectiveTheme, string> = {
+  light: '#f5f5f5',
+  dark: '#111111',
+};
+
 function getSystemTheme(): EffectiveTheme {
   if (typeof window === 'undefined') return 'light';
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
@@ -15,6 +20,15 @@ function getSystemTheme(): EffectiveTheme {
 function applyTheme(effectiveTheme: EffectiveTheme) {
   if (typeof document === 'undefined') return;
   document.documentElement.setAttribute('data-theme', effectiveTheme);
+  document.documentElement.style.colorScheme = effectiveTheme;
+
+  const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  themeColor?.setAttribute('content', THEME_COLORS[effectiveTheme]);
+
+  const appleStatusBar = document.querySelector<HTMLMetaElement>(
+    'meta[name="apple-mobile-web-app-status-bar-style"]'
+  );
+  appleStatusBar?.setAttribute('content', effectiveTheme === 'dark' ? 'black' : 'default');
 }
 
 function applyStyle(style: StyleVariant) {

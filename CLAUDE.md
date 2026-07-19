@@ -271,6 +271,7 @@ When comparing values that may be NULL, use `IS DISTINCT FROM` instead of `!=`:
 - CSS variables defined in `client/src/styles/theme.css`, imported in `main.tsx`
 - Theme is applied via `html[data-theme]` attribute (light/dark) and `html[data-style]` attribute (default/rounded/compact)
 - Store initialized in `main.tsx` before React renders to prevent flash of wrong theme
+- `applyTheme` also synchronizes `color-scheme`, the `theme-color` meta tag, and iOS `apple-mobile-web-app-status-bar-style`. `index.html` applies the persisted theme in an inline head script before app startup because iOS standalone mode may snapshot the status bar style before React initializes.
 - **Theme modes** (`ThemeMode`): `light`, `dark`, `system` (follows OS `prefers-color-scheme` media query, auto-updates on system change)
 - **Style variants** (`StyleVariant`): `default` (standard antd-mobile), `rounded` (large border-radius, cartoon/playful feel), `compact` (small border-radius, minimal feel)
 - CSS variables cover: colors (`--app-color-*`), semantic backgrounds (`--app-color-info/warning/success/danger-*`), shadows (`--app-shadow-*`), border-radius (`--app-radius-*`), tab bar (`--app-color-tab-bar-*`), badges (`--app-color-badge-*`), and overrides for antd-mobile's `--adm-*` variables
@@ -360,8 +361,9 @@ PORT, NODE_ENV
 ## PWA Notes
 
 - Configured via `vite-plugin-pwa` in `vite.config.ts`
-- Manifest in `public/manifest.json`
+- The linked production manifest (`manifest.webmanifest`) is generated from the `manifest` object in `client/vite.config.ts`. `client/public/manifest.json` is a compatibility copy and its colors must remain aligned with that configuration.
 - Icons in `public/icons/`
 - iOS add-to-homescreen requires HTTPS in production
 - iOS safe area: Uses `viewport-fit=cover` and `env(safe-area-inset-bottom)` to handle home indicator area
-- Theme color is white (`#ffffff`) for consistent status bar appearance on iOS
+- Status bar colors follow the effective app theme: light uses `#f5f5f5` with the iOS `default` style; dark uses `#111111` with the iOS `black` style. Do not use the brand primary color as the manifest `theme_color`, because Android derives its standalone status bar color from that value.
+- Installed iOS PWAs may cache status bar and manifest metadata. After deploying metadata changes, fully close and reopen the PWA; older installations may need to be removed from the Home Screen and added again.

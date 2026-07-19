@@ -7,7 +7,24 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="共享仓库" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#f5f5f5" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Apply the persisted color mode before iOS snapshots the standalone status bar style.
+      try {
+        const storedTheme = JSON.parse(localStorage.getItem('theme-storage') || '{}').state?.theme;
+        const isDark = storedTheme === 'dark' ||
+          (storedTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        const effectiveTheme = isDark ? 'dark' : 'light';
+
+        document.documentElement.dataset.theme = effectiveTheme;
+        document.documentElement.style.colorScheme = effectiveTheme;
+        document.querySelector('meta[name="theme-color"]').content = isDark ? '#111111' : '#f5f5f5';
+        document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]').content = isDark ? 'black' : 'default';
+      } catch {
+        // The store will apply the default theme during application initialization.
+      }
+    </script>
     <link rel="apple-touch-icon" href="/icons/icon-192.png" />
     <title>共享仓库</title>
   </head>
