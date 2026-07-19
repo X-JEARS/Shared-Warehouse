@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, SearchBar, SpinLoading } from 'antd-mobile';
 import type { InputRef } from 'antd-mobile/es/components/input';
@@ -231,6 +231,28 @@ export default function Warehouse() {
     setDetailVisible(true);
   };
 
+  const locale = i18n.language === 'en-US' ? 'en' : 'zh';
+
+  const groupedInStockItems = useMemo(() => {
+    const grouped: Record<string, { name: string; items: any[] }> = {};
+    for (const item of inStockItems) {
+      const boxKey = item.item_current_box_id || 'no-box';
+      const boxName = item.current_box_name || t('warehouse.unassignedBox');
+      if (!grouped[boxKey]) {
+        grouped[boxKey] = { name: boxName, items: [] };
+      }
+      grouped[boxKey].items.push(item);
+    }
+    for (const group of Object.values(grouped)) {
+      group.items.sort((a: any, b: any) => (a.item_name || '').localeCompare(b.item_name || '', locale));
+    }
+    return grouped;
+  }, [inStockItems, locale, t]);
+
+  const sortedOutOfStockItems = useMemo(() => {
+    return [...outOfStockItems].sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', locale));
+  }, [outOfStockItems, locale]);
+
   // 没有仓库时的提示
   if (rooms.length === 0) {
     return (
@@ -363,21 +385,7 @@ export default function Warehouse() {
         ) : (
           <ItemList>
             {/* 在库物品：按当前所在盒子分组显示 */}
-            {filters.boxId !== 'out-of-stock' && (() => {
-              const groupedItems = inStockItems.reduce((acc, item) => {
-                const boxKey = item.item_current_box_id || 'no-box';
-                const boxName = item.current_box_name || t('warehouse.unassignedBox');
-                if (!acc[boxKey]) {
-                  acc[boxKey] = { name: boxName, items: [] };
-                }
-                acc[boxKey].items.push(item);
-                return acc;
-              }, {} as Record<string, { name: string; items: any[] }>);
-              (Object.values(groupedItems) as { name: string; items: any[] }[]).forEach(group => {
-                group.items.sort((a: any, b: any) => (a.item_name || '').localeCompare(b.item_name || '', i18n.language === 'en-US' ? 'en' : 'zh'));
-              });
-
-              return (Object.entries(groupedItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
+            {filters.boxId !== 'out-of-stock' && (Object.entries(groupedInStockItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
                 <BoxGroup key={boxKey}>
                   <BoxTitle>{group.name}</BoxTitle>
                   <ItemGrid>
@@ -391,15 +399,14 @@ export default function Warehouse() {
                     ))}
                   </ItemGrid>
                 </BoxGroup>
-              ));
-            })()}
+              ))}
 
             {/* 不在库物品 */}
             {(filters.boxId === 'out-of-stock' ? outOfStockItems.length > 0 : outOfStockItems.length > 0) && (
               <BoxGroup>
                 <BoxTitle>{t('warehouse.notInStock')}</BoxTitle>
                 <ItemGrid>
-                  {[...outOfStockItems].sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', i18n.language === 'en-US' ? 'en' : 'zh')).map((item) => (
+                  {sortedOutOfStockItems.map((item) => (
                     <ItemCard
                       key={item.item_id}
                       item={item}
