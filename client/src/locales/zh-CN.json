@@ -78,10 +78,10 @@
     "myTransferRecords": "我的存取",
     "systemSettings": "系统设置",
     "about": "关于",
-    "aboutContent": "共享仓库 v1.0.0\n扫码借还，高效管理",
+    "aboutContent": "共享仓库 Ver.260720",
     "copyright": "版权所有 © 2026 X-JEARS",
     "license": "采用 AGPL-3.0-only 协议授权",
-    "sourceCode": "查看源代码"
+    "sourceCode": "查看项目Github页面"
   },
   "myProfile": {
     "title": "我的资料",
@@ -177,7 +177,7 @@
     "transferImageTooLarge": "照片不能超过 20MB"
   },
   "myTransferRecords": {
-    "title": "转移记录",
+    "title": "我的存取",
     "loadFailed": "转移记录加载失败",
     "empty": "暂无转移记录",
     "borrow": "取走",

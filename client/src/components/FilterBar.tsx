@@ -182,7 +182,10 @@ const ClearTagFilterButton = styled.button`
 
 interface FilterBarProps {
   roomId: number | undefined;
+  selectedBox?: number | 'out-of-stock';
+  selectedTag?: number;
   onFilterChange: (filters: { boxId?: number | 'out-of-stock'; tagId?: number }) => void;
+  onBoxesChange?: (boxes: Box[]) => void;
 }
 
 interface Box {
@@ -195,24 +198,27 @@ interface Tag {
   tag_name: string;
 }
 
-export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
+export default function FilterBar({
+  roomId,
+  selectedBox,
+  selectedTag,
+  onFilterChange,
+  onBoxesChange,
+}: FilterBarProps) {
   const { t } = useTranslation();
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
-  const [selectedBox, setSelectedBox] = useState<number | 'out-of-stock' | undefined>();
-  const [selectedTag, setSelectedTag] = useState<number | undefined>();
   const [tagDrawerVisible, setTagDrawerVisible] = useState(false);
 
   useEffect(() => {
-    setSelectedBox(undefined);
-    setSelectedTag(undefined);
     setTagDrawerVisible(false);
+    setBoxes([]);
+    onBoxesChange?.([]);
     onFilterChange({});
 
     if (roomId) {
       loadFilters(roomId);
     } else {
-      setBoxes([]);
       setTags([]);
     }
   }, [roomId]);
@@ -225,18 +231,17 @@ export default function FilterBar({ roomId, onFilterChange }: FilterBarProps) {
       ]);
       setBoxes(boxRes.data || []);
       setTags(tagRes.data || []);
+      onBoxesChange?.(boxRes.data || []);
     } catch (error) {
       console.error('Failed to load filters:', error);
     }
   };
 
   const handleBoxChange = (boxId: number | 'out-of-stock' | undefined) => {
-    setSelectedBox(boxId);
     onFilterChange({ boxId, tagId: selectedTag });
   };
 
   const handleTagChange = (tagId: number | undefined) => {
-    setSelectedTag(tagId);
     setTagDrawerVisible(false);
     onFilterChange({ boxId: selectedBox, tagId });
   };

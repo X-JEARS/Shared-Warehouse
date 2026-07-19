@@ -65,7 +65,14 @@ export const getItems = async (req: AuthRequest, res: Response) => {
         ELSE NULL END as holder_nickname,
         CASE WHEN cb.box_belong_room_id IS NULL THEN
           (SELECT u3.user_nickname FROM users u3 WHERE u3.user_box_id = cb.box_id)
-        ELSE cr.room_name END as display_location_name
+        ELSE cr.room_name END as display_location_name,
+        ARRAY(
+          SELECT irt.irt_tag_id
+          FROM item_room_tag_map irt
+          WHERE irt.irt_item_id = i.item_id
+            AND irt.irt_room_id = $1
+          ORDER BY irt.irt_tag_id
+        ) as tag_ids
       FROM items i
       JOIN boxes bb ON i.item_belong_box_id = bb.box_id
       LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
