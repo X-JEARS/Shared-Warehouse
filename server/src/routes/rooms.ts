@@ -4,7 +4,6 @@ import {
   getRoomById,
   createRoom,
   updateRoom,
-  joinRoom,
   getMembers,
   removeMember,
   requestJoinRoom,
@@ -24,7 +23,6 @@ router.get('/', auth, getRooms);
 router.get('/:id', auth, getRoomById);
 router.post('/', auth, createRoom);
 router.put('/:id', auth, updateRoom);
-router.post('/:id/join', auth, joinRoom);
 router.post('/:id/request-join', auth, requestJoinRoom);
 router.get('/:id/join-requests', auth, getJoinRequests);
 router.get('/:id/join-request-status', auth, getJoinRequestStatus);
