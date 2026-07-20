@@ -384,6 +384,10 @@ export const updateItem = async (req: AuthRequest, res: Response) => {
     }
 
     if (image !== undefined) {
+      if (typeof image !== 'string' ||
+        !image.match(/^\/(avatars|images)\/[a-zA-Z0-9_-]+\.(jpg|png|gif|webp)$/)) {
+        return error(res, 'Invalid image path');
+      }
       updates.push(`item_image = $${paramCount++}`);
       values.push(image);
     }
@@ -815,8 +819,10 @@ export const deleteItem = async (req: AuthRequest, res: Response) => {
     if (itemCheck.rows[0].item_image) {
       const fs = require('fs');
       const path = require('path');
-      const imagePath = path.join(__dirname, '../../public', itemCheck.rows[0].item_image);
-      if (fs.existsSync(imagePath)) {
+      const publicDir = path.resolve(__dirname, '../../public');
+      const imagePath = path.resolve(publicDir, itemCheck.rows[0].item_image);
+      // Ensure the resolved path is within the public directory
+      if (imagePath.startsWith(publicDir + path.sep) && fs.existsSync(imagePath)) {
         fs.unlinkSync(imagePath);
       }
     }

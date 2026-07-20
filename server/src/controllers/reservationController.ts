@@ -395,31 +395,51 @@ export const createReservation = async (req: AuthRequest, res: Response) => {
       return error(res, 'End time must be after start time');
     }
 
-    // Check for conflicts
-    const conflictCheck = await query(
-      `SELECT * FROM reservations
-       WHERE reservation_item_id = $1
-         AND reservation_is_canceled = false
-         AND (
-           (reservation_start_time <= $2 AND reservation_end_time >= $2)
-           OR (reservation_start_time <= $3 AND reservation_end_time >= $3)
-           OR (reservation_start_time >= $2 AND reservation_end_time <= $3)
-         )`,
-      [itemId, startTime, endTime]
-    );
+    // Use a transaction with row-level locking to prevent TOCTOU race
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    if (conflictCheck.rows.length > 0) {
-      return error(res, 'This item is already reserved during the selected time period');
+      if (!userId || !await hasItemAccess(userId, Number(itemId), client)) {
+        await client.query('ROLLBACK');
+        return error(res, 'Access denied', 403);
+      }
+
+      // Lock existing reservations for this item to prevent concurrent inserts
+      const conflictCheck = await client.query(
+        `SELECT * FROM reservations
+         WHERE reservation_item_id = $1
+           AND reservation_is_canceled = false
+           AND (
+             (reservation_start_time <= $2 AND reservation_end_time >= $2)
+             OR (reservation_start_time <= $3 AND reservation_end_time >= $3)
+             OR (reservation_start_time >= $2 AND reservation_end_time <= $3)
+           )
+         FOR UPDATE`,
+        [itemId, startTime, endTime]
+      );
+
+      if (conflictCheck.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return error(res, 'This item is already reserved during the selected time period');
+      }
+
+      const result = await client.query(
+        `INSERT INTO reservations (reservation_item_id, reservation_start_time, reservation_end_time, reservation_user_id, reservation_order_id, reservation_is_canceled)
+         VALUES ($1, $2, $3, $4, $5, false)
+         RETURNING *`,
+        [itemId, startTime, endTime, userId, orderId || null]
+      );
+
+      await client.query('COMMIT');
+      return success(res, result.rows[0], 'Reservation created', 201);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      console.error('Create reservation error:', err);
+      return error(res, 'Failed to create reservation', 500);
+    } finally {
+      client.release();
     }
-
-    const result = await query(
-      `INSERT INTO reservations (reservation_item_id, reservation_start_time, reservation_end_time, reservation_user_id, reservation_order_id, reservation_is_canceled)
-       VALUES ($1, $2, $3, $4, $5, false)
-       RETURNING *`,
-      [itemId, startTime, endTime, userId, orderId || null]
-    );
-
-    return success(res, result.rows[0], 'Reservation created', 201);
   } catch (err) {
     console.error('Create reservation error:', err);
     return error(res, 'Failed to create reservation', 500);
@@ -795,6 +815,13 @@ export const checkConflicts = async (req: AuthRequest, res: Response) => {
 
     if (startTime >= endTime) {
       return error(res, 'End time must be after start time');
+    }
+
+    const userId = req.user?.userId;
+    for (const itemId of itemIds) {
+      if (!userId || !await hasItemAccess(userId, Number(itemId))) {
+        return error(res, 'Access denied', 403);
+      }
     }
 
     const conflicts: {

@@ -527,6 +527,7 @@ export const borrowItemsBatch = async (req: AuthRequest, res: Response) => {
   const itemIds = parseArrayField(req.body.itemIds);
   if (!userId) return error(res, 'Unauthorized', 401);
   if (!itemIds || itemIds.length === 0) return error(res, 'Item IDs array is required');
+  if (itemIds.length > 50) return error(res, 'Too many items: maximum 50 per batch');
 
   try {
     const outcome = await processBorrowItems(userId, itemIds, req.file);
@@ -564,6 +565,7 @@ export const returnItemsBatch = async (req: AuthRequest, res: Response) => {
   const items = parseArrayField(req.body.items);
   if (!userId) return error(res, 'Unauthorized', 401);
   if (!items || items.length === 0) return error(res, 'Items array is required');
+  if (items.length > 50) return error(res, 'Too many items: maximum 50 per batch');
 
   try {
     const outcome = await processReturnItems(userId, items, req.file);
