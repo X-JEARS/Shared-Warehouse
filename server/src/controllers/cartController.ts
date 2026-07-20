@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
+import { hasItemAccess } from '../utils/access';
 
 // In-memory cart storage (for simplicity; in production, use Redis or database)
 // Key: userId, Value: Array of { itemId, roomId, startTime, endTime }
@@ -131,10 +132,20 @@ export const checkout = async (req: AuthRequest, res: Response) => {
     }
     const { title } = req.body;
 
+    // Atomically retrieve and clear cart to prevent double-checkout race
     const cart = carts.get(userId) || [];
+    carts.delete(userId);
 
     if (cart.length === 0) {
       return error(res, 'Cart is empty');
+    }
+
+    // Re-verify item access BEFORE creating any database records
+    for (const item of cart) {
+      if (!await hasItemAccess(userId, Number(item.itemId))) {
+        carts.set(userId, cart); // restore cart on failure
+        return error(res, 'Access denied: you no longer have access to one or more cart items', 403);
+      }
     }
 
     const createTime = Date.now();
@@ -183,9 +194,6 @@ export const checkout = async (req: AuthRequest, res: Response) => {
         reservations.push(result.rows[0]);
       }
     }
-
-    // Clear cart
-    carts.delete(userId);
 
     return success(res, { order, reservations, errors }, 'Checkout completed', 201);
   } catch (err) {
