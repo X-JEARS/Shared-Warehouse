@@ -528,7 +528,7 @@ export const getItemReservations = async (req: AuthRequest, res: Response) => {
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
-    const { title, items } = req.body;
+    const { title, items, roomId } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return error(res, 'Items array is required');
@@ -550,7 +550,14 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         return error(res, 'Invalid or duplicate item IDs');
       }
 
+      const rid = Number(req.body.roomId);
+      if (!Number.isInteger(rid) || rid <= 0) {
+        await client.query('ROLLBACK');
+        return error(res, 'roomId is required');
+      }
+
       if (uniqueItemIds.length > 0) {
+        // Lock items first (FOR UPDATE on items table only)
         const lockedItems = await client.query(
           `SELECT item_id FROM items
            WHERE item_id = ANY($1)
@@ -561,6 +568,16 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         if (lockedItems.rows.length !== uniqueItemIds.length) {
           await client.query('ROLLBACK');
           return error(res, 'Item not found', 404);
+        }
+
+        // Verify user is a member of roomId (下单仓成员校验)
+        const memberCheck = await client.query(
+          'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+          [rid, userId]
+        );
+        if (memberCheck.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return error(res, 'Access denied', 403);
         }
       }
 

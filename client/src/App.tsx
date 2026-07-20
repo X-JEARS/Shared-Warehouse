@@ -18,7 +18,6 @@ const MyItems = lazy(() => import('./pages/MyItems'));
 const RoomSettings = lazy(() => import('./pages/RoomSettings'));
 const AddBox = lazy(() => import('./pages/AddBox'));
 const BoxDetail = lazy(() => import('./pages/BoxDetail'));
-const Cart = lazy(() => import('./pages/Cart'));
 const Scanner = lazy(() => import('./pages/Scanner'));
 const CreateItem = lazy(() => import('./pages/CreateItem'));
 const CreateRoom = lazy(() => import('./pages/CreateRoom'));
@@ -91,14 +90,6 @@ function App() {
             element={
               <PrivateRoute>
                 <BoxDetail />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/cart"
-            element={
-              <PrivateRoute>
-                <Cart />
               </PrivateRoute>
             }
           />
