@@ -1,8 +1,10 @@
 import { Request, Response } from 'express';
+import path from 'path';
 import { query } from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 import { hasItemAccess } from '../utils/access';
+import { deleteItemImageFile, isValidItemImagePath } from '../utils/itemImage';
 
 export const getItems = async (req: AuthRequest, res: Response) => {
   try {
@@ -295,6 +297,10 @@ export const createItem = async (req: AuthRequest, res: Response) => {
       return error(res, 'QR code, name, and box ID are required');
     }
 
+    if (image !== undefined && image !== null && !isValidItemImagePath(image)) {
+      return error(res, 'Invalid image path');
+    }
+
     // 二维码长度限制
     if (qrcode.length > 64) {
       return error(res, '二维码长度不能超过64个字符', 400);
@@ -384,8 +390,7 @@ export const updateItem = async (req: AuthRequest, res: Response) => {
     }
 
     if (image !== undefined) {
-      if (typeof image !== 'string' ||
-        !image.match(/^\/(avatars|images)\/[a-zA-Z0-9_-]+\.(jpg|png|gif|webp)$/)) {
+      if (!isValidItemImagePath(image)) {
         return error(res, 'Invalid image path');
       }
       updates.push(`item_image = $${paramCount++}`);
@@ -817,14 +822,8 @@ export const deleteItem = async (req: AuthRequest, res: Response) => {
 
     // 7. 删除物品图片文件（如果存在）
     if (itemCheck.rows[0].item_image) {
-      const fs = require('fs');
-      const path = require('path');
       const publicDir = path.resolve(__dirname, '../../public');
-      const imagePath = path.resolve(publicDir, itemCheck.rows[0].item_image);
-      // Ensure the resolved path is within the public directory
-      if (imagePath.startsWith(publicDir + path.sep) && fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
+      deleteItemImageFile(publicDir, itemCheck.rows[0].item_image);
     }
 
     return success(res, null, '物品已删除');

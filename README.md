@@ -162,7 +162,6 @@ warehouse/
 - `POST /api/rooms` - 创建仓库
 - `GET /api/rooms/:id` - 获取仓库详情
 - `PUT /api/rooms/:id` - 修改仓库信息
-- `POST /api/rooms/:id/join` - 加入仓库（直接加入，保留兼容）
 - `POST /api/rooms/:id/request-join` - 申请加入仓库（需审批）
 - `GET /api/rooms/:id/join-request-status` - 查询申请状态
 - `GET /api/rooms/:id/join-requests` - 获取加入申请列表（管理员）

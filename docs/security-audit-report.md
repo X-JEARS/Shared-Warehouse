@@ -648,7 +648,7 @@ DELETE /api/items/123
 
 **Impact:** Double-booking of assets. Two users both believe they have exclusive access.
 
-**Fix:** Wrap in a transaction with `SELECT ... FOR UPDATE` on the item's existing reservations, or use a unique constraint on `(reservation_item_id, reservation_start_time, reservation_end_time)` as a last line of defense.
+**Fix:** Wrap access validation, conflict checking, and insertion in one transaction. Lock the corresponding `items` row with `SELECT ... FOR UPDATE` before checking conflicts so concurrent creation attempts serialize even when no reservation row exists yet. All multi-item creation paths lock item IDs in a deterministic order.
 
 ---
 
@@ -748,7 +748,7 @@ Three regressions were introduced by the Round 2 fixes and subsequently fixed:
 
 **User-visible impact:** User's cart silently disappears. They have to re-add all items.
 
-**Fix:** Moved `hasItemAccess` check before order creation. On failure, the cart is restored with `carts.set(userId, cart)`.
+**Fix:** Moved `hasItemAccess` check before order creation. A follow-up placed access checks, conflict checks, order creation, and reservation inserts in one transaction. Any database failure rolls back and restores the claimed cart, merging it with items added while checkout was running.
 **Commit:** `05d017a`
 
 **Before (buggy):**
@@ -791,6 +791,8 @@ create order in DB            ← only if access OK
 
 **Fix:** Invalid image path now returns 400 with `"Invalid image path"` error message.
 **Commit:** `bfd30c5`
+
+**Follow-up after PR #2:** Item creation and update now accept only generated `/images/...` paths. File deletion strips the public URL's leading slash before resolving it beneath `server/public`, so valid images are deleted while traversal and `/avatars/...` paths are rejected.
 
 ---
 

@@ -400,12 +400,27 @@ export const createReservation = async (req: AuthRequest, res: Response) => {
     try {
       await client.query('BEGIN');
 
-      if (!userId || !await hasItemAccess(userId, Number(itemId), client)) {
+      const normalizedItemId = Number(itemId);
+      if (!Number.isInteger(normalizedItemId) || normalizedItemId <= 0) {
+        await client.query('ROLLBACK');
+        return error(res, 'Invalid item ID');
+      }
+
+      // Serialize reservation creation for this item, including the first one.
+      const lockedItem = await client.query(
+        'SELECT item_id FROM items WHERE item_id = $1 FOR UPDATE',
+        [normalizedItemId]
+      );
+      if (lockedItem.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return error(res, 'Item not found', 404);
+      }
+
+      if (!userId || !await hasItemAccess(userId, normalizedItemId, client)) {
         await client.query('ROLLBACK');
         return error(res, 'Access denied', 403);
       }
 
-      // Lock existing reservations for this item to prevent concurrent inserts
       const conflictCheck = await client.query(
         `SELECT * FROM reservations
          WHERE reservation_item_id = $1
@@ -414,9 +429,8 @@ export const createReservation = async (req: AuthRequest, res: Response) => {
              (reservation_start_time <= $2 AND reservation_end_time >= $2)
              OR (reservation_start_time <= $3 AND reservation_end_time >= $3)
              OR (reservation_start_time >= $2 AND reservation_end_time <= $3)
-           )
-         FOR UPDATE`,
-        [itemId, startTime, endTime]
+           )`,
+        [normalizedItemId, startTime, endTime]
       );
 
       if (conflictCheck.rows.length > 0) {
@@ -428,7 +442,7 @@ export const createReservation = async (req: AuthRequest, res: Response) => {
         `INSERT INTO reservations (reservation_item_id, reservation_start_time, reservation_end_time, reservation_user_id, reservation_order_id, reservation_is_canceled)
          VALUES ($1, $2, $3, $4, $5, false)
          RETURNING *`,
-        [itemId, startTime, endTime, userId, orderId || null]
+        [normalizedItemId, startTime, endTime, userId, orderId || null]
       );
 
       await client.query('COMMIT');
@@ -538,7 +552,10 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
 
       if (uniqueItemIds.length > 0) {
         const lockedItems = await client.query(
-          `SELECT item_id FROM items WHERE item_id = ANY($1) FOR UPDATE`,
+          `SELECT item_id FROM items
+           WHERE item_id = ANY($1)
+           ORDER BY item_id
+           FOR UPDATE`,
           [uniqueItemIds]
         );
         if (lockedItems.rows.length !== uniqueItemIds.length) {

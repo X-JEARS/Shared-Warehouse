@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "nodemon src/app.ts",
     "build": "tsc",
+    "test": "npm run build && node --test dist/**/*.test.js",
     "start": "node dist/app.js",
     "admin": "ts-node src/tools/admin.ts"
   },

@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { query } from '../config/database';
+import pool from '../config/database';
 import { success, error } from '../utils/response';
 import { AuthRequest } from '../middlewares/auth';
 import { hasItemAccess } from '../utils/access';
@@ -7,6 +8,13 @@ import { hasItemAccess } from '../utils/access';
 // In-memory cart storage (for simplicity; in production, use Redis or database)
 // Key: userId, Value: Array of { itemId, roomId, startTime, endTime }
 const carts: Map<number, any[]> = new Map();
+
+const restoreCart = (userId: number, claimedCart: any[]) => {
+  const currentCart = carts.get(userId) || [];
+  const currentItemIds = new Set(currentCart.map(item => Number(item.itemId)));
+  const restoredItems = claimedCart.filter(item => !currentItemIds.has(Number(item.itemId)));
+  carts.set(userId, [...restoredItems, ...currentCart]);
+};
 
 export const getCart = async (req: AuthRequest, res: Response) => {
   try {
@@ -125,8 +133,11 @@ export const removeFromCart = async (req: AuthRequest, res: Response) => {
 };
 
 export const checkout = async (req: AuthRequest, res: Response) => {
+  let userId: number | undefined;
+  let claimedCart: any[] | null = null;
+
   try {
-    const userId = req.user?.userId;
+    userId = req.user?.userId;
     if (!userId) {
       return error(res, 'Unauthorized', 401);
     }
@@ -135,68 +146,103 @@ export const checkout = async (req: AuthRequest, res: Response) => {
     // Atomically retrieve and clear cart to prevent double-checkout race
     const cart = carts.get(userId) || [];
     carts.delete(userId);
+    claimedCart = cart;
 
     if (cart.length === 0) {
       return error(res, 'Cart is empty');
     }
 
-    // Re-verify item access BEFORE creating any database records
-    for (const item of cart) {
-      if (!await hasItemAccess(userId, Number(item.itemId))) {
-        carts.set(userId, cart); // restore cart on failure
-        return error(res, 'Access denied: you no longer have access to one or more cart items', 403);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const itemIds = cart.map(item => Number(item.itemId));
+      const uniqueItemIds = [...new Set(itemIds)].sort((a, b) => a - b);
+      if (
+        itemIds.some(id => !Number.isInteger(id) || id <= 0)
+        || uniqueItemIds.length !== itemIds.length
+      ) {
+        await client.query('ROLLBACK');
+        restoreCart(userId, cart);
+        claimedCart = null;
+        return error(res, 'Invalid or duplicate item IDs');
       }
-    }
 
-    const createTime = Date.now();
+      const lockedItems = await client.query(
+        `SELECT item_id FROM items
+         WHERE item_id = ANY($1)
+         ORDER BY item_id
+         FOR UPDATE`,
+        [uniqueItemIds]
+      );
+      if (lockedItems.rows.length !== uniqueItemIds.length) {
+        await client.query('ROLLBACK');
+        restoreCart(userId, cart);
+        claimedCart = null;
+        return error(res, 'Item not found', 404);
+      }
 
-    // Create order
-    const orderResult = await query(
-      `INSERT INTO orders (order_create_time, order_user_id, order_title, order_is_canceled)
-       VALUES ($1, $2, $3, false)
-       RETURNING *`,
-      [createTime, userId, title || null]
-    );
-
-    const order = orderResult.rows[0];
-
-    // Create reservations
-    const reservations = [];
-    const errors = [];
-
-    for (const item of cart) {
-      if (item.startTime && item.endTime) {
-        // Check for conflicts
-        const conflictCheck = await query(
-          `SELECT * FROM reservations
-           WHERE reservation_item_id = $1
-             AND reservation_is_canceled = false
-             AND (
-               (reservation_start_time <= $2 AND reservation_end_time >= $2)
-               OR (reservation_start_time <= $3 AND reservation_end_time >= $3)
-               OR (reservation_start_time >= $2 AND reservation_end_time <= $3)
-             )`,
-          [item.itemId, item.startTime, item.endTime]
-        );
-
-        if (conflictCheck.rows.length > 0) {
-          errors.push({ itemId: item.itemId, error: 'Conflicting reservation' });
-          continue;
+      for (const itemId of uniqueItemIds) {
+        if (!await hasItemAccess(userId, itemId, client)) {
+          await client.query('ROLLBACK');
+          restoreCart(userId, cart);
+          claimedCart = null;
+          return error(res, 'Access denied: you no longer have access to one or more cart items', 403);
         }
-
-        const result = await query(
-          `INSERT INTO reservations (reservation_item_id, reservation_start_time, reservation_end_time, reservation_user_id, reservation_order_id, reservation_is_canceled)
-           VALUES ($1, $2, $3, $4, $5, false)
-           RETURNING *`,
-          [item.itemId, item.startTime, item.endTime, userId, order.order_id]
-        );
-
-        reservations.push(result.rows[0]);
       }
-    }
 
-    return success(res, { order, reservations, errors }, 'Checkout completed', 201);
+      const orderResult = await client.query(
+        `INSERT INTO orders (order_create_time, order_user_id, order_title, order_is_canceled)
+         VALUES ($1, $2, $3, false)
+         RETURNING *`,
+        [Date.now(), userId, title || null]
+      );
+      const order = orderResult.rows[0];
+      const reservations = [];
+      const errors = [];
+
+      for (const item of cart) {
+        if (item.startTime && item.endTime) {
+          const conflictCheck = await client.query(
+            `SELECT * FROM reservations
+             WHERE reservation_item_id = $1
+               AND reservation_is_canceled = false
+               AND (
+                 (reservation_start_time <= $2 AND reservation_end_time >= $2)
+                 OR (reservation_start_time <= $3 AND reservation_end_time >= $3)
+                 OR (reservation_start_time >= $2 AND reservation_end_time <= $3)
+               )`,
+            [item.itemId, item.startTime, item.endTime]
+          );
+
+          if (conflictCheck.rows.length > 0) {
+            errors.push({ itemId: item.itemId, error: 'Conflicting reservation' });
+            continue;
+          }
+
+          const result = await client.query(
+            `INSERT INTO reservations (reservation_item_id, reservation_start_time, reservation_end_time, reservation_user_id, reservation_order_id, reservation_is_canceled)
+             VALUES ($1, $2, $3, $4, $5, false)
+             RETURNING *`,
+            [item.itemId, item.startTime, item.endTime, userId, order.order_id]
+          );
+          reservations.push(result.rows[0]);
+        }
+      }
+
+      await client.query('COMMIT');
+      claimedCart = null;
+      return success(res, { order, reservations, errors }, 'Checkout completed', 201);
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
   } catch (err) {
+    if (userId && claimedCart) {
+      restoreCart(userId, claimedCart);
+    }
     console.error('Checkout error:', err);
     return error(res, 'Failed to checkout', 500);
   }
