@@ -4,7 +4,7 @@
 **Status:** Open - 待实现
 **Priority:** HIGH（业务逻辑缺陷，影响数据完整性）
 
-> **2026-07-20 修订**：原方案误将死代码 `cartController.ts` 当作真实购物车后端，已重新定位根因到 `reservationController.createOrder`。最终决策：购物车按"当前浏览仓"隔离 + 外来物品可预约 + 后端 `createOrder` 加同仓校验。
+> **2026-07-20 修订**：原方案误将死代码 `cartController.ts` 当作真实购物车后端，已重新定位根因到 `reservationController.createOrder`。最终决策：购物车按"当前浏览仓"隔离 + 外来物品可预约 + 后端 `createOrder` 加下单仓成员校验。
 
 ---
 
@@ -12,10 +12,12 @@
 
 1. **购物车按"当前浏览仓"隔离**：每个仓库一个独立购物车，切换仓库只切换视图，**不清空、不弹提示**。
 2. **外来物品可预约**：外来物品（归属他仓、当前在本仓）的「+」按钮保持可用，归入当前浏览仓的购物车。
-3. **后端纵深防御**：`reservationController.createOrder` 增加校验——客户端传 `roomId`，服务端校验用户是该仓成员、且每个物品都关联到该仓（归属仓或当前所在仓等于 `roomId`）。
+3. **后端轻量校验**：`reservationController.createOrder` 增加校验——客户端传 `roomId`，服务端校验用户是该仓成员。**不校验物品归属仓/当前仓是否等于 roomId**（物品访问由现有 `hasItemAccess` 把关，跨浏览仓混单由前端按浏览仓隔离阻止）。
 4. **`cartController.ts` 是死代码**，不在本次范围（建议另开 PR 清理）。
 
-> **关于分组口径**：购物车最终按"当前浏览仓"分组。本仓物品的归属仓 = 当前浏览仓；外来物品按决策 2 也归入当前浏览仓。因此统一以 `currentRoom.room_id` 作为购物车 `roomId`，无需区分本仓/外来。外来物品产生的订单仍按其归属仓出现在对方仓的订单列表（`getRoomOrders` 现有行为），这是已接受的取舍。
+> **关于分组口径**：购物车最终按"当前浏览仓"分组。本仓物品的归属仓 = 当前浏览仓；外来物品按决策 2 也归入当前浏览仓。因此统一以 `currentRoom.room_id` 作为购物车 `roomId`，无需区分本仓/外来。外来物品产生的订单按其归属仓（"应归还仓库"）出现在对方仓的订单列表（`getRoomOrders` 现有行为），与外来物品的核心定义一致。
+>
+> **结算与订单归属**：用户是否为物品"归属仓"成员不影响结算--只要其是下单仓成员、`hasItemAccess` 通过即可。订单列表按物品归属仓（"应归还仓库"）展示，外来物品订单出现在其归属仓列表；用户在"我的预约"中始终可见。
 
 ---
 
@@ -60,30 +62,9 @@
 
 ### 后端
 
-#### 1. `reservationController.createOrder` 增加同仓校验（决策 3）
+#### 1. `reservationController.createOrder` 增加下单仓成员校验（决策 3）
 
-在现有事务内、行锁（539-548）之后、`hasItemAccess` 循环之后，增加校验：客户端须传 `roomId`；服务端校验用户是 `roomId` 成员，且每个物品满足 `belong_room_id = roomId OR current_room_id = roomId`。不满足则 `ROLLBACK` 返回 400/403。
-
-将原有行锁查询扩展为同时取归属仓/当前仓：
-
-```typescript
-// 替换 540-543 的 lockedItems 查询
-const lockedItems = await client.query(
-  `SELECT i.item_id,
-          bb.box_belong_room_id AS belong_room_id,
-          cb.box_belong_room_id AS current_room_id
-   FROM items i
-   JOIN boxes bb ON i.item_belong_box_id = bb.box_id
-   LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
-   WHERE i.item_id = ANY($1)
-   FOR UPDATE`,
-  [uniqueItemIds]
-);
-if (lockedItems.rows.length !== uniqueItemIds.length) {
-  await client.query('ROLLBACK');
-  return error(res, 'Item not found', 404);
-}
-```
+在现有事务内、`hasItemAccess` 循环之后，增加：客户端须传 `roomId`（下单仓）；服务端校验用户是该仓成员。**不校验物品归属仓/当前仓是否等于 roomId**--物品访问由现有 `hasItemAccess` 把关，跨浏览仓混单由前端按浏览仓隔离阻止。不满足则 `ROLLBACK` 返回 403。原有行锁查询（539-548）保持不变。
 
 在 `hasItemAccess` 循环之后追加：
 
@@ -103,19 +84,9 @@ if (memberCheck.rows.length === 0) {
   await client.query('ROLLBACK');
   return error(res, 'Access denied', 403);
 }
-
-// 校验每个物品都关联到 roomId（归属仓或当前所在仓）
-for (const row of lockedItems.rows) {
-  const associated =
-    row.belong_room_id === rid || row.current_room_id === rid;
-  if (!associated) {
-    await client.query('ROLLBACK');
-    return error(res, '一个预约单只能包含同一仓库的物品', 400);
-  }
-}
 ```
 
-> 说明：外来物品（`current_room_id = rid`）与本仓物品（`belong_room_id = rid`）都通过；只有既不属于该仓、当前也不在该仓的物品被拒。这样即使客户端被绕过，也无法提交跨浏览仓订单。
+> 说明：用户是否为物品"归属仓"成员不影响结算--只要其是下单仓成员且 `hasItemAccess` 通过即可。这是"在哪个仓库下单，就是哪个仓库"的服务端落地；不做物品-仓库关联判断，避免复杂逻辑。
 
 #### 2. `reservationApi.createOrder` 签名加 `roomId`
 
@@ -187,7 +158,7 @@ createOrder: (data: {
 
 | 文件 | 改动 |
 |---|---|
-| `server/src/controllers/reservationController.ts` | `createOrder` 加 roomId 成员校验 + 物品同仓校验 |
+| `server/src/controllers/reservationController.ts` | `createOrder` 加 `roomId` 下单仓成员校验（不校验物品同仓） |
 | `client/src/services/api.ts` | `reservationApi.createOrder` 签名加 `roomId` |
 | `client/src/stores/cartStore.ts` | `CartItem` 加 `roomId`；过滤 selector；结账按仓移除；persist v2 迁移 |
 | `client/src/components/ItemCard.tsx` | `addItem` 传 `roomId`；外来物品不禁用「+」 |
@@ -200,18 +171,19 @@ createOrder: (data: {
 ## 边界情况
 
 - **个人盒物品**（`box_belong_room_id IS NULL`）：无加购入口（InHand/MyItems 无「+」按钮），非问题。
-- **外来物品订单的列表归属**：外来物品订单按其归属仓出现在对方仓订单列表（`getRoomOrders` 现有行为），已接受。
+- **外来物品订单的列表归属**：外来物品订单按其归属仓（"应归还仓库"）出现在对方仓订单列表（`getRoomOrders` 现有行为），与外来物品的核心定义一致；用户在"我的预约"中始终可见。
 - **被踢出仓库**：该仓 items 留在 localStorage 但不可见、不可下单（`currentRoom` 会切走 + `createOrder` 的 `hasItemAccess`/成员校验拦截）。已知限制，不做额外清理。
 
 ---
 
 ## 验收标准
 
-- 不同浏览仓的物品无法进入同一预约单（前端隔离 + 后端校验双保险）。
+- 正常使用下，不同浏览仓的物品不会进入同一预约单（前端按浏览仓隔离）。后端校验下单仓成员身份 + 物品访问（`hasItemAccess`），不做物品同仓强制。
+- 用户不是物品归属仓成员时，只要其是下单仓成员且 `hasItemAccess` 通过，即可结算。
 - 切仓后购物车按仓隔离、互不丢失、不清空、不弹提示。
 - 老用户升级后旧购物车被清，无残留孤儿 items。
 - 外来物品可加入当前浏览仓购物车并正常结算。
-- 后端单测：`createOrder` 对非 `roomId` 关联物品返回 400；对非该仓成员返回 403。
+- 后端单测：`createOrder` 对非下单仓成员返回 403；缺少 `roomId` 返回 400。
 
 ---
 
