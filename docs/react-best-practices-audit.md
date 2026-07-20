@@ -87,9 +87,9 @@ Introduced SWR for Warehouse, InHand, and MainLayout data fetching:
 
 ### ✅ 4.2 localStorage accessed without error handling — FIXED
 
-**Commit:** `b14e4cc` | **Rule:** `client-localstorage-schema`
+**Commit:** `b14e4cc` + `59bccc3` | **Rule:** `client-localstorage-schema`
 
-Added `version: 1` and version-0 migrations to all 4 Zustand persist stores (auth, cart, room, theme), preserving existing sessions and preferences during upgrade.
+Added `version: 1` and version-0 migrations to all 4 Zustand persist stores (auth, cart, room, theme), preserving existing sessions and preferences during upgrade. The `migrate` function ensures existing localStorage data without a version number is safely upgraded.
 
 ---
 
@@ -156,9 +156,25 @@ Added documentation comment on `_init()` call-once invariant.
 
 ### ✅ 8.2 `document.getElementById` for form input — FIXED
 
-**Commit:** `58c4fb4` | **Rule:** `advanced-event-handler-refs`
+**Commit:** `58c4fb4` + `59bccc3` | **Rule:** `advanced-event-handler-refs`
 
-Replaced global DOM lookup with dialog-local input values in Cart and CartPopup. Values are captured within the imperative dialog lifecycle, avoiding stale React state and duplicate DOM IDs.
+Replaced global DOM lookup with dialog-local input values in Cart and CartPopup. Values are captured within the imperative dialog lifecycle via `defaultValue` + a local `let` variable updated by `onChange`, avoiding stale React state and duplicate DOM IDs. This approach is more appropriate than controlled inputs for imperative dialogs where the value is only needed on confirmation.
+
+---
+
+### ✅ 4.3 Warehouse search state debouncing — FIXED
+
+**Commit:** `59bccc3` | **Rule:** `client-swr-dedup`
+
+Added a separate `searchQuery` state that is only updated on search submit or clear, decoupling the input's immediate text from the SWR cache key. This prevents keystroke-by-keystroke refetches while keeping the SWR key stable across re-renders.
+
+---
+
+### ✅ 4.4 SWR fetcher supports composite keys — FIXED
+
+**Commit:** `59bccc3` | **Rule:** `client-swr-dedup`
+
+Refactored `swrFetcher` from accepting a plain URL string to accepting either a string or a `[url, AxiosRequestConfig]` tuple. This allows SWR hooks to pass query parameters through the standard SWR key pattern without a separate fetcher variant.
 
 ---
 
@@ -259,6 +275,7 @@ Emojis used as decorative elements in i18n strings and placeholders. No function
 | `7f22314` | Add hover/focus preloading for lazy route chunks |
 | `1f532f0` | Update audit report with fix status |
 | `9c62b88` | Update audit report with final issue counts |
+| `59bccc3` | Address PR review findings (access control, store migration, search state, dialog inputs) |
 
 ---
 
