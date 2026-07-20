@@ -1,10 +1,12 @@
 # 购物车跨仓库问题分析与修复方案
 
 **Date:** 2026-07-20
-**Status:** Open - 待实现
+**Status:** Resolved - 已在 PR #3（`5ecd2c8`）实现
 **Priority:** HIGH（业务逻辑缺陷，影响数据完整性）
 
 > **2026-07-20 修订**：原方案误将死代码 `cartController.ts` 当作真实购物车后端，已重新定位根因到 `reservationController.createOrder`。最终决策：购物车按"当前浏览仓"隔离 + 外来物品可预约 + 后端 `createOrder` 加下单仓成员校验。
+>
+> **2026-07-20 实施结果**：PR #3 已按该决策合并。`Cart.tsx` 和 `/cart` 路由已删除；当前购物车入口统一为仓库页的 `CartPopup`。
 
 ---
 
@@ -21,7 +23,7 @@
 
 ---
 
-## 问题描述
+## 原问题描述
 
 购物车系统存在跨仓库（room）混单问题：用户可以将不同仓库的物品放入同一个购物车，并在同一个预约单中下单。
 
@@ -58,7 +60,7 @@
 
 ---
 
-## 修复方案
+## 已实施修复
 
 ### 后端
 
@@ -143,9 +145,9 @@ createOrder: (data: {
 - 切仓只切 `currentRoom`，购物车视图随之过滤。**不清空、不弹提示**。
 - FAB 显隐与角标均按当前仓过滤后数量。
 
-#### 7. `Cart.tsx` + `/cart` 路由
+#### 7. 删除 `Cart.tsx` + `/cart` 路由
 
-- 该页面是**孤儿**（全仓无 `navigate('/cart')`，仅 `App.tsx:101` 与 `MainLayout.tsx:26` 残留路由）。**建议删除** `Cart.tsx` 及其 `/cart` 路由；若保留则同步加当前仓过滤与 `roomId` 传参。
+- 该页面是**孤儿**（全仓无 `navigate('/cart')`，仅残留路由和预加载配置），现已删除 `Cart.tsx`、`/cart` 路由及对应预加载配置。购物车统一通过仓库页的 `CartPopup` 展示。
 
 ### 不变
 
@@ -164,7 +166,7 @@ createOrder: (data: {
 | `client/src/components/ItemCard.tsx` | `addItem` 传 `roomId`；外来物品不禁用「+」 |
 | `client/src/components/CartPopup.tsx` | 当前仓过滤渲染/结账；FAB 角标按当前仓；传 `roomId` |
 | `client/src/pages/Warehouse.tsx` | FAB 角标按当前仓；切仓不清空 |
-| `client/src/pages/Cart.tsx` | 建议删除（孤儿页面） |
+| `client/src/pages/Cart.tsx` | 已删除（孤儿页面） |
 
 ---
 
@@ -176,14 +178,15 @@ createOrder: (data: {
 
 ---
 
-## 验收标准
+## 验收结果
 
 - 正常使用下，不同浏览仓的物品不会进入同一预约单（前端按浏览仓隔离）。后端校验下单仓成员身份 + 物品访问（`hasItemAccess`），不做物品同仓强制。
 - 用户不是物品归属仓成员时，只要其是下单仓成员且 `hasItemAccess` 通过，即可结算。
 - 切仓后购物车按仓隔离、互不丢失、不清空、不弹提示。
 - 老用户升级后旧购物车被清，无残留孤儿 items。
 - 外来物品可加入当前浏览仓购物车并正常结算。
-- 后端单测：`createOrder` 对非下单仓成员返回 403；缺少 `roomId` 返回 400。
+- PR 手工验证：合法 `roomId` 返回 201，缺少 `roomId` 返回 400，非下单仓成员返回 403，外来物品可在浏览仓正常结算并返回 201。
+- PR #3 未新增自动化测试或 CI 检查，后续修改预约结算逻辑时仍应补充上述后端用例。
 
 ---
 
