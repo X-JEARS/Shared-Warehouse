@@ -197,6 +197,7 @@
     "commentFailed": "Comment failed",
     "tagsUpdated": "Tags updated",
     "addedToCart": "Added to cart",
+    "removedFromCart": "Reservation removed",
     "remarkUpdated": "Alias updated",
     "noticeUpdated": "Note updated",
     "reserve": "Reserve",
@@ -539,7 +540,9 @@
     "withPerson": "With: {{name}}",
     "foreignItem": "Foreign",
     "inStock": "In Stock",
-    "outOfStock": "Out"
+    "outOfStock": "Out",
+    "addToCart": "Add to cart",
+    "removeFromCart": "Remove reservation from cart"
   },
   "scannerComponent": {
     "noCamera": "No camera device found",

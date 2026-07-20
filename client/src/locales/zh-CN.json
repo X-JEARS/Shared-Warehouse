@@ -197,6 +197,7 @@
     "commentFailed": "评论失败",
     "tagsUpdated": "标签已更新",
     "addedToCart": "已添加到购物车",
+    "removedFromCart": "已取消预约",
     "remarkUpdated": "别名已更新",
     "noticeUpdated": "备注已更新",
     "reserve": "预约",
@@ -539,7 +540,9 @@
     "withPerson": "正在: {{name}}",
     "foreignItem": "外来物品",
     "inStock": "在库",
-    "outOfStock": "离库"
+    "outOfStock": "离库",
+    "addToCart": "添加到购物车",
+    "removeFromCart": "取消购物车中的预约"
   },
   "scannerComponent": {
     "noCamera": "未找到摄像头设备",

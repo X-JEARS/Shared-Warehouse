@@ -136,21 +136,27 @@ export default function ItemCard({ item, roomId, onClick, showStockStatus = true
   const isForeign = item.is_foreign === true;
   const isInCart = useCartStore((s) => s.items.some((i) => i.itemId === item.item_id));
   const addItem = useCartStore((s) => s.addItem);
+  const removeItem = useCartStore((s) => s.removeItem);
   const displayName = item.remark || item.item_name;
 
   const handleCartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isInCart && roomId != null) {
-      addItem({
-        itemId: item.item_id,
-        roomId,
-        itemName: displayName,
-        itemQrcode: item.item_qrcode || '',
-        itemImage: item.item_image,
-        boxName: item.box_name,
-        roomName: item.room_name,
-      });
+    if (isInCart) {
+      removeItem(item.item_id);
+      return;
     }
+
+    if (roomId == null) return;
+
+    addItem({
+      itemId: item.item_id,
+      roomId,
+      itemName: displayName,
+      itemQrcode: item.item_qrcode || '',
+      itemImage: item.item_image,
+      boxName: item.box_name,
+      roomName: item.room_name,
+    });
   };
 
   return (
@@ -175,10 +181,14 @@ export default function ItemCard({ item, roomId, onClick, showStockStatus = true
         )}
       </ItemInfo>
       {showCartButton && (
-        <CartButton $inCart={isInCart} onClick={handleCartClick}>
+        <CartButton
+          $inCart={isInCart}
+          onClick={handleCartClick}
+          aria-label={t(isInCart ? 'itemCard.removeFromCart' : 'itemCard.addToCart')}
+        >
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
             <line x1="5" y1="12" x2="19" y2="12" />
-            <line x1="12" y1="5" x2="12" y2="19" />
+            {!isInCart && <line x1="12" y1="5" x2="12" y2="19" />}
           </svg>
         </CartButton>
       )}

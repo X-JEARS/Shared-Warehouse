@@ -12,6 +12,28 @@ const PopupContent = styled.div`
   overflow-y: auto;
 `;
 
+const DetailPopupContent = styled.div`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+`;
+
+const FixedSummary = styled.div`
+  position: relative;
+  flex-shrink: 0;
+  padding: 20px 20px 0;
+`;
+
+const ScrollableDetails = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 20px 20px;
+`;
+
 const ItemHeader = styled.div`
   display: flex;
   gap: 16px;
@@ -153,7 +175,7 @@ export default function ItemDetail({
   const [editRemarkText, setEditRemarkText] = useState('');
   const [editingNotice, setEditingNotice] = useState(false);
   const [editNoticeText, setEditNoticeText] = useState('');
-  const { addItem, items: cartItems } = useCartStore();
+  const { addItem, removeItem, items: cartItems } = useCartStore();
 
   const isInCart = cartItems.some((i) => i.itemId === itemId);
 
@@ -277,8 +299,15 @@ export default function ItemDetail({
     }
   };
 
-  const handleAddToCart = () => {
+  const handleToggleCart = () => {
     if (!item) return;
+
+    if (isInCart) {
+      removeItem(item.item_id);
+      Toast.show({ icon: 'success', content: t('itemDetail.removedFromCart') });
+      return;
+    }
+
     addItem({
       itemId: item.item_id,
       roomId: roomId ?? 0,
@@ -329,101 +358,103 @@ export default function ItemDetail({
       onMaskClick={onClose}
       bodyStyle={{ height: '80vh', borderRadius: '12px 12px 0 0' }}
     >
-      <PopupContent>
+      <DetailPopupContent>
         {item && (
           <>
-            <div style={{ position: 'absolute', top: 16, right: 16 }}>
-              <Button
-                color={isInCart ? 'default' : 'primary'}
-                size="small"
-                onClick={handleAddToCart}
-                disabled={isInCart}
-              >
-                {isInCart ? t('itemDetail.reserved') : t('itemDetail.reserve')}
-              </Button>
-            </div>
-            <ItemHeader>
-              <ItemImage $image={item.item_image} onClick={() => item.item_image && setShowImageViewer(true)}>
-                {!item.item_image && '📦'}
-              </ItemImage>
-              <ItemTitle>
-                {editing ? (
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <Input
-                      value={editName}
-                      onChange={setEditName}
-                      placeholder={t('itemDetail.itemNamePlaceholder')}
-                      style={{ flex: 1 }}
-                    />
-                    <Button size="small" onClick={handleUpdateName}>
-                      {t('common.save')}
-                    </Button>
-                    <Button size="small" onClick={() => setEditing(false)}>
-                      {t('common.cancel')}
-                    </Button>
-                  </div>
-                ) : (
-                  <ItemName>
-                    <span>{item.remark || item.item_name}</span>
-                    {item.room_id && (
-                      <span
-                        onClick={() => {
-                          setEditRemarkText(item.remark || '');
-                          setEditingRemark(true);
-                        }}
-                        style={{
-                          marginLeft: 8,
-                          cursor: 'pointer',
-                          color: 'var(--app-color-primary)',
-                          fontSize: 14,
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </span>
-                    )}
-                    {isOwner && (
-                      <Button
-                        size="mini"
-                        style={{ marginLeft: 8 }}
-                        onClick={() => setEditing(true)}
-                      >
-                        {t('itemDetail.editName')}
+            <FixedSummary>
+              <div style={{ position: 'absolute', top: 16, right: 16 }}>
+                <Button
+                  color={isInCart ? 'default' : 'primary'}
+                  size="small"
+                  onClick={handleToggleCart}
+                >
+                  {isInCart ? t('itemDetail.reserved') : t('itemDetail.reserve')}
+                </Button>
+              </div>
+              <ItemHeader>
+                <ItemImage $image={item.item_image} onClick={() => item.item_image && setShowImageViewer(true)}>
+                  {!item.item_image && '📦'}
+                </ItemImage>
+                <ItemTitle>
+                  {editing ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Input
+                        value={editName}
+                        onChange={setEditName}
+                        placeholder={t('itemDetail.itemNamePlaceholder')}
+                        style={{ flex: 1 }}
+                      />
+                      <Button size="small" onClick={handleUpdateName}>
+                        {t('common.save')}
                       </Button>
-                    )}
-                  </ItemName>
-                )}
-                <ItemMeta>{t('itemDetail.createdAt', { time: formatTime(item.item_create_time) })}</ItemMeta>
-                <ItemMeta>
-                  {t('itemDetail.currentLocation', { location: item.display_location_name || item.current_room_name || t('itemDetail.unknownWarehouse') })}
-                  {item.current_box_name && ` / ${item.current_box_name}`}
-                  {item.is_in_stock !== undefined && (
-                    <StockBadge $inStock={item.is_in_stock || item.is_foreign}>
-                      {item.is_foreign ? t('status.foreign') : (item.is_in_stock ? t('status.inStock') : t('status.outOfStock'))}
-                    </StockBadge>
+                      <Button size="small" onClick={() => setEditing(false)}>
+                        {t('common.cancel')}
+                      </Button>
+                    </div>
+                  ) : (
+                    <ItemName>
+                      <span>{item.remark || item.item_name}</span>
+                      {item.room_id && (
+                        <span
+                          onClick={() => {
+                            setEditRemarkText(item.remark || '');
+                            setEditingRemark(true);
+                          }}
+                          style={{
+                            marginLeft: 8,
+                            cursor: 'pointer',
+                            color: 'var(--app-color-primary)',
+                            fontSize: 14,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </span>
+                      )}
+                      {isOwner && (
+                        <Button
+                          size="mini"
+                          style={{ marginLeft: 8 }}
+                          onClick={() => setEditing(true)}
+                        >
+                          {t('itemDetail.editName')}
+                        </Button>
+                      )}
+                    </ItemName>
                   )}
-                </ItemMeta>
-                {item.is_foreign && (
+                  <ItemMeta>{t('itemDetail.createdAt', { time: formatTime(item.item_create_time) })}</ItemMeta>
                   <ItemMeta>
-                    {t('itemDetail.shouldReturnTo', { location: `${item.belong_room_name || item.room_name}${item.belong_box_name ? ` / ${item.belong_box_name}` : ''}` })}
+                    {t('itemDetail.currentLocation', { location: item.display_location_name || item.current_room_name || t('itemDetail.unknownWarehouse') })}
+                    {item.current_box_name && ` / ${item.current_box_name}`}
+                    {item.is_in_stock !== undefined && (
+                      <StockBadge $inStock={item.is_in_stock || item.is_foreign}>
+                        {item.is_foreign ? t('status.foreign') : (item.is_in_stock ? t('status.inStock') : t('status.outOfStock'))}
+                      </StockBadge>
+                    )}
                   </ItemMeta>
-                )}
-                {!item.is_in_stock && !item.is_foreign && (
-                  <ItemMeta>
-                    {t('itemDetail.shouldReturnTo', { location: `${item.belong_room_name || item.room_name}${item.belong_box_name ? ` / ${item.belong_box_name}` : ''}${item.holder_nickname ? ` (${t('itemDetail.withPerson', { name: item.holder_nickname })})` : ''}` })}
-                  </ItemMeta>
-                )}
-                {item.owner_nickname && (
-                  <ItemMeta>{t('itemDetail.owner', { name: item.owner_nickname })}</ItemMeta>
-                )}
-              </ItemTitle>
-            </ItemHeader>
+                  {item.is_foreign && (
+                    <ItemMeta>
+                      {t('itemDetail.shouldReturnTo', { location: `${item.belong_room_name || item.room_name}${item.belong_box_name ? ` / ${item.belong_box_name}` : ''}` })}
+                    </ItemMeta>
+                  )}
+                  {!item.is_in_stock && !item.is_foreign && (
+                    <ItemMeta>
+                      {t('itemDetail.shouldReturnTo', { location: `${item.belong_room_name || item.room_name}${item.belong_box_name ? ` / ${item.belong_box_name}` : ''}${item.holder_nickname ? ` (${t('itemDetail.withPerson', { name: item.holder_nickname })})` : ''}` })}
+                    </ItemMeta>
+                  )}
+                  {item.owner_nickname && (
+                    <ItemMeta>{t('itemDetail.owner', { name: item.owner_nickname })}</ItemMeta>
+                  )}
+                </ItemTitle>
+              </ItemHeader>
+            </FixedSummary>
 
-            <Section>
+            <ScrollableDetails>
+              <Section>
                 <SectionTitle style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   {t('itemDetail.remark')}
                   <Button size="mini" onClick={() => { setEditNoticeText(item.item_notice || ''); setEditingNotice(true); }}>
@@ -575,11 +606,12 @@ export default function ItemDetail({
                   <CommentContent>{c.comment_content}</CommentContent>
                   <CommentTime>{formatTime(c.comment_create_time)}</CommentTime>
                 </CommentItem>
-              ))}
-            </Section>
+                ))}
+              </Section>
+            </ScrollableDetails>
           </>
         )}
-      </PopupContent>
+      </DetailPopupContent>
     </Popup>
 
     {showImageViewer && item?.item_image && (
