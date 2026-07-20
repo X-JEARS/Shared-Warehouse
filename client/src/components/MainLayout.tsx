@@ -23,7 +23,6 @@ const routePreloadMap: Record<string, () => Promise<any>> = {
   '/my-reservations': () => import('../pages/MyReservations'),
   '/my-transfer-records': () => import('../pages/MyTransferRecords'),
   '/system-settings': () => import('../pages/SystemSettings'),
-  '/cart': () => import('../pages/Cart'),
 };
 
 const Container = styled.div`

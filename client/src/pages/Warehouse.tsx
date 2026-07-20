@@ -190,7 +190,7 @@ export default function Warehouse() {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { currentRoom, rooms } = useRoomStore();
-  const cartItemCount = useCartStore((s) => s.items.length);
+  const cartItemCount = useCartStore((s) => s.itemCountByRoom(currentRoom?.room_id ?? 0));
   const [allInStockItems, setAllInStockItems] = useState<any[]>([]);
   const [allOutOfStockItems, setAllOutOfStockItems] = useState<any[]>([]);
   const [boxes, setBoxes] = useState<WarehouseBox[]>([]);
@@ -558,7 +558,7 @@ export default function Warehouse() {
       >
         {currentRoom && (
           <FilterBar
-            roomId={currentRoom.room_id}
+        roomId={currentRoom?.room_id ?? 0}
             selectedBox={filters.boxId}
             selectedTag={filters.tagId}
             onFilterChange={handleFilterChange}
@@ -593,6 +593,7 @@ export default function Warehouse() {
                       <ItemCard
                         key={item.item_id}
                         item={item}
+                        roomId={currentRoom?.room_id ?? 0}
                         onClick={() => handleItemClick(item.item_id)}
                         showCartButton
                       />
@@ -610,6 +611,7 @@ export default function Warehouse() {
                     <ItemCard
                       key={item.item_id}
                       item={item}
+                      roomId={currentRoom?.room_id ?? 0}
                       onClick={() => handleItemClick(item.item_id)}
                       showCartButton
                     />
@@ -656,10 +658,13 @@ export default function Warehouse() {
         onUpdate={() => void refreshItems()}
       />
 
+      {currentRoom && (
       <CartPopup
         visible={cartVisible}
         onClose={() => setCartVisible(false)}
+        roomId={currentRoom.room_id}
       />
+      )}
     </Container>
   );
 }

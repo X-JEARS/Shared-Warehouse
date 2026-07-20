@@ -124,12 +124,13 @@ interface ItemCardProps {
     holder_nickname?: string;
     remark?: string;
   };
+  roomId?: number;
   onClick?: () => void;
   showStockStatus?: boolean;
   showCartButton?: boolean;
 }
 
-export default function ItemCard({ item, onClick, showStockStatus = true, showCartButton = false }: ItemCardProps) {
+export default function ItemCard({ item, roomId, onClick, showStockStatus = true, showCartButton = false }: ItemCardProps) {
   const { t } = useTranslation();
   const isInStock = item.is_in_stock !== false;
   const isForeign = item.is_foreign === true;
@@ -139,9 +140,10 @@ export default function ItemCard({ item, onClick, showStockStatus = true, showCa
 
   const handleCartClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!isInCart) {
+    if (!isInCart && roomId != null) {
       addItem({
         itemId: item.item_id,
+        roomId,
         itemName: displayName,
         itemQrcode: item.item_qrcode || '',
         itemImage: item.item_image,
