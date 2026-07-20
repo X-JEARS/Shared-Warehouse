@@ -5,6 +5,8 @@
 **Scope:** `client/src/` — React + TypeScript + Vite frontend  
 **Reference:** Vercel React Best Practices (70 rules, 8 categories)
 
+> **Post-audit note (2026-07-20):** PR #3 removed the orphan `client/src/pages/Cart.tsx` page and `/cart` route. References to `Cart.tsx` below describe the code as it existed when this audit was performed; `CartPopup.tsx` is now the only cart UI.
+
 ---
 
 ## Summary
