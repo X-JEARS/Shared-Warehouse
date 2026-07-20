@@ -10,6 +10,7 @@ export interface ConflictingReservation {
 
 export interface CartItem {
   itemId: number;
+  roomId: number;
   itemName: string;
   itemQrcode: string;
   itemImage?: string;
@@ -30,7 +31,9 @@ interface CartState {
   setTime: (start?: number, end?: number) => void;
   setOrderTitle: (title?: string) => void;
   clearCart: () => void;
+  removeItemsByRoom: (roomId: number) => void;
   itemCount: () => number;
+  itemCountByRoom: (roomId: number) => number;
   // 更新物品冲突信息
   updateConflict: (itemId: number, conflict: { hasConflict: boolean; conflictingReservations?: ConflictingReservation[] }) => void;
   // 清除所有冲突信息
@@ -63,7 +66,10 @@ export const useCartStore = create<CartState>()(
         setTime: (start, end) => set({ startTime: start, endTime: end }),
         setOrderTitle: (title) => set({ orderTitle: title }),
         clearCart: () => set({ items: [], startTime: undefined, endTime: undefined, orderTitle: undefined }),
+        removeItemsByRoom: (roomId) =>
+          set((state) => ({ items: state.items.filter((i) => i.roomId !== roomId) })),
         itemCount: () => get().items.length,
+        itemCountByRoom: (roomId) => get().items.filter((i) => i.roomId === roomId).length,
         updateConflict: (itemId, conflict) =>
           set((state) => ({
             items: state.items.map((i) =>
@@ -83,8 +89,14 @@ export const useCartStore = create<CartState>()(
       }),
     {
       name: 'cart-storage',
-      version: 1,
-      migrate: (persistedState) => persistedState as CartState,
+      version: 2,
+      migrate: (persistedState: any) => {
+        const state = persistedState as CartState;
+        return {
+          ...state,
+          items: (state.items || []).filter((i: CartItem) => i.roomId != null),
+        };
+      },
     }
   )
 );

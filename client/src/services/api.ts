@@ -143,7 +143,7 @@ export const reservationApi = {
     request.post('/reservations', data),
   cancel: (id: number) => request.delete(`/reservations/${id}`),
   getByItem: (itemId: number) => request.get(`/reservations/items/${itemId}`),
-  createOrder: (data: { title?: string; items: Array<{ itemId: number; startTime: number; endTime: number }> }) =>
+  createOrder: (data: { roomId: number; title?: string; items: Array<{ itemId: number; startTime: number; endTime: number }> }) =>
     request.post('/reservations/orders', data),
   getOrders: (status?: 'active' | 'past') =>
     request.get('/reservations/orders', { params: { status } }),

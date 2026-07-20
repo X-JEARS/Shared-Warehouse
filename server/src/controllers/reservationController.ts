@@ -514,7 +514,7 @@ export const getItemReservations = async (req: AuthRequest, res: Response) => {
 export const createOrder = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.user?.userId;
-    const { title, items } = req.body;
+    const { title, items, roomId } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return error(res, 'Items array is required');
@@ -536,7 +536,14 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         return error(res, 'Invalid or duplicate item IDs');
       }
 
+      const rid = Number(req.body.roomId);
+      if (!Number.isInteger(rid) || rid <= 0) {
+        await client.query('ROLLBACK');
+        return error(res, 'roomId is required');
+      }
+
       if (uniqueItemIds.length > 0) {
+        // Lock items first (FOR UPDATE on items table only)
         const lockedItems = await client.query(
           `SELECT item_id FROM items WHERE item_id = ANY($1) FOR UPDATE`,
           [uniqueItemIds]
@@ -544,6 +551,36 @@ export const createOrder = async (req: AuthRequest, res: Response) => {
         if (lockedItems.rows.length !== uniqueItemIds.length) {
           await client.query('ROLLBACK');
           return error(res, 'Item not found', 404);
+        }
+
+        // Fetch room info for each item
+        const itemRooms = await client.query(
+          `SELECT i.item_id,
+                  bb.box_belong_room_id AS belong_room_id,
+                  cb.box_belong_room_id AS current_room_id
+           FROM items i
+           JOIN boxes bb ON i.item_belong_box_id = bb.box_id
+           LEFT JOIN boxes cb ON i.item_current_box_id = cb.box_id
+           WHERE i.item_id = ANY($1)`,
+          [uniqueItemIds]
+        );
+
+        // Verify user is a member of roomId
+        const memberCheck = await client.query(
+          'SELECT 1 FROM room_members WHERE member_room_id = $1 AND member_user_id = $2',
+          [rid, userId]
+        );
+        if (memberCheck.rows.length === 0) {
+          await client.query('ROLLBACK');
+          return error(res, 'Access denied', 403);
+        }
+
+        // Verify all items belong to or are currently in roomId
+        for (const row of itemRooms.rows) {
+          if (row.belong_room_id !== rid && row.current_room_id !== rid) {
+            await client.query('ROLLBACK');
+            return error(res, '一个预约单只能包含同一仓库的物品', 400);
+          }
         }
       }
 

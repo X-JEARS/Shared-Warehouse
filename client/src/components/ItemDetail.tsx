@@ -281,6 +281,7 @@ export default function ItemDetail({
     if (!item) return;
     addItem({
       itemId: item.item_id,
+      roomId: roomId ?? 0,
       itemName: item.remark || item.item_name,
       itemQrcode: item.item_qrcode,
       itemImage: item.item_image,

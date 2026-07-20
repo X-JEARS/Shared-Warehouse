@@ -232,18 +232,21 @@ const ConflictWarning = styled.div`
 interface CartPopupProps {
   visible: boolean;
   onClose: () => void;
+  roomId: number;
 }
 
-export default function CartPopup({ visible, onClose }: CartPopupProps) {
+export default function CartPopup({ visible, onClose, roomId }: CartPopupProps) {
   const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
-  const items = useCartStore((s) => s.items);
+  const allItems = useCartStore((s) => s.items);
+  const items = allItems.filter((i) => i.roomId === roomId);
   const startTime = useCartStore((s) => s.startTime);
   const endTime = useCartStore((s) => s.endTime);
   const orderTitle = useCartStore((s) => s.orderTitle);
   const setTime = useCartStore((s) => s.setTime);
   const removeItem = useCartStore((s) => s.removeItem);
   const clearCart = useCartStore((s) => s.clearCart);
+  const removeItemsByRoom = useCartStore((s) => s.removeItemsByRoom);
   const setOrderTitle = useCartStore((s) => s.setOrderTitle);
   const updateConflict = useCartStore((s) => s.updateConflict);
   const clearConflicts = useCartStore((s) => s.clearConflicts);
@@ -395,6 +398,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
       try {
         setLoading(true);
         await reservationApi.createOrder({
+          roomId,
           title: orderTitle || defaultTitle,
           items: items.map((item) => ({
             itemId: item.itemId,
@@ -402,7 +406,7 @@ export default function CartPopup({ visible, onClose }: CartPopupProps) {
             endTime: endTime,
           })),
         });
-        clearCart();
+        removeItemsByRoom(roomId);
         Toast.show({ icon: 'success', content: t('cart.reservationSuccess') });
         onClose();
       } catch (error: any) {
