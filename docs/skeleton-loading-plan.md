@@ -378,3 +378,38 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 - ✅ ItemDetail 弹窗立即显示 skeleton
 - ✅ 懒加载路由 branded fallback
 - ✅ Scanner / CartPopup 未改动
+
+---
+
+## 后续修复（Post-Implementation Bugs）
+
+### BUG 1 — BoxDetail.tsx：业务刷新误触发骨架屏
+
+**问题**：`setLoading(true)` 放在 `loadBox` 内部，导致批量归还（`handleBatchReturn → loadBox`）也触发整页骨架屏，扫码弹窗被卸载。
+
+**修复**：`setLoading(true)` 移入 `[id]` mount effect。切换盒子（id 变化）仍正常显示骨架屏；业务刷新调用 `loadBox` 不再触发。
+
+**影响范围**：所有经过 `loadBox` 的 mutation 路径（批量归还、单个归还、扫码等）。
+
+### BUG 2 — ReservationOrderDetail.tsx：同上
+
+**问题**：`setLoading(true)` 放在 `loadDetail` 内部，取消预约/延长订单后的刷新整页闪 DetailSkeleton。
+
+**修复**：`setLoading(true)` 移入 `[id]` effect。切换订单仍显示骨架屏；业务刷新不触发。
+
+### BUG 3 — ItemDetail.tsx：快网络闪烁
+
+**问题**：直接用 `loading` 门控，<300ms 的加载会出现 skeleton 闪一下。
+
+**修复**：改用 `useMinLoadingTime(loading) → showSkeleton` 门控。
+
+### BUG 4 — CreateItem.tsx：整页骨架 + 选择器逻辑
+
+**问题**：整页 `FormSkeleton` 早返回，表单字段（二维码/名称/备注）被骨架替代；"没有盒子"判断在 loading 时误报。
+
+**修复**：
+- 移除整页 `FormSkeleton` 早返回；表单字段立即渲染
+- 盒子选择器在 `showBoxesLoading` 时显示 `FormSkeleton`，加载完切回 Selector
+- "没有盒子"判断改为 `!loadingBoxes && boxes.length === 0`
+- 提交按钮 `disabled={showBoxesLoading}`
+- 加 `useMinLoadingTime(loadingBoxes)` 防闪烁
