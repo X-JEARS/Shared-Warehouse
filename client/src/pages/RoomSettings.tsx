@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { DetailSkeleton, ListSkeleton, ItemCardSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import {
   Button,
   Dialog,
   Input,
   Toast,
-  SpinLoading,
   Selector,
   Popup,
 } from 'antd-mobile';
@@ -787,15 +788,21 @@ export default function RoomSettings() {
     }
   };
 
-  if (loading) {
+  const showSkeleton = useMinLoadingTime(loading);
+
+  if (showSkeleton) {
     return (
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('roomSettings.title')}</HeaderTitle>
         </Header>
-        <div style={{ textAlign: 'center', padding: 60 }}>
-          <SpinLoading />
+        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <DetailSkeleton />
+          <ListSkeleton count={4} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+            {Array.from({ length: 4 }).map((_, i) => <ItemCardSkeleton key={i} />)}
+          </div>
         </div>
       </Container>
     );

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button, Card, Toast, SpinLoading, Dialog } from 'antd-mobile';
+import { DetailSkeleton, ItemCardSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import ScannerComponent, { ScannerHandle } from '../components/Scanner';
@@ -232,7 +234,9 @@ export default function BoxDetail() {
     console.log('Item clicked:', itemId);
   };
 
-  if (loading) {
+  const showSkeleton = useMinLoadingTime(loading);
+
+  if (showSkeleton) {
     return (
       <Container>
         <Header>
@@ -240,9 +244,9 @@ export default function BoxDetail() {
           <HeaderTitle>{t('boxDetail.title')}</HeaderTitle>
         </Header>
         <Content>
-          <div style={{ textAlign: 'center', padding: 60 }}>
-            <SpinLoading />
-            <p>{t('common.loading')}</p>
+          <DetailSkeleton />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginTop: 16 }}>
+            {Array.from({ length: 6 }).map((_, i) => <ItemCardSkeleton key={i} />)}
           </div>
         </Content>
       </Container>

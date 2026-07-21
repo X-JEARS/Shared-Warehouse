@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, Empty, InfiniteScroll, SpinLoading } from 'antd-mobile';
+import { Button, Empty, InfiniteScroll } from 'antd-mobile';
+import { ListSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import { transferRecordApi } from '../services/api';
@@ -266,8 +268,12 @@ export default function MyTransferRecords() {
         <HeaderTitle>{t('myTransferRecords.title')}</HeaderTitle>
       </Header>
 
-      {initialLoading ? (
-        <CenterState><SpinLoading /></CenterState>
+      {useMinLoadingTime(initialLoading) ? (
+        <CenterState>
+          <div style={{ padding: 16 }}>
+            <ListSkeleton count={6} />
+          </div>
+        </CenterState>
       ) : loadError ? (
         <CenterState>
           <Empty description={t('myTransferRecords.loadFailed')} />

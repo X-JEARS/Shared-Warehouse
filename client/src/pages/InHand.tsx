@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, SearchBar, SpinLoading } from 'antd-mobile';
+import { Button, SearchBar } from 'antd-mobile';
+import { ItemCardSkeleton } from '../components/skeleton';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import useSWR from 'swr';
@@ -61,6 +62,7 @@ export default function InHand() {
 
   const { data, isLoading } = useSWR('/items/in-hand', swrFetcher, {
     revalidateOnFocus: false,
+    keepPreviousData: true,
   });
 
   const items = data || [];
@@ -86,8 +88,8 @@ export default function InHand() {
           <HeaderTitle>{t('inHand.title')}</HeaderTitle>
         </Header>
         <Content>
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <SpinLoading />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: 16 }}>
+            {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
           </div>
         </Content>
       </Container>

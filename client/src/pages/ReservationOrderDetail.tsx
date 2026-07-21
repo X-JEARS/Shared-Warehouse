@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Tag, SpinLoading, Dialog, Toast, DatePicker, Input } from 'antd-mobile';
+import { Button, Tag, Dialog, Toast, DatePicker, Input } from 'antd-mobile';
+import { DetailSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled, { css } from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { reservationApi } from '../services/api';
@@ -448,15 +450,17 @@ export default function ReservationOrderDetail() {
     return <Tag color="success">{t('status.active')}</Tag>;
   };
 
-  if (loading) {
+  const showSkeleton = useMinLoadingTime(loading);
+
+  if (showSkeleton) {
     return (
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('reservationOrderDetail.title')}</HeaderTitle>
         </Header>
-        <div style={{ textAlign: 'center', padding: 60 }}>
-          <SpinLoading />
+        <div style={{ padding: 16 }}>
+          <DetailSkeleton />
         </div>
       </Container>
     );

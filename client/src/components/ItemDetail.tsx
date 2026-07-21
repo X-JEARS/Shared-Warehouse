@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { itemApi, tagApi, reservationApi } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
+import { DetailSkeleton } from './skeleton';
 
 const PopupContent = styled.div`
   position: relative;
@@ -159,6 +160,7 @@ export default function ItemDetail({
 }: ItemDetailProps) {
   const { t, i18n } = useTranslation();
   const [item, setItem] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
@@ -197,6 +199,7 @@ export default function ItemDetail({
 
   const loadItem = async () => {
     try {
+      setLoading(true);
       const res: any = await itemApi.getById(itemId!, roomId);
       setItem(res.data);
       setEditName(res.data.item_name);
@@ -206,6 +209,8 @@ export default function ItemDetail({
       }
     } catch (error) {
       console.error('Failed to load item:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -359,7 +364,11 @@ export default function ItemDetail({
       bodyStyle={{ height: '80vh', borderRadius: '12px 12px 0 0' }}
     >
       <DetailPopupContent>
-        {item && (
+        {loading ? (
+          <div style={{ padding: 20 }}>
+            <DetailSkeleton />
+          </div>
+        ) : item && (
           <>
             <FixedSummary>
               <div style={{ position: 'absolute', top: 16, right: 16 }}>

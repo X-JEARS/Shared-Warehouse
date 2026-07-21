@@ -6,6 +6,7 @@ import styled from 'styled-components';
 import { itemApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
 import Scanner from '../components/Scanner';
+import { FormSkeleton } from '../components/skeleton';
 
 const Container = styled.div`
   min-height: 100%;
@@ -195,8 +196,8 @@ export default function CreateItem() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('createItem.title')}</HeaderTitle>
         </Header>
-        <Content style={{ textAlign: 'center', paddingTop: 40 }}>
-          {t('common.loading')}
+        <Content style={{ padding: 16 }}>
+          <FormSkeleton />
         </Content>
       </Container>
     );
