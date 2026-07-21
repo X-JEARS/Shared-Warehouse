@@ -1,7 +1,7 @@
 # Skeleton Loading 实现方案
 
 **Date:** 2026-07-21
-**Status:** 修订后待实现
+**Status:** ✅ 已完成（2026-07-21）
 **Priority:** MEDIUM（用户体验优化）
 
 > **修订记录（2026-07-21）**：基于代码核对修正了若干事实性错误并补充未指定项：
@@ -328,3 +328,53 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 - 懒加载路由首次进入显示 branded fallback（图标 + 主题 SpinLoading，非裸 SpinLoading）
 - 不影响现有 SpinLoading 在 Scanner overlay 和按钮 loading 中的使用
 - CartPopup 与 Scanner 行为不变（未改动）
+
+---
+
+## 实施结果
+
+**Commit:** `6887e7f` — `feat: add skeleton loading to all data loading pages`
+
+### 新增文件
+
+| 文件 | 说明 |
+|------|------|
+| `client/src/components/skeleton/index.ts` | barrel 导出 |
+| `client/src/components/skeleton/ItemCardSkeleton.tsx` | 物品卡片骨架（56x56 图 + 名称 + 标签） |
+| `client/src/components/skeleton/ListSkeleton.tsx` | 列表骨架（圆形头像 + 2 行文本）× N |
+| `client/src/components/skeleton/DetailSkeleton.tsx` | 详情摘要区（80x80 图 + 多行 meta） |
+| `client/src/components/skeleton/OrderSkeleton.tsx` | 订单卡片骨架（标题/状态/内容/按钮） |
+| `client/src/components/skeleton/FormSkeleton.tsx` | 表单选择器骨架（标签 + 输入框） |
+| `client/src/hooks/useMinLoadingTime.ts` | 300ms 最小显示时间 hook |
+
+### 修改文件
+
+| 文件 | 改动 |
+|------|------|
+| `client/src/styles/theme.css` | dark `.adm-skeleton` 对比度覆盖 + `prefers-reduced-motion` |
+| `client/src/App.tsx` | `PageFallback` → branded fallback（PWA 图标 + 主题 SpinLoading） |
+| `client/src/pages/Warehouse.tsx` | SWR `isLoading` → `ItemCardSkeleton` × 8（网格） |
+| `client/src/pages/InHand.tsx` | 补 `keepPreviousData` + `ItemCardSkeleton` × 8 |
+| `client/src/pages/BoxDetail.tsx` | `DetailSkeleton` + `ItemCardSkeleton` × 6 |
+| `client/src/pages/ReservationOrderDetail.tsx` | `DetailSkeleton` |
+| `client/src/pages/RoomSettings.tsx` | `DetailSkeleton` + `ListSkeleton` × 4 + `ItemCardSkeleton` × 4 |
+| `client/src/pages/Notifications.tsx` | `ListSkeleton` × 8 |
+| `client/src/pages/MyReservations.tsx` | `OrderSkeleton` × 4 |
+| `client/src/pages/CreateItem.tsx` | `FormSkeleton`（仅选择器区域） |
+| `client/src/pages/MyTransferRecords.tsx` | `ListSkeleton` × 6 |
+| `client/src/pages/MyItems.tsx` | `ItemCardSkeleton` × 8 |
+| `client/src/pages/ReservationOrders.tsx` | `OrderSkeleton` × 4 |
+| `client/src/components/ItemDetail.tsx` | 新增 loading state + `DetailSkeleton`（摘要区） |
+
+### 验收结果
+
+- ✅ `cd client && npx tsc --noEmit` 编译通过
+- ✅ 所有数据加载页面首次加载显示 skeleton
+- ✅ Skeleton shimmer 动画 + `prefers-reduced-motion` 停止
+- ✅ dark 模式对比度正确
+- ✅ 三种 style variant 圆角适配
+- ✅ `useMinLoadingTime` 300ms 防闪烁
+- ✅ SWR 页面 `keepPreviousData` 刷新不显示 skeleton
+- ✅ ItemDetail 弹窗立即显示 skeleton
+- ✅ 懒加载路由 branded fallback
+- ✅ Scanner / CartPopup 未改动
