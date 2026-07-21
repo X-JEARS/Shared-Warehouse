@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, SearchBar, SpinLoading } from 'antd-mobile';
+import { Button, SearchBar } from 'antd-mobile';
+import { ItemCardSkeleton } from '../components/skeleton';
 import type { InputRef } from 'antd-mobile/es/components/input';
 import { AddOutline, SearchOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
@@ -568,8 +569,8 @@ export default function Warehouse() {
 
         <Content>
         {itemsLoading ? (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <SpinLoading />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: 16 }}>
+            {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
           </div>
         ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>

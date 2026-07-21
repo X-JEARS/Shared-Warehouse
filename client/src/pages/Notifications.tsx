@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Empty, SpinLoading, Badge } from 'antd-mobile';
+import { Empty, Badge } from 'antd-mobile';
+import { ListSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { notificationApi } from '../services/api';
@@ -157,15 +159,17 @@ export default function Notifications() {
     }
   };
 
-  if (loading) {
+  const showSkeleton = useMinLoadingTime(loading);
+
+  if (showSkeleton) {
     return (
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('notifications.title')}</HeaderTitle>
         </Header>
-        <div style={{ textAlign: 'center', padding: 60 }}>
-          <SpinLoading />
+        <div style={{ padding: 16 }}>
+          <ListSkeleton count={8} />
         </div>
       </Container>
     );

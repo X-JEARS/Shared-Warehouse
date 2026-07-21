@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, SpinLoading } from 'antd-mobile';
+import { Tag } from 'antd-mobile';
+import { OrderSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { reservationApi } from '../services/api';
@@ -201,15 +203,17 @@ export default function MyReservations() {
     ));
   };
 
-  if (loading) {
+  const showSkeleton = useMinLoadingTime(loading);
+
+  if (showSkeleton) {
     return (
       <Container>
         <Header>
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('myReservations.title')}</HeaderTitle>
         </Header>
-        <div style={{ textAlign: 'center', padding: 60 }}>
-          <SpinLoading />
+        <div style={{ padding: 16 }}>
+          {Array.from({ length: 4 }).map((_, i) => <OrderSkeleton key={i} />)}
         </div>
       </Container>
     );

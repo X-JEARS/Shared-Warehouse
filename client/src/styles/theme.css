@@ -228,7 +228,27 @@ html[data-style='compact'] {
   --app-radius-pill: 999px;
   --app-radius-input: 2px;
 
-  --adm-radius-s: 2px;
-  --adm-radius-m: 4px;
-  --adm-radius-l: 6px;
+   --adm-radius-s: 2px;
+   --adm-radius-m: 4px;
+   --adm-radius-l: 6px;
+}
+
+/* ========================================
+   Skeleton Loading
+   ======================================== */
+
+/* Dark mode: improve skeleton contrast */
+html[data-theme='dark'] .adm-skeleton {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
+  background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.15) 37%, rgba(255,255,255,0.08) 63%);
+  background-size: 400% 100%;
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .adm-skeleton.adm-skeleton-animated {
+    animation: none;
+  }
 }

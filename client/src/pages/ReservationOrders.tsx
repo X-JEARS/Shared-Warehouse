@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Tag, SpinLoading, SearchBar } from 'antd-mobile';
+import { Tag, SearchBar } from 'antd-mobile';
+import { OrderSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import type { InputRef } from 'antd-mobile/es/components/input';
 import { SearchOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
@@ -258,7 +260,9 @@ export default function ReservationOrders() {
     ));
   };
 
-  if (loading) {
+  const showSkeleton = useMinLoadingTime(loading);
+
+  if (showSkeleton) {
     return (
       <Container>
         <Header>
@@ -269,8 +273,8 @@ export default function ReservationOrders() {
             </IconButton>
           </HeaderActions>
         </Header>
-        <div style={{ textAlign: 'center', padding: 60 }}>
-          <SpinLoading />
+        <div style={{ padding: 16 }}>
+          {Array.from({ length: 4 }).map((_, i) => <OrderSkeleton key={i} />)}
         </div>
       </Container>
     );

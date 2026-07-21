@@ -31,8 +31,12 @@ const MyTransferRecords = lazy(() => import('./pages/MyTransferRecords'));
 
 function PageFallback() {
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100dvh' }}>
-      <SpinLoading />
+    <div style={{
+      display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+      height: '100dvh', gap: 16, background: 'var(--app-color-bg)',
+    }}>
+      <img src="/icons/icon-192.png" alt="" style={{ width: 56, height: 56, borderRadius: 'var(--app-radius-m)' }} />
+      <SpinLoading color="primary" />
     </div>
   );
 }

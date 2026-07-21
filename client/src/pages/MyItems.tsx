@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchBar, SpinLoading, Input, Button, Toast, Popup, Dialog, ActionSheet } from 'antd-mobile';
+import { ItemCardSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled from 'styled-components';
 import { itemApi, scanApi, userApi } from '../services/api';
 import Scanner from '../components/Scanner';
@@ -658,15 +660,17 @@ export default function MyItems() {
     return item.item_name?.toLowerCase().includes(text);
   });
 
-  if (loading) {
+  const showSkeleton = useMinLoadingTime(loading);
+
+  if (showSkeleton) {
     return (
       <Container>
         <Header>
           <HeaderTitle>{t('myItems.title')}</HeaderTitle>
         </Header>
         <Content>
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <SpinLoading />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: 16 }}>
+            {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
           </div>
         </Content>
       </Container>
