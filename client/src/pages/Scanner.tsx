@@ -64,7 +64,7 @@ const HeaderTitle = styled.div`
 
 const Content = styled.div`
   flex: 1;
-  padding: 16px;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom, 0px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -102,6 +102,7 @@ const BatchActionArea = styled.div`
 
 const ActionRow = styled.div`
   min-height: 44px;
+  margin-top: 12px;
   display: grid;
   grid-template-columns: minmax(110px, 36%) minmax(0, 1fr);
   gap: 8px;
@@ -282,8 +283,8 @@ const ReferenceMenuMessage = styled.div`
 
 const ResultListWrapper = styled.div`
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  margin-top: 12px;
 `;
 
 const ListSectionTitle = styled.div`
@@ -783,6 +784,42 @@ export default function Scanner() {
               </ReferenceDropdown>
             </ReferenceDropdownHost>
 
+            <ResultListWrapper>
+              {selectedOrder && (
+                <>
+                  <ListSectionTitle>{t('scanner.reservationChecklist')}</ListSectionTitle>
+                  <ReferenceList>
+                    {selectedOrder.reservations.map(reservation => {
+                      const status = getReferenceStatus(reservation);
+                      const statusLabel = getStatusLabel(status);
+                      return (
+                        <ReferenceItem key={reservation.reservation_id}>
+                          <StatusSlot>
+                            {status !== 'none' && (
+                              <StatusDot
+                                $status={status}
+                                aria-label={statusLabel}
+                                title={statusLabel}
+                              />
+                            )}
+                          </StatusSlot>
+                          <ReferenceItemInfo>
+                            <ReferenceItemName>{reservation.item_name}</ReferenceItemName>
+                            <ReferenceItemLocation>{getReferenceLocation(reservation)}</ReferenceItemLocation>
+                          </ReferenceItemInfo>
+                        </ReferenceItem>
+                      );
+                    })}
+                  </ReferenceList>
+                  <ListSectionTitle>{t('scanner.scannedItems')}</ListSectionTitle>
+                </>
+              )}
+              <ScanResultList
+                items={pendingItems}
+                onRemoveItem={handleRemoveItem}
+              />
+            </ResultListWrapper>
+
             <ActionRow>
               <PhotoArea>
                 {transferImage && transferImagePreview ? (
@@ -846,42 +883,6 @@ export default function Scanner() {
                 </Button>
               </ButtonRow>
             </ActionRow>
-
-            <ResultListWrapper>
-              {selectedOrder && (
-                <>
-                  <ListSectionTitle>{t('scanner.reservationChecklist')}</ListSectionTitle>
-                  <ReferenceList>
-                    {selectedOrder.reservations.map(reservation => {
-                      const status = getReferenceStatus(reservation);
-                      const statusLabel = getStatusLabel(status);
-                      return (
-                        <ReferenceItem key={reservation.reservation_id}>
-                          <StatusSlot>
-                            {status !== 'none' && (
-                              <StatusDot
-                                $status={status}
-                                aria-label={statusLabel}
-                                title={statusLabel}
-                              />
-                            )}
-                          </StatusSlot>
-                          <ReferenceItemInfo>
-                            <ReferenceItemName>{reservation.item_name}</ReferenceItemName>
-                            <ReferenceItemLocation>{getReferenceLocation(reservation)}</ReferenceItemLocation>
-                          </ReferenceItemInfo>
-                        </ReferenceItem>
-                      );
-                    })}
-                  </ReferenceList>
-                  <ListSectionTitle>{t('scanner.scannedItems')}</ListSectionTitle>
-                </>
-              )}
-              <ScanResultList
-                items={pendingItems}
-                onRemoveItem={handleRemoveItem}
-              />
-            </ResultListWrapper>
           </BatchActionArea>
         )}
       </Content>

@@ -184,7 +184,7 @@ Items → Reservations → Orders
 - Partial success: failed items remain in list, succeeded items removed
 - **Transfer photo**: Borrow and return modes show an optional single-photo picker labeled "上传照片" on the left side of the action row. JPEG, PNG, GIF, and WebP files up to 20MB are submitted with the batch as multipart data. The selected original file is not cropped, resized, compressed, or re-encoded. A record photo is cleared after a transfer record is created, while total request failures keep it available for retry.
 - "取消" button resets mode and restarts scanner
-- UI layout: Fixed viewport height flex column (`height: 100dvh`). Header pinned at top (`flex-shrink: 0`). Scanner frame → hint → action row (上传照片 on the left; 取消 + 取走/放入 on the right) are fixed and non-scrolling. All three actions stay on one row. ScanResultList wrapped in `ResultListWrapper` (`flex: 1; overflow-y: auto`) scrolls independently within remaining space.
+- UI layout: Fixed viewport height flex column (`height: 100dvh`). Header pinned at top (`flex-shrink: 0`). Scanner frame, hint, and reservation selector are fixed and non-scrolling. ScanResultList is wrapped in `ResultListWrapper` (`flex: 1; min-height: 0; overflow-y: auto`) and scrolls independently within the remaining space. The action row (上传照片 on the left; 取消 + 取走/放入 on the right) stays below the list at the bottom, with normal bottom spacing plus `safe-area-inset-bottom` for mobile system navigation. All three actions stay on one row.
 
 ### ScanResultList Component
 - Located at `client/src/components/ScanResultList.tsx`
