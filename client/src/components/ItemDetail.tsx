@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { itemApi, tagApi, reservationApi } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 import { DetailSkeleton } from './skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 
 const PopupContent = styled.div`
   position: relative;
@@ -178,6 +179,7 @@ export default function ItemDetail({
   const [editingNotice, setEditingNotice] = useState(false);
   const [editNoticeText, setEditNoticeText] = useState('');
   const { addItem, removeItem, items: cartItems } = useCartStore();
+  const showSkeleton = useMinLoadingTime(loading);
 
   const isInCart = cartItems.some((i) => i.itemId === itemId);
 
@@ -364,10 +366,10 @@ export default function ItemDetail({
       bodyStyle={{ height: '80vh', borderRadius: '12px 12px 0 0' }}
     >
       <DetailPopupContent>
-        {loading ? (
-          <div style={{ padding: 20 }}>
+        {showSkeleton ? (
+          <FixedSummary>
             <DetailSkeleton />
-          </div>
+          </FixedSummary>
         ) : item && (
           <>
             <FixedSummary>

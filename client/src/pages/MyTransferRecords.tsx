@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button, Empty, InfiniteScroll } from 'antd-mobile';
-import { ListSkeleton } from '../components/skeleton';
+import { TransferRecordListSkeleton } from '../components/skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
@@ -261,6 +261,8 @@ export default function MyTransferRecords() {
     return item.box_name || t('common.unknown');
   };
 
+  const showInitialSkeleton = useMinLoadingTime(initialLoading);
+
   return (
     <Container>
       <Header>
@@ -268,12 +270,10 @@ export default function MyTransferRecords() {
         <HeaderTitle>{t('myTransferRecords.title')}</HeaderTitle>
       </Header>
 
-      {useMinLoadingTime(initialLoading) ? (
-        <CenterState>
-          <div style={{ padding: 16 }}>
-            <ListSkeleton count={6} />
-          </div>
-        </CenterState>
+      {showInitialSkeleton ? (
+        <Content>
+          <TransferRecordListSkeleton />
+        </Content>
       ) : loadError ? (
         <CenterState>
           <Empty description={t('myTransferRecords.loadFailed')} />

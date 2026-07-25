@@ -267,15 +267,21 @@ export default function ReservationOrders() {
       <Container>
         <Header>
           <WarehouseSelector />
-          <HeaderActions>
-            <IconButton onClick={() => setShowSearch(true)}>
-              <SearchOutline />
-            </IconButton>
-          </HeaderActions>
+          {currentRoom && (
+            <HeaderActions>
+              <IconButton onClick={() => setShowSearch(true)}>
+                <SearchOutline />
+              </IconButton>
+            </HeaderActions>
+          )}
         </Header>
-        <div style={{ padding: 16 }}>
+        <TabBar>
+          <TabItem $active>{t('reservationOrders.active')} (0)</TabItem>
+          <TabItem>{t('reservationOrders.past')} (0)</TabItem>
+        </TabBar>
+        <Content>
           {Array.from({ length: 4 }).map((_, i) => <OrderSkeleton key={i} />)}
-        </div>
+        </Content>
       </Container>
     );
   }

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Card, Toast, SpinLoading, Dialog } from 'antd-mobile';
-import { DetailSkeleton, ItemCardSkeleton } from '../components/skeleton';
+import { Button, Card, Toast, SpinLoading, Dialog, Skeleton } from 'antd-mobile';
+import { ItemCardSkeleton } from '../components/skeleton';
+import type { CSSProperties } from 'react';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
@@ -128,13 +129,13 @@ export default function BoxDetail() {
   const scannerRef = useRef<ScannerHandle>(null);
 
   useEffect(() => {
+    setLoading(true);
     loadBox();
   }, [id]);
 
   const loadBox = async () => {
     if (!id) return;
     try {
-      setLoading(true);
       const res: any = await boxApi.getById(parseInt(id));
       setBox(res.data);
     } catch (error: any) {
@@ -244,10 +245,23 @@ export default function BoxDetail() {
           <HeaderTitle>{t('boxDetail.title')}</HeaderTitle>
         </Header>
         <Content>
-          <DetailSkeleton />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginTop: 16 }}>
+          <BoxInfo aria-hidden="true">
+            <BoxInfoContent>
+              <Skeleton animated style={{ '--width': '42%', '--height': '18px', marginBottom: 8 } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '58%', '--height': '14px', marginBottom: 4 } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '76%', '--height': '14px' } as CSSProperties} />
+            </BoxInfoContent>
+          </BoxInfo>
+          <Skeleton
+            animated
+            style={{ '--width': '100%', '--height': '45px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties}
+          />
+          <SectionTitle style={{ marginTop: 24 }} aria-hidden="true">
+            <Skeleton animated style={{ '--width': '88px', '--height': '16px' } as CSSProperties} />
+          </SectionTitle>
+          <ItemList aria-hidden="true">
             {Array.from({ length: 6 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-          </div>
+          </ItemList>
         </Content>
       </Container>
     );

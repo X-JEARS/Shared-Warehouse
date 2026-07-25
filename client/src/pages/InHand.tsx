@@ -8,6 +8,7 @@ import useSWR from 'swr';
 import { swrFetcher } from '../utils/swr';
 import ItemCard from '../components/ItemCard';
 import ItemDetail from '../components/ItemDetail';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 
 const Container = styled.div`
   height: 100%;
@@ -66,6 +67,7 @@ export default function InHand() {
   });
 
   const items = data || [];
+  const showSkeleton = useMinLoadingTime(isLoading);
 
   const handleItemClick = (itemId: number) => {
     setSelectedItem(itemId);
@@ -80,21 +82,6 @@ export default function InHand() {
       item.item_notice?.toLowerCase().includes(text)
     );
   }, [items, searchText]);
-
-  if (isLoading) {
-    return (
-      <Container>
-        <Header>
-          <HeaderTitle>{t('inHand.title')}</HeaderTitle>
-        </Header>
-        <Content>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: 16 }}>
-            {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-          </div>
-        </Content>
-      </Container>
-    );
-  }
 
   return (
     <Container>
@@ -112,7 +99,11 @@ export default function InHand() {
       </SearchContainer>
 
       <Content>
-        {filteredItems.length === 0 ? (
+        {showSkeleton ? (
+          <ItemGrid aria-hidden="true">
+            {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
+          </ItemGrid>
+        ) : filteredItems.length === 0 ? (
           <EmptyContainer>
             <EmptyText>
               {searchText ? t('inHand.noMatch') : t('inHand.noItems')}

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { DetailSkeleton, ListSkeleton, ItemCardSkeleton } from '../components/skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import {
   Button,
@@ -9,7 +8,9 @@ import {
   Toast,
   Selector,
   Popup,
+  Skeleton,
 } from 'antd-mobile';
+import type { CSSProperties } from 'react';
 import { AddOutline, CheckCircleOutline, CloseCircleOutline, CloseOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -797,13 +798,70 @@ export default function RoomSettings() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('roomSettings.title')}</HeaderTitle>
         </Header>
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <DetailSkeleton />
-          <ListSkeleton count={4} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
-            {Array.from({ length: 4 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-          </div>
-        </div>
+        <Content aria-hidden="true">
+          <Card>
+            <RoomNameRow>
+              <Skeleton animated style={{ '--width': '42%', '--height': '18px' } as CSSProperties} />
+            </RoomNameRow>
+            <RoomId>
+              <Skeleton animated style={{ '--width': '88px', '--height': '13px' } as CSSProperties} />
+            </RoomId>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton animated style={{ '--width': '84px', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '64px', '--height': '28px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties} />
+            </CardHeader>
+            <BoxGrid>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <BoxCard key={index}>
+                  <BoxCardInfo>
+                    <Skeleton animated style={{ '--width': '68%', '--height': '14px' } as CSSProperties} />
+                    <Skeleton animated style={{ '--width': '44%', '--height': '12px', marginTop: 4 } as CSSProperties} />
+                  </BoxCardInfo>
+                  <Skeleton animated style={{ '--width': '16px', '--height': '16px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+                </BoxCard>
+              ))}
+            </BoxGrid>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton animated style={{ '--width': '84px', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '68px', '--height': '28px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties} />
+            </CardHeader>
+            <TagList>
+              {[72, 56, 88, 64, 76].map((width) => (
+                <Skeleton
+                  key={width}
+                  animated
+                  style={{ '--width': `${width}px`, '--height': '25px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties}
+                />
+              ))}
+            </TagList>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <Skeleton animated style={{ '--width': '110px', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '76px', '--height': '28px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties} />
+            </CardHeader>
+            <MemberGrid>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <MemberCard key={index}>
+                  <MemberCardLeft>
+                    <Skeleton animated style={{ '--width': '32px', '--height': '32px', '--border-radius': '50%' } as CSSProperties} />
+                    <MemberCardInfo>
+                      <Skeleton animated style={{ '--width': '70%', '--height': '14px' } as CSSProperties} />
+                      <Skeleton animated style={{ '--width': '48%', '--height': '12px', marginTop: 4 } as CSSProperties} />
+                    </MemberCardInfo>
+                  </MemberCardLeft>
+                </MemberCard>
+              ))}
+            </MemberGrid>
+          </Card>
+        </Content>
       </Container>
     );
   }

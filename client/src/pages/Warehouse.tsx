@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, SearchBar } from 'antd-mobile';
+import { Button, SearchBar, Skeleton } from 'antd-mobile';
 import { ItemCardSkeleton } from '../components/skeleton';
 import type { InputRef } from 'antd-mobile/es/components/input';
+import type { CSSProperties } from 'react';
 import { AddOutline, SearchOutline, ShopbagOutline, SetOutline } from 'antd-mobile-icons';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -569,9 +570,16 @@ export default function Warehouse() {
 
         <Content>
         {itemsLoading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: 16 }}>
-            {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-          </div>
+          <ItemList aria-hidden="true">
+            <BoxGroup>
+              <BoxTitle>
+                <Skeleton animated style={{ '--width': '96px', '--height': '14px' } as CSSProperties} />
+              </BoxTitle>
+              <ItemGrid>
+                {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
+              </ItemGrid>
+            </BoxGroup>
+          </ItemList>
         ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>

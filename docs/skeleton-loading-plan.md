@@ -1,16 +1,18 @@
 # Skeleton Loading 实现方案
 
 **Date:** 2026-07-21
+**Last updated:** 2026-07-25
 **Status:** ✅ 已完成（2026-07-21）
 **Priority:** MEDIUM（用户体验优化）
 
 > **修订记录（2026-07-21）**：基于代码核对修正了若干事实性错误并补充未指定项：
 > - 移除 **CartPopup**（列表来自 Zustand 同步读取，无加载态）与 **Scanner**（overlay 为相机初始化而非数据加载）的 skeleton 改动。
-> - 修正 **RoomSettings**（纵向堆叠卡片，非"多 Tab"）、**ReservationOrderDetail**（改用 `DetailSkeleton` 而非 `OrderSkeleton`）。
+> - 修正 **RoomSettings**（纵向堆叠卡片，非"多 Tab"）、**ReservationOrderDetail**（首次实现使用 `DetailSkeleton`，2026-07-25 对齐修订后改为 `ReservationDetailSkeleton`）。
 > - 新增 **App.tsx 路由 chunk 加载 fallback**（`<Suspense fallback>` 覆盖 14 个懒加载路由）为本次范围内的 branded fallback。
 > - 新增 **`useMinLoadingTime` 共享 hook** 落地 300ms 最小显示时间。
 > - **改用 antd-mobile 内置 `Skeleton` / `Skeleton.Title` / `Skeleton.Paragraph`**（已确认 v5.34 提供，`animated` + `--width/--height/--border-radius` CSS 变量），不再从零实现 shimmer 与 `SkeletonBase`；相应不新增 `--app-color-skeleton` 变量，改为 dark 模式 `.adm-skeleton` 对比度覆盖 + `prefers-reduced-motion`。
 > - `keepPreviousData` per-call 说明、骨架条数规则、Phase 依赖（`DetailSkeleton` 前移到 Phase 1）、构建校验等。
+> - **布局对齐修订（2026-07-25）**：加载态改为复用真实页面的容器、搜索栏、Tab、分组标题和响应式网格；新增页面专用骨架，避免用同一通用列表/网格骨架替代不同方向的真实卡片。
 
 ---
 
@@ -69,7 +71,8 @@ client/src/components/skeleton/
 ├── ListSkeleton.tsx      # 列表骨架：容器，渲染 N 个 ListItemSkeleton
 ├── DetailSkeleton.tsx    # 详情页骨架（图片 + Paragraph + 标签行）
 ├── FormSkeleton.tsx      # 表单骨架（仅选择器区域）
-└── OrderSkeleton.tsx     # 订单卡片骨架
+├── OrderSkeleton.tsx     # 订单卡片骨架
+└── PageSkeletons.tsx     # 页面专用骨架（MyItems/Notifications/Transfer/ReservationDetail）
 ```
 
 > 不再需要自定义 `Skeleton.tsx` 基础单元 / `shimmer` keyframes / `SkeletonBase`。每个复合骨架为薄封装，组合 antd-mobile 原语。自定义 CSS 变量需以 `as React.CSSProperties` 断言以通过 TS 检查。
@@ -195,15 +198,15 @@ function PageFallback() {
 | **App.tsx 懒加载路由** | 裸 `SpinLoading` 全屏 | `BrandedPageFallback`（图标 + 主题 SpinLoading） |
 | **Warehouse** | SWR `isLoading` + `keepPreviousData`（已具备） | `ItemCardSkeleton` × N（按网格列数）；分组标题用 `Skeleton` 文本行 |
 | **InHand** | SpinLoading 居中 | `ItemCardSkeleton` × N（网格）；SWR 加 `keepPreviousData: true` |
-| **BoxDetail** | SpinLoading + overlay | 盒子信息用 `DetailSkeleton`；物品列表用 `ItemCardSkeleton` |
-| **ReservationOrderDetail** | SpinLoading 居中 | `DetailSkeleton`（标题/状态/时间行 + 物品网格占位 + 底部按钮占位），**非** `OrderSkeleton` |
-| **RoomSettings** | SpinLoading 居中 | **纵向堆叠卡片**（非 Tab）：房间信息 `DetailSkeleton`、成员 `ListItemSkeleton`、盒子 `ItemCardSkeleton`、标签 `Skeleton` 文本行、加入申请 `ListItemSkeleton`。5 个请求错峰到达，按区块独立切换 skeleton->内容 |
+| **BoxDetail** | SpinLoading + overlay | 复用真实 `BoxInfo`、按钮、标题和 `ItemList` 容器，物品网格使用 `ItemCardSkeleton` |
+| **ReservationOrderDetail** | SpinLoading 居中 | `ReservationDetailSkeleton` 对应订单信息、视图切换和两列预约卡片 |
+| **RoomSettings** | SpinLoading 居中 | 复用真实 `Content`、`Card`、`BoxGrid`、`TagList` 和 `MemberGrid`，在各容器内填充骨架块 |
 | **Scanner** | 相机 overlay | **不改动**（overlay 为相机初始化，非数据加载；参考订单下拉数据量小，用 antd 自身 loading 即可） |
-| **Notifications** | SpinLoading 居中 | `ListSkeleton` count=8 |
+| **Notifications** | SpinLoading 居中 | `NotificationListSkeleton`，对应标题、正文和时间三行结构 |
 | **MyReservations** | SpinLoading 居中 | `OrderSkeleton` × 4 |
 | **CreateItem** | 纯文本 | 仅盒子/标签选择器用 `FormSkeleton`（表单字段立即渲染，无需骨架） |
-| **MyTransferRecords** | SpinLoading + InfiniteScroll | 初始 `ListSkeleton` count=6；分页沿用 `InfiniteScroll` 自带 loading 指示（不再叠加底部小骨架） |
-| **MyItems** | SpinLoading 居中 | `ItemCardSkeleton` × N |
+| **MyTransferRecords** | SpinLoading + InfiniteScroll | 初始 `TransferRecordListSkeleton`；分页沿用 `InfiniteScroll` 自带 loading 指示 |
+| **MyItems** | SpinLoading 居中 | `MyItemListSkeleton`，对应横向 60px 图片和两行位置内容 |
 | **ReservationOrders** | SpinLoading 居中 | `OrderSkeleton` × 4 |
 | **ItemDetail** | 无（空白弹窗） | `DetailSkeleton` 仅覆盖**固定摘要区**（图片 80x80 + 名称 + meta 行）；history/comments/tags/reservations 为条件渲染，无需骨架 |
 | **CartPopup** | 按钮 loading | **不改动**（列表来自 `useCartStore` 同步读取，无加载态） |
@@ -216,7 +219,9 @@ function PageFallback() {
 - **SWR 页面**：用 `isLoading` 区分首次加载（skeleton）与后续刷新；**必须显式加 `keepPreviousData: true`**（`swr.ts` 仅导出 `swrFetcher`，未全局配置）。Warehouse 已具备；InHand 需补加。
 - **useEffect 页面**：用 `loading` state 控制，经 `useMinLoadingTime(loading)` 包裹后决定渲染 skeleton 还是内容。
 - **最小显示时间**：统一通过 `useMinLoadingTime`（默认 300ms），不要在各页内联实现。
-- **骨架条数**：按页面一屏可见量给具体值--网格页（Warehouse/InHand/MyItems/BoxDetail 物品列表）= 网格列数 × 2 行（桌面 `auto-fill, minmax(150px, 1fr)` 下动态列数，可取 `Math.max(6, 列数×2)` 或固定 8）；列表页（Notifications/MyTransferRecords）= 6~8；订单页 = 4。不再用"固定 6 条"的含糊说法。
+- **容器一致性**：加载态必须复用真实内容的 padding、搜索栏/Tab、分组标题和网格组件；禁止在 `Content` 内再叠加额外页面级 padding。
+- **方向一致性**：纵向物品网格、横向“我的物品”卡、通知行、流转记录卡和预约详情分别使用对应骨架，不以通用 `ListSkeleton` 或 `ItemCardSkeleton` 互相替代。
+- **骨架条数**：按页面一屏可见量给具体值--网格页（Warehouse/InHand/BoxDetail 物品列表）= 网格列数 × 2 行（桌面 `auto-fill, minmax(150px, 1fr)` 下动态列数，可取 `Math.max(6, 列数×2)` 或固定 8）；页面专用列表按一屏可见卡片数设置；订单页 = 4。不再用"固定 6 条"的含糊说法。
 - **`prefers-reduced-motion`**：经下方全局 CSS 覆盖，`@media (prefers-reduced-motion: reduce)` 下停掉 `.adm-skeleton-animated` 动画，显示静态骨架。
 
 #### 样式与主题（theme.css）
@@ -255,30 +260,30 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 
 #### Phase 1：基础组件 + 高频页 + 路由 fallback
 
-- [ ] `theme.css` 新增 dark `.adm-skeleton` 对比度覆盖 + `prefers-reduced-motion`
-- [ ] `useMinLoadingTime` 共享 hook
-- [ ] `BrandedPageFallback`（App.tsx `PageFallback` 替换）
-- [ ] `ItemCardSkeleton`、`ListSkeleton`、`DetailSkeleton`（前移，ItemDetail 依赖）+ `index.ts` barrel
-- [ ] Warehouse 接入（验证已有 `keepPreviousData`）
-- [ ] InHand 接入（补加 `keepPreviousData: true`）
-- [ ] ItemDetail 弹窗接入（仅摘要区）
+- [x] `theme.css` 新增 dark `.adm-skeleton` 对比度覆盖 + `prefers-reduced-motion`
+- [x] `useMinLoadingTime` 共享 hook
+- [x] `BrandedPageFallback`（App.tsx `PageFallback` 替换）
+- [x] `ItemCardSkeleton`、`ListSkeleton`、`DetailSkeleton`（前移，ItemDetail 依赖）+ `index.ts` barrel
+- [x] Warehouse 接入（验证已有 `keepPreviousData`）
+- [x] InHand 接入（补加 `keepPreviousData: true`）
+- [x] ItemDetail 弹窗接入（仅摘要区）
 
 #### Phase 2：中频页面
 
-- [ ] `OrderSkeleton`（订单卡片骨架）
-- [ ] Notifications 接入
-- [ ] MyReservations 接入
-- [ ] MyItems 接入
-- [ ] ReservationOrders 接入
-- [ ] ReservationOrderDetail 接入（用 `DetailSkeleton`）
+- [x] `OrderSkeleton`（订单卡片骨架）
+- [x] Notifications 接入（当前使用 `NotificationListSkeleton`）
+- [x] MyReservations 接入
+- [x] MyItems 接入（当前使用 `MyItemListSkeleton`）
+- [x] ReservationOrders 接入
+- [x] ReservationOrderDetail 接入（当前使用 `ReservationDetailSkeleton`）
 
 #### Phase 3：低频页面 + 收尾
 
-- [ ] `FormSkeleton`（仅选择器区域）
-- [ ] BoxDetail 接入
-- [ ] RoomSettings 接入（按区块）
-- [ ] MyTransferRecords 接入（初始 `ListSkeleton` + 沿用 InfiniteScroll 自带 loading）
-- [ ] CreateItem 接入（仅选择器）
+- [x] `FormSkeleton`（仅选择器区域）
+- [x] BoxDetail 接入
+- [x] RoomSettings 接入（按区块）
+- [x] MyTransferRecords 接入（当前使用 `TransferRecordListSkeleton`，分页沿用 InfiniteScroll loading）
+- [x] CreateItem 接入（仅选择器）
 
 > Scanner 与 CartPopup **不在范围内**，不做改动。
 
@@ -294,13 +299,14 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 | `client/src/components/skeleton/DetailSkeleton.tsx` | 新增 |
 | `client/src/components/skeleton/FormSkeleton.tsx` | 新增 |
 | `client/src/components/skeleton/OrderSkeleton.tsx` | 新增 |
+| `client/src/components/skeleton/PageSkeletons.tsx` | 新增：页面专用骨架 |
 | `client/src/hooks/useMinLoadingTime.ts` | 新增（新建 `hooks/` 目录） |
 | `client/src/App.tsx` | 修改：`PageFallback` -> branded fallback |
 | `client/src/styles/theme.css` | 修改：dark `.adm-skeleton` 对比度覆盖 + `prefers-reduced-motion` |
 | `client/src/pages/Warehouse.tsx` | 修改加载态 |
 | `client/src/pages/InHand.tsx` | 修改加载态 + 补 `keepPreviousData` |
 | `client/src/pages/BoxDetail.tsx` | 修改加载态 |
-| `client/src/pages/ReservationOrderDetail.tsx` | 修改加载态（`DetailSkeleton`） |
+| `client/src/pages/ReservationOrderDetail.tsx` | 修改加载态（`ReservationDetailSkeleton`） |
 | `client/src/pages/RoomSettings.tsx` | 修改加载态（按区块） |
 | `client/src/pages/Notifications.tsx` | 修改加载态 |
 | `client/src/pages/MyReservations.tsx` | 修改加载态 |
@@ -333,7 +339,7 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 
 ## 实施结果
 
-**Commit:** `6887e7f` — `feat: add skeleton loading to all data loading pages`
+**Original rollout commit:** `628c7b5` — `feat: add skeleton loading to all data loading pages (#4)`
 
 ### 新增文件
 
@@ -343,8 +349,9 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 | `client/src/components/skeleton/ItemCardSkeleton.tsx` | 物品卡片骨架（56x56 图 + 名称 + 标签） |
 | `client/src/components/skeleton/ListSkeleton.tsx` | 列表骨架（圆形头像 + 2 行文本）× N |
 | `client/src/components/skeleton/DetailSkeleton.tsx` | 详情摘要区（80x80 图 + 多行 meta） |
-| `client/src/components/skeleton/OrderSkeleton.tsx` | 订单卡片骨架（标题/状态/内容/按钮） |
-| `client/src/components/skeleton/FormSkeleton.tsx` | 表单选择器骨架（标签 + 输入框） |
+| `client/src/components/skeleton/OrderSkeleton.tsx` | 订单卡片骨架（标题、状态、时间和数量） |
+| `client/src/components/skeleton/FormSkeleton.tsx` | 表单选择器骨架（响应式选项块） |
+| `client/src/components/skeleton/PageSkeletons.tsx` | 页面专用骨架：横向物品卡、通知行、流转记录、预约详情 |
 | `client/src/hooks/useMinLoadingTime.ts` | 300ms 最小显示时间 hook |
 
 ### 修改文件
@@ -353,16 +360,16 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 |------|------|
 | `client/src/styles/theme.css` | dark `.adm-skeleton` 对比度覆盖 + `prefers-reduced-motion` |
 | `client/src/App.tsx` | `PageFallback` → branded fallback（PWA 图标 + 主题 SpinLoading） |
-| `client/src/pages/Warehouse.tsx` | SWR `isLoading` → `ItemCardSkeleton` × 8（网格） |
+| `client/src/pages/Warehouse.tsx` | SWR `isLoading` → 分组标题 + `ItemCardSkeleton` × 8（真实网格） |
 | `client/src/pages/InHand.tsx` | 补 `keepPreviousData` + `ItemCardSkeleton` × 8 |
-| `client/src/pages/BoxDetail.tsx` | `DetailSkeleton` + `ItemCardSkeleton` × 6 |
-| `client/src/pages/ReservationOrderDetail.tsx` | `DetailSkeleton` |
-| `client/src/pages/RoomSettings.tsx` | `DetailSkeleton` + `ListSkeleton` × 4 + `ItemCardSkeleton` × 4 |
-| `client/src/pages/Notifications.tsx` | `ListSkeleton` × 8 |
+| `client/src/pages/BoxDetail.tsx` | 在真实详情卡、按钮、标题和物品网格内渲染骨架 |
+| `client/src/pages/ReservationOrderDetail.tsx` | `ReservationDetailSkeleton` |
+| `client/src/pages/RoomSettings.tsx` | 在真实设置卡片、盒子/标签/成员容器内渲染骨架 |
+| `client/src/pages/Notifications.tsx` | `NotificationListSkeleton` |
 | `client/src/pages/MyReservations.tsx` | `OrderSkeleton` × 4 |
 | `client/src/pages/CreateItem.tsx` | `FormSkeleton`（仅选择器区域） |
-| `client/src/pages/MyTransferRecords.tsx` | `ListSkeleton` × 6 |
-| `client/src/pages/MyItems.tsx` | `ItemCardSkeleton` × 8 |
+| `client/src/pages/MyTransferRecords.tsx` | `TransferRecordListSkeleton` |
+| `client/src/pages/MyItems.tsx` | `MyItemListSkeleton` |
 | `client/src/pages/ReservationOrders.tsx` | `OrderSkeleton` × 4 |
 | `client/src/components/ItemDetail.tsx` | 新增 loading state + `DetailSkeleton`（摘要区） |
 
@@ -378,6 +385,16 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 - ✅ ItemDetail 弹窗立即显示 skeleton
 - ✅ 懒加载路由 branded fallback
 - ✅ Scanner / CartPopup 未改动
+
+### 布局对齐修订（2026-07-25）
+
+- 物品骨架卡与真实 `ItemCard` 统一为 `8px` padding、`var(--app-radius-m)`、56px 图片和相同纵向 gap。
+- Warehouse/InHand 加载态直接使用真实响应式网格；Warehouse 保留分组标题，移除 `Content` 内重复的 `16px` padding。
+- MyItems、Notifications、MyTransferRecords、ReservationOrderDetail 使用与真实卡片方向和层级一致的页面专用骨架。
+- MyReservations/ReservationOrders 加载时保留 TabBar；MyItems/InHand 加载时保留搜索栏。
+- CreateItem 只替换异步仓储位置选择器，二维码、名称和备注字段立即渲染。
+- BoxDetail/ReservationOrderDetail 仅在路由 `id` 变化时重新进入整页骨架，业务内刷新保留现有内容。
+- 响应式实测：375px 为 2 列、768px（含 56px 侧栏）为 4 列、1440px 为 8 列，三个视口均无横向溢出。
 
 ---
 

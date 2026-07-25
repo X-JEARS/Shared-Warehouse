@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Empty, Badge } from 'antd-mobile';
-import { ListSkeleton } from '../components/skeleton';
+import { NotificationListSkeleton } from '../components/skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -168,9 +168,25 @@ export default function Notifications() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('notifications.title')}</HeaderTitle>
         </Header>
-        <div style={{ padding: 16 }}>
-          <ListSkeleton count={8} />
-        </div>
+        {unreadCount > 0 && (
+          <div
+            style={{
+              padding: '12px 16px',
+              background: 'var(--app-color-bg)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <span style={{ fontSize: 14, color: 'var(--app-color-text-weak)' }}>
+              {t('notifications.unreadCount', { count: unreadCount })}
+            </span>
+            <span style={{ color: 'var(--app-color-primary)', fontSize: 14 }}>
+              {t('notifications.markAllRead')}
+            </span>
+          </div>
+        )}
+        <NotificationListSkeleton />
       </Container>
     );
   }

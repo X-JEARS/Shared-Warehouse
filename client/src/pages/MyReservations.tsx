@@ -212,9 +212,13 @@ export default function MyReservations() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('myReservations.title')}</HeaderTitle>
         </Header>
-        <div style={{ padding: 16 }}>
+        <TabBar>
+          <TabItem $active>{t('myReservations.active')} (0)</TabItem>
+          <TabItem>{t('myReservations.past')} (0)</TabItem>
+        </TabBar>
+        <Content>
           {Array.from({ length: 4 }).map((_, i) => <OrderSkeleton key={i} />)}
-        </div>
+        </Content>
       </Container>
     );
   }

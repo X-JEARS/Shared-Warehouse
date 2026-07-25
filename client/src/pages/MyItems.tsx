@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SearchBar, SpinLoading, Input, Button, Toast, Popup, Dialog, ActionSheet } from 'antd-mobile';
-import { ItemCardSkeleton } from '../components/skeleton';
+import { MyItemListSkeleton } from '../components/skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled from 'styled-components';
 import { itemApi, scanApi, userApi } from '../services/api';
@@ -666,12 +666,21 @@ export default function MyItems() {
     return (
       <Container>
         <Header>
+          <BackButton onClick={() => window.history.back()}>
+            ←
+          </BackButton>
           <HeaderTitle>{t('myItems.title')}</HeaderTitle>
         </Header>
+        <SearchContainer>
+          <SearchBar
+            value={searchText}
+            onChange={setSearchText}
+            placeholder={t('myItems.searchPlaceholder')}
+            showCancelButton
+          />
+        </SearchContainer>
         <Content>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: 16 }}>
-            {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-          </div>
+          <MyItemListSkeleton />
         </Content>
       </Container>
     );

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button, Tag, Dialog, Toast, DatePicker, Input } from 'antd-mobile';
-import { DetailSkeleton } from '../components/skeleton';
+import { ReservationDetailSkeleton } from '../components/skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled, { css } from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -286,13 +286,13 @@ export default function ReservationOrderDetail() {
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   useEffect(() => {
+    setLoading(true);
     loadDetail();
   }, [id]);
 
   const loadDetail = async () => {
     if (!id) return;
     try {
-      setLoading(true);
       const res: any = await reservationApi.getOrderDetail(parseInt(id, 10));
       setData(res.data);
     } catch (error) {
@@ -459,9 +459,9 @@ export default function ReservationOrderDetail() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('reservationOrderDetail.title')}</HeaderTitle>
         </Header>
-        <div style={{ padding: 16 }}>
-          <DetailSkeleton />
-        </div>
+        <Content>
+          <ReservationDetailSkeleton />
+        </Content>
       </Container>
     );
   }
