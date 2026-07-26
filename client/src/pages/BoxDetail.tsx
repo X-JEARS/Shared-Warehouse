@@ -245,7 +245,9 @@ export default function BoxDetail() {
         </Header>
         <Content>
           <DetailSkeleton withImage={false} card />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginTop: 16 }}>
+          <div style={{ marginTop: 16, height: 44, background: 'var(--app-color-primary)', borderRadius: 'var(--app-radius-btn)', opacity: 0.6 }} />
+          <div style={{ marginTop: 24, marginBottom: 12, height: 16, width: 80, background: 'var(--app-color-border)', borderRadius: 'var(--app-radius-s)' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
             {Array.from({ length: 6 }).map((_, i) => <ItemCardSkeleton key={i} />)}
           </div>
         </Content>

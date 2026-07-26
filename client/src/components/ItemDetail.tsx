@@ -6,6 +6,8 @@ import { itemApi, tagApi, reservationApi } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 import { DetailSkeleton } from './skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
+import type { CSSProperties } from 'react';
+import { Skeleton } from 'antd-mobile';
 
 const PopupContent = styled.div`
   position: relative;
@@ -367,9 +369,30 @@ export default function ItemDetail({
       bodyStyle={{ height: '80vh', borderRadius: '12px 12px 0 0' }}
     >
       <DetailPopupContent>
-        {showSkeleton ? (
+         {showSkeleton ? (
           <div style={{ padding: 20 }}>
             <DetailSkeleton />
+            <div style={{ marginTop: 16 }}>
+              <Skeleton animated style={{ '--width': '50px', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '80%', '--height': '13px', marginTop: 10 } as CSSProperties} />
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <Skeleton animated style={{ '--width': '40px', '--height': '14px' } as CSSProperties} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <Skeleton animated style={{ '--width': '50px', '--height': '24px', '--border-radius': '4px' } as CSSProperties} />
+                <Skeleton animated style={{ '--width': '40px', '--height': '24px', '--border-radius': '4px' } as CSSProperties} />
+                <Skeleton animated style={{ '--width': '55px', '--height': '24px', '--border-radius': '4px' } as CSSProperties} />
+              </div>
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <Skeleton animated style={{ '--width': '60px', '--height': '14px' } as CSSProperties} />
+              {Array.from({ length: 2 }).map((_, i) => (
+                <div key={i} style={{ marginTop: 10, padding: 10, background: 'var(--app-color-bg)', borderRadius: 'var(--app-radius-s)' }}>
+                  <Skeleton animated style={{ '--width': '60%', '--height': '14px' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': '40%', '--height': '12px', marginTop: 6 } as CSSProperties} />
+                </div>
+              ))}
+            </div>
           </div>
         ) : item && (
           <>
