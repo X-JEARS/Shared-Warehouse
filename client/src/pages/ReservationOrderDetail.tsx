@@ -286,13 +286,13 @@ export default function ReservationOrderDetail() {
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
 
   useEffect(() => {
+    setLoading(true);
     loadDetail();
   }, [id]);
 
   const loadDetail = async () => {
     if (!id) return;
     try {
-      setLoading(true);
       const res: any = await reservationApi.getOrderDetail(parseInt(id, 10));
       setData(res.data);
     } catch (error) {

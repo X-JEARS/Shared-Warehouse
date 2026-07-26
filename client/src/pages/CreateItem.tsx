@@ -7,6 +7,7 @@ import { itemApi, boxApi, tagApi } from '../services/api';
 import { useRoomStore } from '../stores/roomStore';
 import Scanner from '../components/Scanner';
 import { FormSkeleton } from '../components/skeleton';
+import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 
 const Container = styled.div`
   min-height: 100%;
@@ -77,6 +78,7 @@ export default function CreateItem() {
   const [boxes, setBoxes] = useState<any[]>([]);
   const [tags, setTags] = useState<any[]>([]);
   const [loadingBoxes, setLoadingBoxes] = useState(true);
+  const showBoxesLoading = useMinLoadingTime(loadingBoxes);
   const [showScanner, setShowScanner] = useState(false);
   const [formData, setFormData] = useState({
     qrcode: '',
@@ -188,23 +190,8 @@ export default function CreateItem() {
     );
   }
 
-  // 加载中
-  if (loadingBoxes) {
-    return (
-      <Container>
-        <Header>
-          <BackButton onClick={() => navigate(-1)}>←</BackButton>
-          <HeaderTitle>{t('createItem.title')}</HeaderTitle>
-        </Header>
-        <Content style={{ padding: 16 }}>
-          <FormSkeleton />
-        </Content>
-      </Container>
-    );
-  }
-
-  // 没有盒子
-  if (boxes.length === 0) {
+  // 没有盒子（仅在加载完成后判断）
+  if (!loadingBoxes && boxes.length === 0) {
     return (
       <Container>
         <Header>
@@ -268,17 +255,21 @@ export default function CreateItem() {
             />
           </Form.Item>
 
-          <Form.Item label={t('createItem.storageLocation')} required>
-            <Selector
-              options={boxes.map((b) => ({
-                label: b.box_name || t('createItem.boxId', { id: b.box_id }),
-                value: b.box_id.toString(),
-              }))}
-              value={formData.boxId ? [formData.boxId] : []}
-              onChange={(arr) => setFormData({ ...formData, boxId: arr[0] || '' })}
-              style={{ '--gap': '8px' }}
-            />
-          </Form.Item>
+          {showBoxesLoading ? (
+            <FormSkeleton />
+          ) : (
+            <Form.Item label={t('createItem.storageLocation')} required>
+              <Selector
+                options={boxes.map((b) => ({
+                  label: b.box_name || t('createItem.boxId', { id: b.box_id }),
+                  value: b.box_id.toString(),
+                }))}
+                value={formData.boxId ? [formData.boxId] : []}
+                onChange={(arr) => setFormData({ ...formData, boxId: arr[0] || '' })}
+                style={{ '--gap': '8px' }}
+              />
+            </Form.Item>
+          )}
 
           {tags.length > 0 && (
             <Form.Item label={t('createItem.tags')}>
@@ -316,6 +307,7 @@ export default function CreateItem() {
           color="primary"
           size="large"
           loading={loading}
+          disabled={showBoxesLoading}
           onClick={handleSubmit}
           style={{ marginTop: 24 }}
         >

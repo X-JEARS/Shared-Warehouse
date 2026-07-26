@@ -128,13 +128,13 @@ export default function BoxDetail() {
   const scannerRef = useRef<ScannerHandle>(null);
 
   useEffect(() => {
+    setLoading(true);
     loadBox();
   }, [id]);
 
   const loadBox = async () => {
     if (!id) return;
     try {
-      setLoading(true);
       const res: any = await boxApi.getById(parseInt(id));
       setBox(res.data);
     } catch (error: any) {
