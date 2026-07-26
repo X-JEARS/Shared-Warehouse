@@ -267,11 +267,13 @@ export default function ReservationOrders() {
       <Container>
         <Header>
           <WarehouseSelector />
-          <HeaderActions>
-            <IconButton onClick={() => setShowSearch(true)}>
-              <SearchOutline />
-            </IconButton>
-          </HeaderActions>
+          {currentRoom && (
+            <HeaderActions>
+              <IconButton onClick={() => setShowSearch(true)}>
+                <SearchOutline />
+              </IconButton>
+            </HeaderActions>
+          )}
         </Header>
         <TabBar>
           <TabItem $active>{t('reservationOrders.active')}</TabItem>
