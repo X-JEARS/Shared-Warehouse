@@ -413,3 +413,106 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 - "没有盒子"判断改为 `!loadingBoxes && boxes.length === 0`
 - 提交按钮 `disabled={showBoxesLoading}`
 - 加 `useMinLoadingTime(loadingBoxes)` 防闪烁
+
+---
+
+## 第二轮修复：骨架与真实内容布局对齐（已修复）
+
+针对"骨架屏与真实内容样式/边距不一致"的复核，已修复以下 4 处（Commit: 待提交）。
+
+### FIX 5 - ItemCardSkeleton.tsx：对齐真实 ItemCard
+
+**问题**：骨架卡片用 `--app-radius-card` / `padding:12` / 无阴影 / 图片 `--app-radius-m`，真实 `ItemCard` 是 `--app-radius-m` / `padding:8` / `box-shadow` / 图片 `--app-radius-s`。
+
+**修复**：改为 `padding:8`、`--app-radius-m`、`box-shadow: var(--app-shadow-card)`、图片 `--app-radius-s`、flex column gap 6/4、标签 `--app-radius-s`，与 `CardContainer` 一致。惠及 Warehouse / InHand / BoxDetail / RoomSettings。
+
+### FIX 6 - Warehouse.tsx：双重 padding + 缺分组结构
+
+**问题**：骨架 grid 自带 `padding:16`，又在 `<Content>`（`padding:12px 16px`）内 -> 水平边距 32px（真实 16px）；且未体现 `ItemList -> BoxGroup -> BoxTitle -> ItemGrid` 的分组结构。
+
+**修复**：骨架改用真实内容同一套布局组件 `ItemList / BoxGroup / BoxTitle / ItemGrid`，`BoxTitle` 内放一根 Skeleton 条模拟分组标题。padding/gap/结构与真实内容逐像素对齐。
+
+### FIX 7 - InHand.tsx：双重 padding
+
+**问题**：同 Warehouse，骨架 grid 自带 `padding:16` 叠加 `Content` padding。
+
+**修复**：裸 div 换成真实内容用的 `ItemGrid`（无额外 padding）。
+
+### FIX 8 - MyItems.tsx：骨架形态全错 + 双重 padding
+
+**问题**：真实 MyItems 是**单列纵向行列表**（宽行卡片），骨架却是**两列迷你卡片网格**，形态完全不符；且自带 `padding:16` 叠加 `Content` padding。
+
+**修复**：改用 `ListSkeleton count={6}` 匹配纵向列表形态，去掉双重 padding。
+
+---
+
+## 待修复：骨架与真实内容不匹配（彻查结论）
+
+对全部 9 个使用 skeleton 的页面（除已修的 Warehouse / InHand / MyItems 外）逐一比对"骨架分支 vs 真实内容分支"，发现 **8 个页面存在实质性不匹配**。根因是几个共享 skeleton 组件本身设计与真实卡片不符，且多页用裸 `<div style={{padding}}>` 包裹而非复用真实容器组件（与 Warehouse 那类问题同源）。
+
+### 跨页面根因（组件级）
+
+| 组件 | 问题 | 影响页面 |
+|---|---|---|
+| `OrderSkeleton` | 底部有个 80×32 按钮（真实 `OrderCard` 没有）；radius 用 `--app-radius-card`（真实 `--app-radius-m`）；无 `box-shadow` | MyReservations, ReservationOrders |
+| `DetailSkeleton` | 永远带 80×80 图、无 Card 背景。对有图的摘要（ItemDetail）正确；对无图且在 Card 内的头部（BoxInfo / OrderInfo / room-info）错误 | BoxDetail, ReservationOrderDetail, RoomSettings（ItemDetail 正确） |
+| `ListSkeleton` | 固定"40 圆头像 + 横向 2 行 + 分隔线"形态，与多页真实形态不符 | Notifications（纵向堆叠无头像）, MyTransferRecords（嵌套卡片）, RoomSettings（无匹配分区） |
+| `CenterState` 误用 | 空态/错误态容器（居中、`padding:60px 24px`）被当列表骨架容器 | MyTransferRecords |
+
+### 各页面待修复项
+
+#### 🔴 P1 - MyTransferRecords.tsx（最差）
+- 骨架套在 `CenterState`（`padding:60px 24px` + 居中 + `min-height:240`）+ 内层 `padding:16` -> 边距 40px/76px vs 真实 12px。
+- 扁平分隔行 vs 真实**嵌套卡片**（头部 + TypeBadge + 物品子列表）；圆头像 vs 方形 38×38 物品图；无卡片背景/圆角/阴影；`text-align:center` 错误；骨架高度远小于真实。
+- **修法**：脱离 `CenterState`，用真实 `Content` 容器 + 接近"卡片含子列表"的骨架。
+
+#### 🔴 P1 - ReservationOrderDetail.tsx（最差）
+- 只骨架了 OrderInfo 摘要；**主体内容**（SectionTitle + ViewToggle + ReservationGrid + Footer）完全缺失，加载后弹入。
+- DetailSkeleton 多 80×80 图、缺 OrderInfo 的 Card 容器；wrapper 不是 `Content`。
+- **修法**：骨架覆盖 ReservationGrid 主体；DetailSkeleton 去图 + Card 容器。
+
+#### 🔴 P1 - RoomSettings.tsx
+- 5 个分区（房间信息 / 加入申请 / 盒子 / 标签 / 成员）结构未体现；各分区骨架形态全错。
+- 盒子/成员是 2 列卡片网格（`repeat(2,1fr)`, gap 10），非 avatar 列表；标签是 pill 流式；没用 `Content` / `Card` 容器；DetailSkeleton 多余图片。
+- **修法**：按 5 个 Card 分区分别给骨架，盒子/成员用 2 列网格、标签用 pill 流式。
+
+#### 🟠 P2 - MyReservations.tsx / ReservationOrders.tsx（共性问题）
+- **TabBar 被省略** -> 加载完内容下跳 ~38px。
+- `OrderSkeleton` 底部假 80×32 按钮 -> 卡片高 ~44px；radius `card` vs `m`；无阴影。
+- ReservationOrders 额外 NIT：搜索图标在骨架里未按 `currentRoom` 守卫。
+- **修法**：骨架分支补 `TabBar`；改 `OrderSkeleton` 组件（去按钮、radius m、加阴影）一改两修。
+
+#### 🟠 P2 - Notifications.tsx
+- ListSkeleton 是**横向**行（40 圆头像 + 2 行），真实通知是**纵向**堆叠（行内 emoji + 标题 + 内容 + 时间，无头像）-> 轴向翻转。
+- 行 padding 12 vs 16；未读数条带被省略（可能弹入）。
+- **修法**：换纵向堆叠骨架（无头像），或调整 ListSkeleton 形态。
+
+#### 🟡 P3 - ItemDetail.tsx（弹窗）
+- 摘要形态匹配（80×80 图 + 18px 标题 + 3 行 + padding 20，✓）。
+- 但**只骨架了固定摘要**，80vh 弹窗的 ScrollableDetails（备注/标签/历史/评论）全空；未表示"预约"按钮。
+- **修法**：补滚动区占位，避免 80vh 大片空白。
+
+#### 🟡 P3 - BoxDetail.tsx
+- 物品网格部分 ✓（复用 Content + ItemGrid）。
+- DetailSkeleton 缺 BoxInfo 的 Card 容器、多 80×80 图（盒子头部只有 emoji）；缺"存入物品"按钮和"物品清单"标题。
+- **修法**：DetailSkeleton 去图 + Card 容器；补按钮/标题占位。
+
+#### 🟡 P3 - CreateItem.tsx
+- 作用域 ✓（仅盒子选择器，表单字段立即渲染）。
+- FormSkeleton 是**堆叠** 30% 标签 + 44px 输入条，真实是**横向** Form.Item + Selector pill 芯片 -> 方向/形态不符；标签选择器无骨架（加载后弹入）。
+- **修法**：FormSkeleton 改横向 Selector 形态；标签选择器加骨架。
+
+### 修复优先级建议
+
+- **P0（组件级一改多修，性价比最高）**：改 `OrderSkeleton`（去按钮、radius m、加阴影）+ `DetailSkeleton`（图片可选 / 无图变体 + Card 背景）-> 立刻惠及 4+ 页。
+- **P1（结构性重写，工作量大）**：MyTransferRecords、ReservationOrderDetail、RoomSettings。
+- **P2（小改）**：MyReservations / ReservationOrders 补 `TabBar`；Notifications 换骨架形态。
+- **P3（收尾）**：ItemDetail 补滚动区、BoxDetail 补 Card/按钮、CreateItem 改 FormSkeleton。
+
+### 已核实正确（无需改动）
+
+- `useMinLoadingTime` hook 逻辑、5 个骨架组件 + barrel、`App.tsx` branded fallback、`theme.css` dark 覆盖 + `prefers-reduced-motion`。
+- Warehouse / InHand / MyItems：经第二轮修复后骨架与真实内容对齐。
+- BoxDetail 的物品网格部分（复用 Content + ItemGrid）。
+- Scanner / CartPopup：未改动（按计划）。
+- `tsc --noEmit` 通过。

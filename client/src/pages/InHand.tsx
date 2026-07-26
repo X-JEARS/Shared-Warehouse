@@ -88,9 +88,9 @@ export default function InHand() {
           <HeaderTitle>{t('inHand.title')}</HeaderTitle>
         </Header>
         <Content>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, padding: 16 }}>
+          <ItemGrid>
             {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-          </div>
+          </ItemGrid>
         </Content>
       </Container>
     );
