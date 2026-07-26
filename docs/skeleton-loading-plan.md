@@ -460,6 +460,8 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 | P1 | `cd6cbc8` | MyTransferRecords/ReservationOrderDetail/RoomSettings 结构性重写，新建 3 个专用骨架 | ✅ subagent 逐页比对 |
 | P2 | `40ffcc8` | Notifications 纵向骨架 + MyReservations/ReservationOrders 补 TabBar | ✅ subagent 逐页比对 |
 | P3 | `6acad57` | ItemDetail 补滚动区 + BoxDetail 补按钮/标题 + CreateItem FormSkeleton 改横向 | ✅ subagent 逐页比对 |
+| 收尾 | `6db979c` | 关闭 2 个轻微残留（FormSkeleton 横向 flex + ReservationOrders 搜索图标守卫） | ✅ |
+| 文档 | `27568f3` | 更新文档为完整验证结论 | ✅ |
 
 ### 逐项验证结果
 
@@ -472,10 +474,10 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 | P1 RoomSettings | `cd6cbc8` | subagent | ✅ 4 个常驻分区镜像：房间信息（无图 DetailSkeleton）、盒子（2 列网格）、标签（pill 流式）、成员（2 列头像网格），用真实 `Content`/`Card`。加入申请分区按需省略（合理） |
 | P2 Notifications | `40ffcc8` | subagent | ✅ 新 `NotificationSkeleton`：纵向堆叠、20×20 小图标（非 40px 圆头像）、padding 16 |
 | P2 MyReservations | `40ffcc8` | subagent | ✅ 骨架分支已补 TabBar，消除 ~38px 下跳 |
-| P2 ReservationOrders | `40ffcc8` | subagent | 🟡 PARTIAL：TabBar 已补 ✅；但搜索图标在骨架里仍未按 `currentRoom` 守卫（NIT，实际几乎无影响——loading 仅在 currentRoom 存在时触发） |
+| P2 ReservationOrders | `40ffcc8` + `6db979c` | subagent | ✅ TabBar 已补 + 搜索图标已加 `currentRoom` 守卫 |
 | P3 ItemDetail | `6acad57` | subagent | ✅ 摘要下补了备注/标签/历史-评论区块占位，80vh 弹窗不再大片空白 |
 | P3 BoxDetail | `6acad57` | subagent | ✅ DetailSkeleton `withImage={false} card` + "存入物品"按钮占位 + "物品清单"标题占位 + 物品网格 |
-| P3 CreateItem | `6acad57` | subagent + 亲自读 | 🟡 PARTIAL：pill 芯片形态 ✅、标签选择器也加了骨架 ✅；但 FormSkeleton 的标签仍是堆叠在上方（非横向 Form.Item 的左侧标签）-> 加载完标签位置会从"顶部"跳到"左侧" |
+| P3 CreateItem | `6acad57` + `6db979c` | subagent + 亲自读 | ✅ pill 芯片形态 + 标签选择器骨架 + FormSkeleton 改为横向 flex（标签左 + 芯片右）匹配真实 Form.Item |
 
 ### 新增骨架组件
 
@@ -485,10 +487,10 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 | `client/src/components/skeleton/ReservationGridSkeleton.tsx` | 2 列预约卡片网格骨架 |
 | `client/src/components/skeleton/NotificationSkeleton.tsx` | 纵向通知项骨架（小图标 + 标题 + 内容 + 时间） |
 
-### 轻微残留（待后续处理）
+### 已关闭残留（`6db979c`）
 
-1. **CreateItem FormSkeleton 标签位置**（🟡 轻微布局跳变）：FormSkeleton 把 30% 标签条放在芯片上方（`marginBottom: 8` 堆叠），而真实 `<Form layout="horizontal">` 的标签在左侧。修法：把标签和芯片改成横向 flex（标签左 + 芯片右）。
-2. **ReservationOrders 搜索图标守卫**（⚪ NIT，实际无影响）：骨架分支无条件渲染搜索图标，真实分支 `{currentRoom && ...}` 守卫。因 loading 仅在 currentRoom 存在时触发，实际不会出错；要彻底对齐就加同一个守卫。
+1. **CreateItem FormSkeleton 标签位置**：✅ 已改为横向 flex（标签左 + 芯片右），匹配 `<Form layout="horizontal">`。
+2. **ReservationOrders 搜索图标守卫**：✅ 已加 `currentRoom &&` 守卫，与真实分支一致。
 
 ### 已核实正确（无需改动）
 
