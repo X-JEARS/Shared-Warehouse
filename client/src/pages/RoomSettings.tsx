@@ -797,13 +797,13 @@ export default function RoomSettings() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('roomSettings.title')}</HeaderTitle>
         </Header>
-        <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <DetailSkeleton />
+        <Content>
+          <DetailSkeleton withImage={false} card />
           <ListSkeleton count={4} />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
             {Array.from({ length: 4 }).map((_, i) => <ItemCardSkeleton key={i} />)}
           </div>
-        </div>
+        </Content>
       </Container>
     );
   }

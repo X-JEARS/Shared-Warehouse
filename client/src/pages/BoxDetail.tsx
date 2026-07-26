@@ -244,7 +244,7 @@ export default function BoxDetail() {
           <HeaderTitle>{t('boxDetail.title')}</HeaderTitle>
         </Header>
         <Content>
-          <DetailSkeleton />
+          <DetailSkeleton withImage={false} card />
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12, marginTop: 16 }}>
             {Array.from({ length: 6 }).map((_, i) => <ItemCardSkeleton key={i} />)}
           </div>

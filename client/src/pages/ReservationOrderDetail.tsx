@@ -459,9 +459,9 @@ export default function ReservationOrderDetail() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('reservationOrderDetail.title')}</HeaderTitle>
         </Header>
-        <div style={{ padding: 16 }}>
-          <DetailSkeleton />
-        </div>
+        <Content>
+          <DetailSkeleton withImage={false} card />
+        </Content>
       </Container>
     );
   }
