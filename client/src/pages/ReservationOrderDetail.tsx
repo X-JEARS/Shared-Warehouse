@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Tag, Dialog, Toast, DatePicker, Input } from 'antd-mobile';
-import { DetailSkeleton } from '../components/skeleton';
+import { Button, Tag, Dialog, Toast, DatePicker, Input, Skeleton } from 'antd-mobile';
+import { DetailSkeleton, ReservationGridSkeleton } from '../components/skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled, { css } from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -461,6 +462,13 @@ export default function ReservationOrderDetail() {
         </Header>
         <Content>
           <DetailSkeleton withImage={false} card />
+          <div style={{ marginTop: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Skeleton animated style={{ '--width': '80px', '--height': '15px' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': '50px', '--height': '24px', '--border-radius': '6px' } as CSSProperties} />
+          </div>
+          <div style={{ marginTop: 12 }}>
+            <ReservationGridSkeleton />
+          </div>
         </Content>
       </Container>
     );

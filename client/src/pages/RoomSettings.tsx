@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { DetailSkeleton, ListSkeleton, ItemCardSkeleton } from '../components/skeleton';
+import { DetailSkeleton } from '../components/skeleton';
+import type { CSSProperties } from 'react';
+import { Skeleton } from 'antd-mobile';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import {
   Button,
@@ -798,11 +800,52 @@ export default function RoomSettings() {
           <HeaderTitle>{t('roomSettings.title')}</HeaderTitle>
         </Header>
         <Content>
+          {/* Room info card */}
           <DetailSkeleton withImage={false} card />
-          <ListSkeleton count={4} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
-            {Array.from({ length: 4 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-          </div>
+
+          {/* Box management card (2-col grid) */}
+          <Card style={{ marginTop: 12 }}>
+            <CardHeader>
+              <Skeleton animated style={{ '--width': '70px', '--height': '14px' } as CSSProperties} />
+            </CardHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, padding: '12px 16px' }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} style={{ background: 'var(--app-color-hover)', borderRadius: 'var(--app-radius-m)', padding: 12 }}>
+                  <Skeleton animated style={{ '--width': '70%', '--height': '14px' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': '50%', '--height': '12px', marginTop: 6 } as CSSProperties} />
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Tag management card (pill flow) */}
+          <Card style={{ marginTop: 12 }}>
+            <CardHeader>
+              <Skeleton animated style={{ '--width': '50px', '--height': '14px' } as CSSProperties} />
+            </CardHeader>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '12px 16px' }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} animated style={{ '--width': `${40 + i * 15}px`, '--height': '24px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+              ))}
+            </div>
+          </Card>
+
+          {/* Member management card (2-col grid) */}
+          <Card style={{ marginTop: 12 }}>
+            <CardHeader>
+              <Skeleton animated style={{ '--width': '80px', '--height': '14px' } as CSSProperties} />
+            </CardHeader>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, padding: '12px 16px' }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} style={{ background: 'var(--app-color-hover)', borderRadius: 'var(--app-radius-m)', padding: 12, display: 'flex', alignItems: 'center' }}>
+                  <Skeleton animated style={{ '--width': '32px', '--height': '32px', '--border-radius': '50%' } as CSSProperties} />
+                  <div style={{ marginLeft: 8, flex: 1 }}>
+                    <Skeleton animated style={{ '--width': '60%', '--height': '13px' } as CSSProperties} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
         </Content>
       </Container>
     );
