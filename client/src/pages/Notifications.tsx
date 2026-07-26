@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Empty, Badge } from 'antd-mobile';
-import { ListSkeleton } from '../components/skeleton';
+import { NotificationSkeleton } from '../components/skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
@@ -168,8 +168,8 @@ export default function Notifications() {
           <BackButton onClick={() => navigate(-1)}>←</BackButton>
           <HeaderTitle>{t('notifications.title')}</HeaderTitle>
         </Header>
-        <div style={{ padding: 16 }}>
-          <ListSkeleton count={8} />
+        <div>
+          {Array.from({ length: 6 }).map((_, i) => <NotificationSkeleton key={i} />)}
         </div>
       </Container>
     );

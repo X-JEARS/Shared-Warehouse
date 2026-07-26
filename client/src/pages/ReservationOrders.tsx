@@ -273,9 +273,13 @@ export default function ReservationOrders() {
             </IconButton>
           </HeaderActions>
         </Header>
-        <div style={{ padding: 16 }}>
+        <TabBar>
+          <TabItem $active>{t('reservationOrders.active')}</TabItem>
+          <TabItem>{t('reservationOrders.past')}</TabItem>
+        </TabBar>
+        <Content>
           {Array.from({ length: 4 }).map((_, i) => <OrderSkeleton key={i} />)}
-        </div>
+        </Content>
       </Container>
     );
   }
