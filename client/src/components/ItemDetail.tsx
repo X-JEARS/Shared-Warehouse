@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Popup, Button, Input, Toast } from 'antd-mobile';
+import { Popup, Button, Input, Toast, Skeleton } from 'antd-mobile';
+import type { CSSProperties } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { itemApi, tagApi, reservationApi } from '../services/api';
@@ -367,9 +368,56 @@ export default function ItemDetail({
     >
       <DetailPopupContent>
         {showSkeleton ? (
-          <FixedSummary>
-            <DetailSkeleton />
-          </FixedSummary>
+          <>
+            <FixedSummary>
+              <DetailSkeleton />
+            </FixedSummary>
+            <ScrollableDetails aria-hidden="true">
+              <Section>
+                <SectionTitle>
+                  <Skeleton animated style={{ '--width': '50px', '--height': '14px' } as CSSProperties} />
+                </SectionTitle>
+                <Skeleton animated style={{ '--width': '80%', '--height': '13px' } as CSSProperties} />
+              </Section>
+
+              <Section>
+                <SectionTitle>
+                  <Skeleton animated style={{ '--width': '40px', '--height': '14px' } as CSSProperties} />
+                </SectionTitle>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {[50, 40, 55].map((width) => (
+                    <Skeleton
+                      key={width}
+                      animated
+                      style={{ '--width': `${width}px`, '--height': '24px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties}
+                    />
+                  ))}
+                </div>
+              </Section>
+
+              <Section>
+                <SectionTitle>
+                  <Skeleton animated style={{ '--width': '60px', '--height': '14px' } as CSSProperties} />
+                </SectionTitle>
+                {Array.from({ length: 2 }).map((_, index) => (
+                  <HistoryItem key={index}>
+                    <Skeleton animated style={{ '--width': index === 0 ? '64%' : '52%', '--height': '14px' } as CSSProperties} />
+                    <Skeleton animated style={{ '--width': '40%', '--height': '12px', marginTop: 6 } as CSSProperties} />
+                  </HistoryItem>
+                ))}
+              </Section>
+
+              <Section>
+                <SectionTitle>
+                  <Skeleton animated style={{ '--width': '72px', '--height': '14px' } as CSSProperties} />
+                </SectionTitle>
+                <Skeleton
+                  animated
+                  style={{ '--width': '100%', '--height': '32px', '--border-radius': 'var(--app-radius-input)' } as CSSProperties}
+                />
+              </Section>
+            </ScrollableDetails>
+          </>
         ) : item && (
           <>
             <FixedSummary>

@@ -272,7 +272,11 @@ export default function CreateItem() {
             )}
           </Form.Item>
 
-          {tags.length > 0 && (
+          {showBoxesLoading ? (
+            <Form.Item label={t('createItem.tags')}>
+              <FormSkeleton />
+            </Form.Item>
+          ) : tags.length > 0 && (
             <Form.Item label={t('createItem.tags')}>
               <Selector
                 options={tags.map((tag) => ({

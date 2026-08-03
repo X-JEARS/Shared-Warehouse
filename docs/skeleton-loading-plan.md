@@ -1,7 +1,7 @@
 # Skeleton Loading 实现方案
 
 **Date:** 2026-07-21
-**Last updated:** 2026-07-25
+**Last updated:** 2026-08-03
 **Status:** ✅ 已完成（2026-07-21）
 **Priority:** MEDIUM（用户体验优化）
 
@@ -13,6 +13,7 @@
 > - **改用 antd-mobile 内置 `Skeleton` / `Skeleton.Title` / `Skeleton.Paragraph`**（已确认 v5.34 提供，`animated` + `--width/--height/--border-radius` CSS 变量），不再从零实现 shimmer 与 `SkeletonBase`；相应不新增 `--app-color-skeleton` 变量，改为 dark 模式 `.adm-skeleton` 对比度覆盖 + `prefers-reduced-motion`。
 > - `keepPreviousData` per-call 说明、骨架条数规则、Phase 依赖（`DetailSkeleton` 前移到 Phase 1）、构建校验等。
 > - **布局对齐修订（2026-07-25）**：加载态改为复用真实页面的容器、搜索栏、Tab、分组标题和响应式网格；新增页面专用骨架，避免用同一通用列表/网格骨架替代不同方向的真实卡片。
+> - **详情补全（2026-08-03）**：ItemDetail 的 skeleton 扩展到滚动详情区；CreateItem 的异步标签选择器与仓储位置选择器使用相同的加载占位。
 
 ---
 
@@ -208,7 +209,7 @@ function PageFallback() {
 | **MyTransferRecords** | SpinLoading + InfiniteScroll | 初始 `TransferRecordListSkeleton`；分页沿用 `InfiniteScroll` 自带 loading 指示 |
 | **MyItems** | SpinLoading 居中 | `MyItemListSkeleton`，对应横向 60px 图片和两行位置内容 |
 | **ReservationOrders** | SpinLoading 居中 | `OrderSkeleton` × 4 |
-| **ItemDetail** | 无（空白弹窗） | `DetailSkeleton` 仅覆盖**固定摘要区**（图片 80x80 + 名称 + meta 行）；history/comments/tags/reservations 为条件渲染，无需骨架 |
+| **ItemDetail** | 无（空白弹窗） | `DetailSkeleton` 覆盖**固定摘要区**（图片 80x80 + 名称 + meta 行），滚动详情区使用与备注、标签、流转记录和评论结构一致的占位块 |
 | **CartPopup** | 按钮 loading | **不改动**（列表来自 `useCartStore` 同步读取，无加载态） |
 | **MainLayout** | 无 | 不需要（badge 首次显示 0） |
 
@@ -266,7 +267,7 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 - [x] `ItemCardSkeleton`、`ListSkeleton`、`DetailSkeleton`（前移，ItemDetail 依赖）+ `index.ts` barrel
 - [x] Warehouse 接入（验证已有 `keepPreviousData`）
 - [x] InHand 接入（补加 `keepPreviousData: true`）
-- [x] ItemDetail 弹窗接入（仅摘要区）
+- [x] ItemDetail 弹窗接入（固定摘要区 + 滚动详情区）
 
 #### Phase 2：中频页面
 
@@ -314,7 +315,7 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 | `client/src/pages/MyTransferRecords.tsx` | 修改加载态 |
 | `client/src/pages/MyItems.tsx` | 修改加载态 |
 | `client/src/pages/ReservationOrders.tsx` | 修改加载态 |
-| `client/src/components/ItemDetail.tsx` | 新增加载态（仅摘要区） |
+| `client/src/components/ItemDetail.tsx` | 新增加载态（固定摘要区 + 滚动详情区） |
 | `client/src/pages/Scanner.tsx` | **不改** |
 | `client/src/components/CartPopup.tsx` | **不改** |
 
@@ -330,7 +331,7 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 - **default / rounded / compact 三种 style variant** 下骨架圆角随 `--border-radius: var(--app-radius-*)` 正确变化
 - 数据加载 < 300ms 时 skeleton 不闪烁（通过 `useMinLoadingTime` 生效）
 - 下拉刷新/筛选切换不显示 skeleton（保持现有内容）
-- ItemDetail 弹窗打开后立即显示摘要区 skeleton 而非空白
+- ItemDetail 弹窗打开后立即显示覆盖摘要和滚动详情区的 skeleton，而非下半区空白
 - 懒加载路由首次进入显示 branded fallback（图标 + 主题 SpinLoading，非裸 SpinLoading）
 - 不影响现有 SpinLoading 在 Scanner overlay 和按钮 loading 中的使用
 - CartPopup 与 Scanner 行为不变（未改动）
@@ -367,11 +368,11 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 | `client/src/pages/RoomSettings.tsx` | 在真实设置卡片、盒子/标签/成员容器内渲染骨架 |
 | `client/src/pages/Notifications.tsx` | `NotificationListSkeleton` |
 | `client/src/pages/MyReservations.tsx` | `OrderSkeleton` × 4 |
-| `client/src/pages/CreateItem.tsx` | `FormSkeleton`（仅选择器区域） |
+| `client/src/pages/CreateItem.tsx` | `FormSkeleton`（仓储位置与标签选择器区域） |
 | `client/src/pages/MyTransferRecords.tsx` | `TransferRecordListSkeleton` |
 | `client/src/pages/MyItems.tsx` | `MyItemListSkeleton` |
 | `client/src/pages/ReservationOrders.tsx` | `OrderSkeleton` × 4 |
-| `client/src/components/ItemDetail.tsx` | 新增 loading state + `DetailSkeleton`（摘要区） |
+| `client/src/components/ItemDetail.tsx` | 新增 loading state + `DetailSkeleton`（摘要区）+ 滚动详情占位 |
 
 ### 验收结果
 
@@ -392,7 +393,7 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 - Warehouse/InHand 加载态直接使用真实响应式网格；Warehouse 保留分组标题，移除 `Content` 内重复的 `16px` padding。
 - MyItems、Notifications、MyTransferRecords、ReservationOrderDetail 使用与真实卡片方向和层级一致的页面专用骨架。
 - MyReservations/ReservationOrders 加载时保留 TabBar；MyItems/InHand 加载时保留搜索栏。
-- CreateItem 只替换异步仓储位置选择器，二维码、名称和备注字段立即渲染。
+- CreateItem 只替换异步仓储位置与标签选择器，二维码、名称和备注字段立即渲染。
 - BoxDetail/ReservationOrderDetail 仅在路由 `id` 变化时重新进入整页骨架，业务内刷新保留现有内容。
 - 响应式实测：375px 为 2 列、768px（含 56px 侧栏）为 4 列、1440px 为 8 列，三个视口均无横向溢出。
 
@@ -426,7 +427,7 @@ html[data-theme='dark'] .adm-skeleton.adm-skeleton-animated {
 
 **修复**：
 - 移除整页 `FormSkeleton` 早返回；表单字段立即渲染
-- 盒子选择器在 `showBoxesLoading` 时显示 `FormSkeleton`，加载完切回 Selector
+- 盒子和标签选择器在 `showBoxesLoading` 时显示 `FormSkeleton`，加载完切回 Selector 或按数据决定是否显示标签行
 - "没有盒子"判断改为 `!loadingBoxes && boxes.length === 0`
 - 提交按钮 `disabled={showBoxesLoading}`
 - 加 `useMinLoadingTime(loadingBoxes)` 防闪烁
