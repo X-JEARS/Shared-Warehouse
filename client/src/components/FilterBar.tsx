@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { RightOutline } from 'antd-mobile-icons';
 import { boxApi, tagApi } from '../services/api';
 
 const BoxTabBar = styled.div`
+  position: relative;
   background: var(--app-color-surface);
   display: flex;
   gap: 20px;
@@ -20,6 +21,8 @@ const BoxTabBar = styled.div`
 `;
 
 const BoxTab = styled.button<{ $active?: boolean }>`
+  position: relative;
+  z-index: 1;
   flex: 0 0 auto;
   padding: 10px 0 8px;
   border: 0;
@@ -29,19 +32,20 @@ const BoxTab = styled.button<{ $active?: boolean }>`
   font-size: 14px;
   font-weight: ${(props) => (props.$active ? 500 : 400)};
   white-space: nowrap;
-  position: relative;
   cursor: pointer;
+`;
 
-  &::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: 2px;
-    border-radius: 1px;
-    background: ${(props) => (props.$active ? 'var(--app-color-primary)' : 'transparent')};
-  }
+const BoxTabIndicator = styled.div<{ $left: number; $width: number; $visible: boolean; $animated: boolean }>`
+  position: absolute;
+  bottom: 0;
+  left: ${(props) => props.$left}px;
+  width: ${(props) => props.$width}px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--app-color-primary);
+  opacity: ${(props) => (props.$visible ? 1 : 0)};
+  transition: ${(props) => (props.$animated ? 'left 0.24s cubic-bezier(0.22, 0.61, 0.36, 1), width 0.24s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none')};
+  pointer-events: none;
 `;
 
 const TagBubble = styled.button<{ $active?: boolean }>`
@@ -186,6 +190,12 @@ interface FilterBarProps {
   selectedTag?: number;
   onFilterChange: (filters: { boxId?: number | 'out-of-stock'; tagId?: number }) => void;
   onBoxesChange?: (boxes: Box[]) => void;
+  swipeProgress?: {
+    fromIndex: number;
+    toIndex: number;
+    progress: number;
+  };
+  swipeAnimating?: boolean;
 }
 
 interface Box {
@@ -204,11 +214,23 @@ export default function FilterBar({
   selectedTag,
   onFilterChange,
   onBoxesChange,
+  swipeProgress,
+  swipeAnimating = false,
 }: FilterBarProps) {
   const { t } = useTranslation();
   const [boxes, setBoxes] = useState<Box[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagDrawerVisible, setTagDrawerVisible] = useState(false);
+  const tabBarRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0, visible: false });
+
+  const boxFilterIds = [undefined, 'out-of-stock', ...boxes.map((box) => box.box_id)] as Array<number | 'out-of-stock' | undefined>;
+  const clampBoxIndex = (index: number) => Math.max(0, Math.min(boxFilterIds.length - 1, index));
+  const selectedBoxIndex = clampBoxIndex(boxFilterIds.findIndex((boxId) => boxId === selectedBox));
+  const visualSelectedBoxIndex = swipeProgress && swipeProgress.progress >= 0.999
+    ? clampBoxIndex(swipeProgress.toIndex)
+    : selectedBoxIndex;
 
   useEffect(() => {
     setTagDrawerVisible(false);
@@ -222,6 +244,56 @@ export default function FilterBar({
       setTags([]);
     }
   }, [roomId]);
+
+  useLayoutEffect(() => {
+    const tabBar = tabBarRef.current;
+    if (!tabBar || boxFilterIds.length === 0) {
+      setIndicator((current) => current.visible ? { left: 0, width: 0, visible: false } : current);
+      return;
+    }
+
+    const fromIndex = clampBoxIndex(swipeProgress?.fromIndex ?? selectedBoxIndex);
+    const toIndex = clampBoxIndex(swipeProgress?.toIndex ?? fromIndex);
+    const progress = Math.max(0, Math.min(1, swipeProgress?.progress ?? 0));
+    const fromTab = tabRefs.current[fromIndex];
+    const toTab = tabRefs.current[toIndex] || fromTab;
+
+    if (!fromTab || !toTab) {
+      setIndicator((current) => current.visible ? { left: 0, width: 0, visible: false } : current);
+      return;
+    }
+
+    const left = fromTab.offsetLeft + (toTab.offsetLeft - fromTab.offsetLeft) * progress;
+    const width = fromTab.offsetWidth + (toTab.offsetWidth - fromTab.offsetWidth) * progress;
+    const nextIndicator = { left, width, visible: true };
+    setIndicator((current) => (
+      current.visible === nextIndicator.visible
+      && Math.abs(current.left - nextIndicator.left) < 0.5
+      && Math.abs(current.width - nextIndicator.width) < 0.5
+        ? current
+        : nextIndicator
+    ));
+
+    const desiredScrollLeft = Math.max(
+      0,
+      Math.min(
+        tabBar.scrollWidth - tabBar.clientWidth,
+        left + width / 2 - tabBar.clientWidth / 2
+      )
+    );
+    if (Math.abs(tabBar.scrollLeft - desiredScrollLeft) > 1) {
+      tabBar.scrollLeft = desiredScrollLeft;
+    }
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIndicator((current) => ({ ...current }));
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const loadFilters = async (targetRoomId: number) => {
     try {
@@ -248,37 +320,52 @@ export default function FilterBar({
 
   return (
     <>
-      <BoxTabBar role="tablist" aria-label={t('filterBar.boxes')}>
+      <BoxTabBar ref={tabBarRef} role="tablist" aria-label={t('filterBar.boxes')}>
         <BoxTab
+          ref={(node) => {
+            tabRefs.current[0] = node;
+          }}
           type="button"
           role="tab"
-          aria-selected={selectedBox === undefined}
-          $active={selectedBox === undefined}
+          aria-selected={visualSelectedBoxIndex === 0}
+          $active={visualSelectedBoxIndex === 0}
           onClick={() => handleBoxChange(undefined)}
         >
           {t('filterBar.all')}
         </BoxTab>
         <BoxTab
+          ref={(node) => {
+            tabRefs.current[1] = node;
+          }}
           type="button"
           role="tab"
-          aria-selected={selectedBox === 'out-of-stock'}
-          $active={selectedBox === 'out-of-stock'}
+          aria-selected={visualSelectedBoxIndex === 1}
+          $active={visualSelectedBoxIndex === 1}
           onClick={() => handleBoxChange('out-of-stock')}
         >
           {t('filterBar.notInStock')}
         </BoxTab>
-        {boxes.map((box) => (
+        {boxes.map((box, index) => (
           <BoxTab
             key={box.box_id}
+            ref={(node) => {
+              tabRefs.current[index + 2] = node;
+            }}
             type="button"
             role="tab"
-            aria-selected={selectedBox === box.box_id}
-            $active={selectedBox === box.box_id}
+            aria-selected={visualSelectedBoxIndex === index + 2}
+            $active={visualSelectedBoxIndex === index + 2}
             onClick={() => handleBoxChange(box.box_id)}
           >
             {box.box_name || t('filterBar.boxId', { id: box.box_id })}
           </BoxTab>
         ))}
+        <BoxTabIndicator
+          $left={indicator.left}
+          $width={indicator.width}
+          $visible={indicator.visible}
+          $animated={swipeAnimating || !swipeProgress}
+        />
       </BoxTabBar>
 
       <TagBubble

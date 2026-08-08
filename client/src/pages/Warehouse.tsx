@@ -62,6 +62,29 @@ const Content = styled.div`
   }
 `;
 
+const SwipeViewport = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+`;
+
+const SwipeTrack = styled.div<{ $offset: number; $animated: boolean }>`
+  width: 300%;
+  height: 100%;
+  display: flex;
+  transform: translate3d(calc(-33.333333% + ${(props) => props.$offset}px), 0, 0);
+  transition: ${(props) => (props.$animated ? 'transform 0.24s cubic-bezier(0.22, 0.61, 0.36, 1)' : 'none')};
+  will-change: transform;
+`;
+
+const SwipePane = styled.div`
+  width: calc(100% / 3);
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
+
 const ItemList = styled.div`
   display: flex;
   flex-direction: column;
@@ -171,10 +194,23 @@ const ActionButtons = styled.div`
   gap: 12px;
 `;
 
+const SWIPE_LOCK_DISTANCE = 12;
+const SWIPE_TRIGGER_DISTANCE = 56;
+const SWIPE_TRIGGER_RATIO = 0.22;
+const SWIPE_ANIMATION_MS = 240;
+const WHEEL_SETTLE_DELAY = 90;
+const WHEEL_DELTA_TO_DRAG_RATIO = 1;
+const WHEEL_NEW_GESTURE_GAP = 56;
+const WHEEL_NEW_GESTURE_ACCELERATION = 1.8;
+const WHEEL_NEW_GESTURE_MIN_DELTA = 12;
+const WHEEL_DECELERATION_RATIO = 0.82;
+
 interface WarehouseBox {
   box_id: number;
   box_name: string;
 }
+
+type BoxFilterId = number | 'out-of-stock' | undefined;
 
 interface PointerStart {
   x: number;
@@ -182,6 +218,13 @@ interface PointerStart {
   target: EventTarget | null;
   pointerId: number;
   captured: boolean;
+  dragging: boolean;
+}
+
+interface SwipeProgress {
+  fromIndex: number;
+  toIndex: number;
+  progress: number;
 }
 
 const isSwipeIgnoredTarget = (target: EventTarget | null) => (
@@ -198,7 +241,7 @@ export default function Warehouse() {
   const [allOutOfStockItems, setAllOutOfStockItems] = useState<any[]>([]);
   const [boxes, setBoxes] = useState<WarehouseBox[]>([]);
   const [searchText, setSearchText] = useState('');
-  const [filters, setFilters] = useState<{ boxId?: number | 'out-of-stock'; tagId?: number }>({});
+  const [filters, setFilters] = useState<{ boxId?: BoxFilterId; tagId?: number }>({});
   const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [detailVisible, setDetailVisible] = useState(false);
   const [cartVisible, setCartVisible] = useState(false);
@@ -211,6 +254,18 @@ export default function Warehouse() {
   const suppressClickRef = useRef(false);
   const boxesRef = useRef<WarehouseBox[]>([]);
   const filtersRef = useRef(filters);
+  const swipeOffsetRef = useRef(0);
+  const swipeCommitRef = useRef<{ direction: 1 | -1 } | null>(null);
+  const swipeAnimationActiveRef = useRef(false);
+  const wheelSettleTimerRef = useRef<number | null>(null);
+  const swipeAnimationTimerRef = useRef<number | null>(null);
+  const wheelGestureActiveRef = useRef(false);
+  const wheelGestureDirectionRef = useRef<1 | -1 | null>(null);
+  const wheelLastEventAtRef = useRef(0);
+  const wheelLastDeltaRef = useRef(0);
+  const wheelGestureDeceleratingRef = useRef(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isSwipeAnimating, setIsSwipeAnimating] = useState(false);
 
   const itemKey = currentRoom
     ? ['/items', { params: { roomId: currentRoom.room_id } }]
@@ -243,7 +298,59 @@ export default function Warehouse() {
     setPendingRequestCount(joinRequestsData?.length || 0);
   }, [joinRequestsData]);
 
-  const handleFilterChange = (newFilters: { boxId?: number | 'out-of-stock'; tagId?: number }) => {
+  const setSwipeOffsetValue = (offset: number) => {
+    swipeOffsetRef.current = offset;
+    setSwipeOffset(offset);
+  };
+
+  const clearWheelSettleTimer = () => {
+    if (wheelSettleTimerRef.current === null) return;
+    window.clearTimeout(wheelSettleTimerRef.current);
+    wheelSettleTimerRef.current = null;
+  };
+
+  const clearSwipeAnimationTimer = () => {
+    if (swipeAnimationTimerRef.current === null) return;
+    window.clearTimeout(swipeAnimationTimerRef.current);
+    swipeAnimationTimerRef.current = null;
+  };
+
+  const resetWheelGestureState = () => {
+    wheelGestureActiveRef.current = false;
+    wheelGestureDirectionRef.current = null;
+    wheelLastEventAtRef.current = 0;
+    wheelLastDeltaRef.current = 0;
+    wheelGestureDeceleratingRef.current = false;
+  };
+
+  const getAvailableFilters = (): BoxFilterId[] => [
+    undefined,
+    'out-of-stock',
+    ...boxesRef.current.map((box) => box.box_id),
+  ];
+
+  const getCurrentFilterIndex = (availableFilters = getAvailableFilters()) => {
+    const currentIndex = availableFilters.findIndex((boxId) => boxId === filtersRef.current.boxId);
+    return currentIndex >= 0 ? currentIndex : 0;
+  };
+
+  const getNextFilterIndex = (direction: 1 | -1, availableFilters = getAvailableFilters()) => {
+    if (availableFilters.length < 2) return getCurrentFilterIndex(availableFilters);
+    return (getCurrentFilterIndex(availableFilters) + direction + availableFilters.length) % availableFilters.length;
+  };
+
+  const resetSwipeState = () => {
+    clearWheelSettleTimer();
+    clearSwipeAnimationTimer();
+    resetWheelGestureState();
+    swipeAnimationActiveRef.current = false;
+    swipeCommitRef.current = null;
+    setIsSwipeAnimating(false);
+    setSwipeOffsetValue(0);
+  };
+
+  const handleFilterChange = (newFilters: { boxId?: BoxFilterId; tagId?: number }) => {
+    resetSwipeState();
     filtersRef.current = newFilters;
     setFilters(newFilters);
   };
@@ -253,27 +360,65 @@ export default function Warehouse() {
     setBoxes(nextBoxes);
   };
 
-  const switchFilterByDirection = (direction: 1 | -1) => {
-    const availableBoxes = boxesRef.current;
-    const availableFilters: Array<number | 'out-of-stock' | undefined> = [
-      undefined,
-      'out-of-stock',
-      ...availableBoxes.map((box) => box.box_id),
-    ];
+  const commitFilterByDirection = (direction: 1 | -1) => {
+    const availableFilters = getAvailableFilters();
     if (availableFilters.length < 2) return false;
 
-    const currentFilters = filtersRef.current;
-    const currentIndex = availableFilters.findIndex((boxId) => boxId === currentFilters.boxId);
-    const baseIndex = currentIndex >= 0 ? currentIndex : 0;
-    const nextIndex = (baseIndex + direction + availableFilters.length) % availableFilters.length;
+    const nextIndex = getNextFilterIndex(direction, availableFilters);
     const nextFilters = {
       boxId: availableFilters[nextIndex],
-      tagId: currentFilters.tagId,
+      tagId: filtersRef.current.tagId,
     };
-
     filtersRef.current = nextFilters;
     setFilters(nextFilters);
     return true;
+  };
+
+  const completeSwipeTransition = () => {
+    if (!swipeAnimationActiveRef.current) return;
+
+    swipeAnimationActiveRef.current = false;
+    clearSwipeAnimationTimer();
+    const commit = swipeCommitRef.current;
+    swipeCommitRef.current = null;
+
+    if (commit) {
+      commitFilterByDirection(commit.direction);
+    }
+
+    setIsSwipeAnimating(false);
+    setSwipeOffsetValue(0);
+  };
+
+  const settleSwipe = (direction?: 1 | -1) => {
+    const width = warehouseMainRef.current?.clientWidth || 1;
+    const targetDirection = direction ?? (
+      Math.abs(swipeOffsetRef.current) >= Math.max(SWIPE_TRIGGER_DISTANCE, width * SWIPE_TRIGGER_RATIO)
+        ? (swipeOffsetRef.current < 0 ? 1 : -1)
+        : undefined
+    );
+
+    clearSwipeAnimationTimer();
+
+    if (!targetDirection && swipeOffsetRef.current === 0) {
+      swipeAnimationActiveRef.current = false;
+      setIsSwipeAnimating(false);
+      return;
+    }
+
+    swipeAnimationActiveRef.current = true;
+    setIsSwipeAnimating(true);
+    if (targetDirection && getAvailableFilters().length > 1) {
+      swipeCommitRef.current = { direction: targetDirection };
+      setSwipeOffsetValue(targetDirection === 1 ? -width : width);
+    } else {
+      swipeCommitRef.current = null;
+      setSwipeOffsetValue(0);
+    }
+
+    swipeAnimationTimerRef.current = window.setTimeout(() => {
+      completeSwipeTransition();
+    }, SWIPE_ANIMATION_MS + 20);
   };
 
   const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -282,12 +427,24 @@ export default function Warehouse() {
       return;
     }
 
+    if (swipeAnimationActiveRef.current) {
+      completeSwipeTransition();
+    }
+
+    clearWheelSettleTimer();
+    clearSwipeAnimationTimer();
+    resetWheelGestureState();
+    swipeAnimationActiveRef.current = false;
+    swipeCommitRef.current = null;
+    setIsSwipeAnimating(false);
+    setSwipeOffsetValue(0);
     pointerStartRef.current = {
       x: event.clientX,
       y: event.clientY,
       target: event.target,
       pointerId: event.pointerId,
       captured: false,
+      dragging: false,
     };
   };
 
@@ -297,12 +454,22 @@ export default function Warehouse() {
 
     const deltaX = event.clientX - start.x;
     const deltaY = event.clientY - start.y;
-    if (Math.abs(deltaX) >= 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2) {
+    if (
+      !start.dragging
+      && Math.abs(deltaX) >= SWIPE_LOCK_DISTANCE
+      && Math.abs(deltaX) > Math.abs(deltaY) * 1.2
+    ) {
       if (!start.captured) {
         event.currentTarget.setPointerCapture?.(start.pointerId);
         start.captured = true;
       }
+      start.dragging = true;
+    }
+
+    if (start.dragging) {
+      const width = event.currentTarget.clientWidth || 1;
       event.preventDefault();
+      setSwipeOffsetValue(Math.max(-width, Math.min(width, deltaX)));
     }
   };
 
@@ -313,14 +480,11 @@ export default function Warehouse() {
       return;
     }
 
-    const deltaX = event.clientX - start.x;
-    const deltaY = event.clientY - start.y;
-    const isHorizontalSwipe = Math.abs(deltaX) >= 56 && Math.abs(deltaX) > Math.abs(deltaY) * 1.2;
-    if (!isHorizontalSwipe || isSwipeIgnoredTarget(start.target)) return;
+    if (!start.dragging || isSwipeIgnoredTarget(start.target)) return;
 
     event.preventDefault();
     suppressClickRef.current = true;
-    switchFilterByDirection(deltaX < 0 ? 1 : -1);
+    settleSwipe();
   };
 
   useEffect(() => {
@@ -331,13 +495,35 @@ export default function Warehouse() {
     boxesRef.current = boxes;
   }, [boxes]);
 
+  const filterSequence = useMemo<BoxFilterId[]>(() => [
+    undefined,
+    'out-of-stock',
+    ...boxes.map((box) => box.box_id),
+  ], [boxes]);
+
+  const currentFilterIndex = useMemo(() => {
+    const index = filterSequence.findIndex((boxId) => boxId === filters.boxId);
+    return index >= 0 ? index : 0;
+  }, [filterSequence, filters.boxId]);
+
+  const previousBoxId = filterSequence[(currentFilterIndex - 1 + filterSequence.length) % filterSequence.length];
+  const nextBoxId = filterSequence[(currentFilterIndex + 1) % filterSequence.length];
+
+  const swipeProgress = useMemo<SwipeProgress | undefined>(() => {
+    if (filterSequence.length < 2 || swipeOffset === 0) return undefined;
+
+    const width = warehouseMainRef.current?.clientWidth || 1;
+    const direction = swipeOffset < 0 ? 1 : -1;
+    return {
+      fromIndex: currentFilterIndex,
+      toIndex: (currentFilterIndex + direction + filterSequence.length) % filterSequence.length,
+      progress: Math.min(1, Math.abs(swipeOffset) / width),
+    };
+  }, [currentFilterIndex, filterSequence.length, swipeOffset]);
+
   useEffect(() => {
     const warehouseMain = warehouseMainRef.current;
     if (!warehouseMain) return;
-
-    let accumulatedDeltaX = 0;
-    let lastWheelAt = 0;
-    let lastSwitchAt = 0;
 
     const handleWheel = (event: WheelEvent) => {
       if (isSwipeIgnoredTarget(event.target)) return;
@@ -345,7 +531,6 @@ export default function Warehouse() {
       const horizontalDelta = Math.abs(event.deltaX);
       const verticalDelta = Math.abs(event.deltaY);
       if (horizontalDelta < 1 || horizontalDelta <= verticalDelta) {
-        accumulatedDeltaX = 0;
         return;
       }
 
@@ -355,26 +540,72 @@ export default function Warehouse() {
       event.stopPropagation();
 
       const now = performance.now();
-      if (now - lastWheelAt > 450) accumulatedDeltaX = 0;
-      lastWheelAt = now;
+      const wheelDirection: 1 | -1 = event.deltaX > 0 ? 1 : -1;
+      const eventGap = now - wheelLastEventAtRef.current;
+      const previousDelta = wheelLastDeltaRef.current;
+      const isNewGesture = wheelGestureActiveRef.current && (
+        wheelGestureDirectionRef.current !== wheelDirection
+        || eventGap > WHEEL_NEW_GESTURE_GAP
+        || (
+          wheelGestureDeceleratingRef.current
+          && horizontalDelta >= Math.max(
+            WHEEL_NEW_GESTURE_MIN_DELTA,
+            previousDelta * WHEEL_NEW_GESTURE_ACCELERATION
+          )
+          && horizontalDelta - previousDelta >= WHEEL_NEW_GESTURE_MIN_DELTA / 2
+        )
+      );
 
-      if (now - lastSwitchAt < 650) {
-        accumulatedDeltaX = 0;
-        return;
+      if (isNewGesture) {
+        clearWheelSettleTimer();
+        settleSwipe();
+        completeSwipeTransition();
+        resetWheelGestureState();
       }
 
-      accumulatedDeltaX += event.deltaX;
-      if (Math.abs(accumulatedDeltaX) < 70) return;
+      if (swipeAnimationActiveRef.current) {
+        completeSwipeTransition();
+      }
 
-      accumulatedDeltaX = 0;
-      lastSwitchAt = now;
-      // Trackpad wheel deltas follow the opposite direction from the user's
-      // finger movement, so invert the mapping for the expected navigation feel.
-      switchFilterByDirection(event.deltaX < 0 ? -1 : 1);
+      clearWheelSettleTimer();
+      clearSwipeAnimationTimer();
+      swipeAnimationActiveRef.current = false;
+      setIsSwipeAnimating(false);
+
+      const width = warehouseMain.clientWidth || 1;
+      // Trackpad wheel deltas are the direction the page would scroll, so invert
+      // them to match the visual movement of the user's fingers. Trackpad and
+      // pointer movement use the same one-to-one pixel scale.
+      const nextOffset = Math.max(
+        -width,
+        Math.min(width, swipeOffsetRef.current - event.deltaX * WHEEL_DELTA_TO_DRAG_RATIO)
+      );
+
+      if (!wheelGestureActiveRef.current) {
+        wheelGestureActiveRef.current = true;
+        wheelGestureDirectionRef.current = wheelDirection;
+        wheelGestureDeceleratingRef.current = false;
+      } else if (previousDelta > 0 && horizontalDelta < previousDelta * WHEEL_DECELERATION_RATIO) {
+        wheelGestureDeceleratingRef.current = true;
+      }
+
+      setSwipeOffsetValue(nextOffset);
+      wheelLastEventAtRef.current = now;
+      wheelLastDeltaRef.current = horizontalDelta;
+
+      wheelSettleTimerRef.current = window.setTimeout(() => {
+        wheelSettleTimerRef.current = null;
+        resetWheelGestureState();
+        settleSwipe();
+      }, WHEEL_SETTLE_DELAY);
     };
 
     warehouseMain.addEventListener('wheel', handleWheel, { passive: false });
-    return () => warehouseMain.removeEventListener('wheel', handleWheel);
+    return () => {
+      clearWheelSettleTimer();
+      clearSwipeAnimationTimer();
+      warehouseMain.removeEventListener('wheel', handleWheel);
+    };
   }, []);
 
   const handleItemClick = (itemId: number) => {
@@ -384,7 +615,7 @@ export default function Warehouse() {
 
   const locale = i18n.language === 'en-US' ? 'en' : 'zh';
 
-  const { inStockItems, outOfStockItems } = useMemo(() => {
+  const getItemsForBox = (boxId: BoxFilterId) => {
     const normalizedSearch = searchQuery.toLocaleLowerCase(locale);
     const matchesCommonFilters = (item: any) => {
       const matchesTag = filters.tagId === undefined
@@ -397,7 +628,7 @@ export default function Warehouse() {
       return name.includes(normalizedSearch) || notice.includes(normalizedSearch);
     };
 
-    if (filters.boxId === 'out-of-stock') {
+    if (boxId === 'out-of-stock') {
       return {
         inStockItems: [],
         outOfStockItems: allOutOfStockItems.filter(matchesCommonFilters),
@@ -406,36 +637,115 @@ export default function Warehouse() {
 
     const filteredInStock = allInStockItems.filter((item) =>
       matchesCommonFilters(item)
-      && (filters.boxId === undefined || Number(item.item_current_box_id) === filters.boxId)
+      && (boxId === undefined || Number(item.item_current_box_id) === boxId)
     );
 
     return {
       inStockItems: filteredInStock,
-      outOfStockItems: filters.boxId === undefined
+      outOfStockItems: boxId === undefined
         ? allOutOfStockItems.filter(matchesCommonFilters)
         : [],
     };
-  }, [allInStockItems, allOutOfStockItems, filters, locale, searchQuery]);
+  };
 
-  const groupedInStockItems = useMemo(() => {
-    const grouped: Record<string, { name: string; items: any[] }> = {};
+  const getPageData = (boxId: BoxFilterId) => {
+    const { inStockItems, outOfStockItems } = getItemsForBox(boxId);
+    const groupedInStockItems: Record<string, { name: string; items: any[] }> = {};
     for (const item of inStockItems) {
       const boxKey = item.item_current_box_id || 'no-box';
       const boxName = item.current_box_name || t('warehouse.unassignedBox');
-      if (!grouped[boxKey]) {
-        grouped[boxKey] = { name: boxName, items: [] };
+      if (!groupedInStockItems[boxKey]) {
+        groupedInStockItems[boxKey] = { name: boxName, items: [] };
       }
-      grouped[boxKey].items.push(item);
+      groupedInStockItems[boxKey].items.push(item);
     }
-    for (const group of Object.values(grouped)) {
+    for (const group of Object.values(groupedInStockItems)) {
       group.items.sort((a: any, b: any) => (a.item_name || '').localeCompare(b.item_name || '', locale));
     }
-    return grouped;
-  }, [inStockItems, locale, t]);
+    return {
+      inStockItems,
+      outOfStockItems,
+      groupedInStockItems,
+      sortedOutOfStockItems: [...outOfStockItems].sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', locale)),
+    };
+  };
 
-  const sortedOutOfStockItems = useMemo(() => {
-    return [...outOfStockItems].sort((a, b) => (a.item_name || '').localeCompare(b.item_name || '', locale));
-  }, [outOfStockItems, locale]);
+  const currentPageData = getPageData(filters.boxId);
+
+  const renderSwipePage = (boxId: BoxFilterId, slot: 'previous' | 'current' | 'next') => {
+    const {
+      inStockItems,
+      outOfStockItems,
+      groupedInStockItems,
+      sortedOutOfStockItems,
+    } = slot === 'current' ? currentPageData : getPageData(boxId);
+
+    return (
+      <Content aria-hidden={slot !== 'current'}>
+        {itemsLoading ? (
+          <ItemList aria-hidden="true">
+            <BoxGroup>
+              <BoxTitle>
+                <Skeleton animated style={{ '--width': '96px', '--height': '17px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+              </BoxTitle>
+              <ItemGrid>
+                {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
+              </ItemGrid>
+            </BoxGroup>
+          </ItemList>
+        ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>
+              {boxId === 'out-of-stock' ? t('warehouse.noOutOfStockItems') : t('warehouse.noItems')}
+            </p>
+            {boxId !== 'out-of-stock' && (
+              <Button color="primary" onClick={() => navigate('/create-item')}>
+                {t('warehouse.addItem')}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <ItemList>
+            {/* 在库物品：按当前所在盒子分组显示 */}
+            {boxId !== 'out-of-stock' && (Object.entries(groupedInStockItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
+              <BoxGroup key={boxKey}>
+                <BoxTitle>{group.name}</BoxTitle>
+                <ItemGrid>
+                  {group.items.map((item: any) => (
+                    <ItemCard
+                      key={item.item_id}
+                      item={item}
+                      roomId={currentRoom?.room_id ?? 0}
+                      onClick={() => handleItemClick(item.item_id)}
+                      showCartButton
+                    />
+                  ))}
+                </ItemGrid>
+              </BoxGroup>
+            ))}
+
+            {/* 不在库物品 */}
+            {outOfStockItems.length > 0 && (
+              <BoxGroup>
+                <BoxTitle>{t('warehouse.notInStock')}</BoxTitle>
+                <ItemGrid>
+                  {sortedOutOfStockItems.map((item) => (
+                    <ItemCard
+                      key={item.item_id}
+                      item={item}
+                      roomId={currentRoom?.room_id ?? 0}
+                      onClick={() => handleItemClick(item.item_id)}
+                      showCartButton
+                    />
+                  ))}
+                </ItemGrid>
+              </BoxGroup>
+            )}
+          </ItemList>
+        )}
+      </Content>
+    );
+  };
 
   // 没有仓库时的提示
   if (rooms.length === 0) {
@@ -551,6 +861,7 @@ export default function Warehouse() {
         onPointerUp={handlePointerEnd}
         onPointerCancel={() => {
           pointerStartRef.current = null;
+          settleSwipe();
         }}
         onClickCapture={(event) => {
           if (!suppressClickRef.current) return;
@@ -561,77 +872,26 @@ export default function Warehouse() {
       >
         {currentRoom && (
           <FilterBar
-        roomId={currentRoom?.room_id ?? 0}
+            roomId={currentRoom?.room_id ?? 0}
             selectedBox={filters.boxId}
             selectedTag={filters.tagId}
             onFilterChange={handleFilterChange}
             onBoxesChange={handleBoxesChange}
+            swipeProgress={swipeProgress}
+            swipeAnimating={isSwipeAnimating}
           />
         )}
 
-        <Content>
-        {itemsLoading ? (
-          <ItemList aria-hidden="true">
-            <BoxGroup>
-              <BoxTitle>
-                <Skeleton animated style={{ '--width': '96px', '--height': '17px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
-              </BoxTitle>
-              <ItemGrid>
-                {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}
-              </ItemGrid>
-            </BoxGroup>
-          </ItemList>
-        ) : inStockItems.length === 0 && outOfStockItems.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40 }}>
-            <p style={{ color: 'var(--app-color-text-secondary)', marginBottom: 16 }}>
-              {filters.boxId === 'out-of-stock' ? t('warehouse.noOutOfStockItems') : t('warehouse.noItems')}
-            </p>
-            {filters.boxId !== 'out-of-stock' && (
-              <Button color="primary" onClick={() => navigate('/create-item')}>
-                {t('warehouse.addItem')}
-              </Button>
-            )}
-          </div>
-        ) : (
-          <ItemList>
-            {/* 在库物品：按当前所在盒子分组显示 */}
-            {filters.boxId !== 'out-of-stock' && (Object.entries(groupedInStockItems) as [string, { name: string; items: any[] }][]).map(([boxKey, group]) => (
-                <BoxGroup key={boxKey}>
-                  <BoxTitle>{group.name}</BoxTitle>
-                  <ItemGrid>
-                    {group.items.map((item: any) => (
-                      <ItemCard
-                        key={item.item_id}
-                        item={item}
-                        roomId={currentRoom?.room_id ?? 0}
-                        onClick={() => handleItemClick(item.item_id)}
-                        showCartButton
-                      />
-                    ))}
-                  </ItemGrid>
-                </BoxGroup>
-              ))}
-
-            {/* 不在库物品 */}
-            {(filters.boxId === 'out-of-stock' ? outOfStockItems.length > 0 : outOfStockItems.length > 0) && (
-              <BoxGroup>
-                <BoxTitle>{t('warehouse.notInStock')}</BoxTitle>
-                <ItemGrid>
-                  {sortedOutOfStockItems.map((item) => (
-                    <ItemCard
-                      key={item.item_id}
-                      item={item}
-                      roomId={currentRoom?.room_id ?? 0}
-                      onClick={() => handleItemClick(item.item_id)}
-                      showCartButton
-                    />
-                  ))}
-                </ItemGrid>
-              </BoxGroup>
-            )}
-          </ItemList>
-        )}
-        </Content>
+        <SwipeViewport>
+          <SwipeTrack
+            $offset={swipeOffset}
+            $animated={isSwipeAnimating}
+          >
+            <SwipePane>{renderSwipePage(previousBoxId, 'previous')}</SwipePane>
+            <SwipePane>{renderSwipePage(filters.boxId, 'current')}</SwipePane>
+            <SwipePane>{renderSwipePage(nextBoxId, 'next')}</SwipePane>
+          </SwipeTrack>
+        </SwipeViewport>
       </WarehouseMain>
 
       <FAB>
