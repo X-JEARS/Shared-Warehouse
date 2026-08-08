@@ -584,14 +584,14 @@ export default function ItemDetail({
             <ScrollableDetails aria-hidden="true">
               <Section>
                 <SectionTitle>
-                  <Skeleton animated style={{ '--width': '50px', '--height': '14px' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': '50px', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
                 </SectionTitle>
-                <Skeleton animated style={{ '--width': '80%', '--height': '13px' } as CSSProperties} />
+                <Skeleton animated style={{ '--width': '80%', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
               </Section>
 
               <Section>
                 <SectionTitle>
-                  <Skeleton animated style={{ '--width': '40px', '--height': '14px' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': '40px', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
                 </SectionTitle>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {[50, 40, 55].map((width) => (
@@ -606,19 +606,19 @@ export default function ItemDetail({
 
               <Section>
                 <SectionTitle>
-                  <Skeleton animated style={{ '--width': '60px', '--height': '14px' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': '60px', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
                 </SectionTitle>
                 {Array.from({ length: 2 }).map((_, index) => (
                   <HistoryItem key={index}>
-                    <Skeleton animated style={{ '--width': index === 0 ? '64%' : '52%', '--height': '14px' } as CSSProperties} />
-                    <Skeleton animated style={{ '--width': '40%', '--height': '12px', marginTop: 6 } as CSSProperties} />
+                    <Skeleton animated style={{ '--width': index === 0 ? '64%' : '52%', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+                    <Skeleton animated style={{ '--width': '40%', '--height': '12px', '--border-radius': 'var(--app-radius-s)', marginTop: 6 } as CSSProperties} />
                   </HistoryItem>
                 ))}
               </Section>
 
               <Section>
                 <SectionTitle>
-                  <Skeleton animated style={{ '--width': '72px', '--height': '14px' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': '72px', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
                 </SectionTitle>
                 <Skeleton
                   animated

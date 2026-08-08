@@ -247,9 +247,9 @@ export default function BoxDetail() {
         <Content>
           <BoxInfo aria-hidden="true">
             <BoxInfoContent>
-              <Skeleton animated style={{ '--width': '42%', '--height': '18px', marginBottom: 8 } as CSSProperties} />
-              <Skeleton animated style={{ '--width': '58%', '--height': '14px', marginBottom: 4 } as CSSProperties} />
-              <Skeleton animated style={{ '--width': '76%', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '42%', '--height': '18px', '--border-radius': 'var(--app-radius-s)', marginBottom: 8 } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '58%', '--height': '14px', '--border-radius': 'var(--app-radius-s)', marginBottom: 4 } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '76%', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
             </BoxInfoContent>
           </BoxInfo>
           <Skeleton
@@ -257,7 +257,7 @@ export default function BoxDetail() {
             style={{ '--width': '100%', '--height': '45px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties}
           />
           <SectionTitle style={{ marginTop: 24 }} aria-hidden="true">
-            <Skeleton animated style={{ '--width': '88px', '--height': '16px' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': '88px', '--height': '16px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
           </SectionTitle>
           <ItemList aria-hidden="true">
             {Array.from({ length: 6 }).map((_, i) => <ItemCardSkeleton key={i} />)}

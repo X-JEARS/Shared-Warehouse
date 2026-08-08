@@ -58,6 +58,7 @@ const ItemInfo = styled.div`
 
 const ItemName = styled.div`
   font-size: 14px;
+  line-height: 17px;
   font-weight: 500;
   color: var(--app-color-text);
   overflow: hidden;

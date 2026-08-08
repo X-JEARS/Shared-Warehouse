@@ -29,13 +29,13 @@ export function OrderSkeleton() {
   return (
     <Card aria-hidden="true">
       <Header>
-        <Skeleton animated style={{ '--width': '48%', '--height': '16px' } as CSSProperties} />
+        <Skeleton animated style={{ '--width': '48%', '--height': '16px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
         <Skeleton animated style={{ '--width': '52px', '--height': '22px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
       </Header>
       <Time>
-        <Skeleton animated style={{ '--width': '78%', '--height': '15px' } as CSSProperties} />
+        <Skeleton animated style={{ '--width': '78%', '--height': '15px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
       </Time>
-      <Skeleton animated style={{ '--width': '42%', '--height': '13px' } as CSSProperties} />
+      <Skeleton animated style={{ '--width': '42%', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
     </Card>
   );
 }

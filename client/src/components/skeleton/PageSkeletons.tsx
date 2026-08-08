@@ -33,9 +33,9 @@ export function MyItemListSkeleton({ count = 6 }: { count?: number }) {
           <MyItemRow>
             <Skeleton animated style={{ '--width': '60px', '--height': '60px', '--border-radius': 'var(--app-radius-m)' } as CSSProperties} />
             <MyItemInfo>
-              <Skeleton animated style={{ '--width': '58%', '--height': '15px' } as CSSProperties} />
-              <Skeleton animated style={{ '--width': '88%', '--height': '13px' } as CSSProperties} />
-              <Skeleton animated style={{ '--width': '74%', '--height': '13px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '58%', '--height': '15px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '88%', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '74%', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
             </MyItemInfo>
           </MyItemRow>
         </MyItemCard>
@@ -61,9 +61,9 @@ export function NotificationListSkeleton({ count = 8 }: { count?: number }) {
       {Array.from({ length: count }).map((_, index) => (
         <NotificationRow key={index}>
           <NotificationLines>
-            <Skeleton animated style={{ '--width': index % 2 === 0 ? '46%' : '58%', '--height': '15px' } as CSSProperties} />
-            <Skeleton animated style={{ '--width': index % 3 === 0 ? '76%' : '88%', '--height': '13px' } as CSSProperties} />
-            <Skeleton animated style={{ '--width': '24%', '--height': '12px' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': index % 2 === 0 ? '46%' : '58%', '--height': '15px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': index % 3 === 0 ? '76%' : '88%', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': '24%', '--height': '12px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
           </NotificationLines>
         </NotificationRow>
       ))}
@@ -120,15 +120,15 @@ export function TransferRecordListSkeleton({ count = 4 }: { count?: number }) {
         <TransferCard key={cardIndex}>
           <TransferHeader>
             <Skeleton animated style={{ '--width': '34%', '--height': '24px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
-            <Skeleton animated style={{ '--width': '30%', '--height': '12px' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': '30%', '--height': '12px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
           </TransferHeader>
           <TransferItems>
             {Array.from({ length: 2 }).map((_, itemIndex) => (
               <TransferItem key={itemIndex}>
                 <Skeleton animated style={{ '--width': '38px', '--height': '38px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
                 <TransferItemInfo>
-                  <Skeleton animated style={{ '--width': itemIndex === 0 ? '52%' : '64%', '--height': '14px' } as CSSProperties} />
-                  <Skeleton animated style={{ '--width': '72%', '--height': '12px' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': itemIndex === 0 ? '52%' : '64%', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+                  <Skeleton animated style={{ '--width': '72%', '--height': '12px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
                 </TransferItemInfo>
               </TransferItem>
             ))}
@@ -177,21 +177,21 @@ export function ReservationDetailSkeleton() {
   return (
     <div aria-hidden="true">
       <ReservationInfo>
-        <Skeleton animated style={{ '--width': '54%', '--height': '18px' } as CSSProperties} />
-        <Skeleton animated style={{ '--width': '36%', '--height': '14px' } as CSSProperties} />
-        <Skeleton animated style={{ '--width': '68%', '--height': '14px' } as CSSProperties} />
+        <Skeleton animated style={{ '--width': '54%', '--height': '18px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+        <Skeleton animated style={{ '--width': '36%', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+        <Skeleton animated style={{ '--width': '68%', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
       </ReservationInfo>
       <ReservationSectionTitle>
-        <Skeleton animated style={{ '--width': '32%', '--height': '15px' } as CSSProperties} />
+        <Skeleton animated style={{ '--width': '32%', '--height': '15px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
         <Skeleton animated style={{ '--width': '68px', '--height': '28px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
       </ReservationSectionTitle>
       <ReservationGrid>
         {Array.from({ length: 6 }).map((_, index) => (
           <ReservationCard key={index}>
             <Skeleton animated style={{ '--width': '46px', '--height': '20px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
-            <Skeleton animated style={{ '--width': '74%', '--height': '15px' } as CSSProperties} />
-            <Skeleton animated style={{ '--width': '88%', '--height': '13px' } as CSSProperties} />
-            <Skeleton animated style={{ '--width': '66%', '--height': '13px' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': '74%', '--height': '15px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': '88%', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+            <Skeleton animated style={{ '--width': '66%', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
           </ReservationCard>
         ))}
       </ReservationGrid>

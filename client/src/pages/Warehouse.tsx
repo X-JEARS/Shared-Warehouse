@@ -76,6 +76,7 @@ const BoxGroup = styled.div`
 
 const BoxTitle = styled.div`
   font-size: 14px;
+  line-height: 17px;
   font-weight: 500;
   color: var(--app-color-text-weak);
   padding: 4px 0;
@@ -573,7 +574,7 @@ export default function Warehouse() {
           <ItemList aria-hidden="true">
             <BoxGroup>
               <BoxTitle>
-                <Skeleton animated style={{ '--width': '96px', '--height': '14px' } as CSSProperties} />
+                <Skeleton animated style={{ '--width': '96px', '--height': '17px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
               </BoxTitle>
               <ItemGrid>
                 {Array.from({ length: 8 }).map((_, i) => <ItemCardSkeleton key={i} />)}

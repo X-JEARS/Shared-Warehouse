@@ -801,24 +801,24 @@ export default function RoomSettings() {
         <Content aria-hidden="true">
           <Card>
             <RoomNameRow>
-              <Skeleton animated style={{ '--width': '42%', '--height': '18px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '42%', '--height': '18px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
             </RoomNameRow>
             <RoomId>
-              <Skeleton animated style={{ '--width': '88px', '--height': '13px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '88px', '--height': '13px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
             </RoomId>
           </Card>
 
           <Card>
             <CardHeader>
-              <Skeleton animated style={{ '--width': '84px', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '84px', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
               <Skeleton animated style={{ '--width': '64px', '--height': '28px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties} />
             </CardHeader>
             <BoxGrid>
               {Array.from({ length: 4 }).map((_, index) => (
                 <BoxCard key={index}>
                   <BoxCardInfo>
-                    <Skeleton animated style={{ '--width': '68%', '--height': '14px' } as CSSProperties} />
-                    <Skeleton animated style={{ '--width': '44%', '--height': '12px', marginTop: 4 } as CSSProperties} />
+                    <Skeleton animated style={{ '--width': '68%', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+                    <Skeleton animated style={{ '--width': '44%', '--height': '12px', '--border-radius': 'var(--app-radius-s)', marginTop: 4 } as CSSProperties} />
                   </BoxCardInfo>
                   <Skeleton animated style={{ '--width': '16px', '--height': '16px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
                 </BoxCard>
@@ -828,7 +828,7 @@ export default function RoomSettings() {
 
           <Card>
             <CardHeader>
-              <Skeleton animated style={{ '--width': '84px', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '84px', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
               <Skeleton animated style={{ '--width': '68px', '--height': '28px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties} />
             </CardHeader>
             <TagList>
@@ -844,7 +844,7 @@ export default function RoomSettings() {
 
           <Card>
             <CardHeader>
-              <Skeleton animated style={{ '--width': '110px', '--height': '14px' } as CSSProperties} />
+              <Skeleton animated style={{ '--width': '110px', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
               <Skeleton animated style={{ '--width': '76px', '--height': '28px', '--border-radius': 'var(--app-radius-btn)' } as CSSProperties} />
             </CardHeader>
             <MemberGrid>
@@ -853,8 +853,8 @@ export default function RoomSettings() {
                   <MemberCardLeft>
                     <Skeleton animated style={{ '--width': '32px', '--height': '32px', '--border-radius': '50%' } as CSSProperties} />
                     <MemberCardInfo>
-                      <Skeleton animated style={{ '--width': '70%', '--height': '14px' } as CSSProperties} />
-                      <Skeleton animated style={{ '--width': '48%', '--height': '12px', marginTop: 4 } as CSSProperties} />
+                      <Skeleton animated style={{ '--width': '70%', '--height': '14px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+                      <Skeleton animated style={{ '--width': '48%', '--height': '12px', '--border-radius': 'var(--app-radius-s)', marginTop: 4 } as CSSProperties} />
                     </MemberCardInfo>
                   </MemberCardLeft>
                 </MemberCard>

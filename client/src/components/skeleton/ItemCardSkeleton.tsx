@@ -25,8 +25,7 @@ export function ItemCardSkeleton() {
     <Card aria-hidden="true">
       <Skeleton animated style={{ '--width': '56px', '--height': '56px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
       <Info>
-        <Skeleton animated style={{ '--width': '70%', '--height': '14px' } as CSSProperties} />
-        <Skeleton animated style={{ '--width': '48%', '--height': '12px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
+        <Skeleton animated style={{ '--width': '70%', '--height': '17px', '--border-radius': 'var(--app-radius-s)' } as CSSProperties} />
       </Info>
     </Card>
   );
