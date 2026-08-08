@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Popup, Button, Input, Toast, Skeleton } from 'antd-mobile';
+import { Popup, Button, Input, Toast, Skeleton, Dialog, ActionSheet, SearchBar, SpinLoading } from 'antd-mobile';
 import type { CSSProperties } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
-import { itemApi, tagApi, reservationApi } from '../services/api';
+import { itemApi, tagApi, reservationApi, userApi } from '../services/api';
 import { useCartStore } from '../stores/cartStore';
 import { DetailSkeleton } from './skeleton';
 import { useMinLoadingTime } from '../hooks/useMinLoadingTime';
@@ -143,6 +143,77 @@ const CommentInput = styled.div`
   margin-top: 12px;
 `;
 
+const OwnerRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const OperationButton = styled.span`
+  color: var(--app-color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  white-space: nowrap;
+`;
+
+const PopupButtons = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+`;
+
+const UserSearchContainer = styled.div`
+  margin-bottom: 16px;
+`;
+
+const UserList = styled.div`
+  max-height: 300px;
+  overflow-y: auto;
+`;
+
+const UserItem = styled.div<{ $selected?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--app-radius-m);
+  cursor: pointer;
+  background: ${(props) => (props.$selected ? 'var(--app-color-info-bg)' : 'transparent')};
+  transition: background 0.2s;
+
+  &:hover {
+    background: var(--app-color-bg);
+  }
+`;
+
+const UserAvatar = styled.div<{ $avatar?: string }>`
+  width: 40px;
+  height: 40px;
+  border-radius: var(--app-radius-avatar);
+  background: ${(props) =>
+    props.$avatar ? `url(${props.$avatar}) center/cover` : 'var(--app-color-placeholder)'};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+`;
+
+const UserInfo = styled.div`
+  flex: 1;
+`;
+
+const UserNickname = styled.div`
+  font-size: 14px;
+  font-weight: 500;
+`;
+
+const NoUsers = styled.div`
+  text-align: center;
+  padding: 20px;
+  color: var(--app-color-text-secondary);
+`;
+
 interface ItemDetailProps {
   visible: boolean;
   itemId: number | null;
@@ -150,6 +221,12 @@ interface ItemDetailProps {
   isOwner?: boolean;
   onClose: () => void;
   onUpdate?: () => void;
+}
+
+interface SearchedUser {
+  user_id: number;
+  user_nickname: string;
+  user_avatar?: string;
 }
 
 export default function ItemDetail({
@@ -179,10 +256,16 @@ export default function ItemDetail({
   const [editRemarkText, setEditRemarkText] = useState('');
   const [editingNotice, setEditingNotice] = useState(false);
   const [editNoticeText, setEditNoticeText] = useState('');
+  const [transferPopupVisible, setTransferPopupVisible] = useState(false);
+  const [userSearchKeyword, setUserSearchKeyword] = useState('');
+  const [searchedUsers, setSearchedUsers] = useState<SearchedUser[]>([]);
+  const [selectedUser, setSelectedUser] = useState<SearchedUser | null>(null);
+  const [searchingUsers, setSearchingUsers] = useState(false);
   const { addItem, removeItem, items: cartItems } = useCartStore();
   const showSkeleton = useMinLoadingTime(loading);
 
   const isInCart = cartItems.some((i) => i.itemId === itemId);
+  const canManageItem = Boolean(item?.isOwner || isOwner);
 
   useEffect(() => {
     if (visible && itemId) {
@@ -353,6 +436,132 @@ export default function ItemDetail({
     }
   };
 
+  const showActionSheet = () => {
+    if (!item) return;
+
+    const handler = ActionSheet.show({
+      actions: [
+        { text: t('myItems.editName'), key: 'edit' },
+        { text: t('myItems.transfer'), key: 'transfer' },
+        { text: t('myItems.delete'), key: 'delete', danger: true },
+      ],
+      cancelText: t('common.cancel'),
+      onAction: (action) => {
+        handler.close();
+        if (action.key === 'edit') {
+          handleEditName();
+        } else if (action.key === 'transfer') {
+          handleTransfer();
+        } else if (action.key === 'delete') {
+          void handleDelete();
+        }
+      },
+    });
+  };
+
+  const handleEditName = () => {
+    if (!item) return;
+
+    let currentEditName = item.item_name;
+    Dialog.confirm({
+      content: (
+        <div>
+          <div style={{ marginBottom: 12, fontWeight: 500 }}>{t('myItems.editItemName')}</div>
+          <Input
+            defaultValue={item.item_name}
+            onChange={(value) => { currentEditName = value; }}
+            placeholder={t('myItems.itemNamePlaceholder')}
+            style={{ '--text-align': 'left' }}
+          />
+        </div>
+      ),
+      confirmText: t('common.save'),
+      cancelText: t('common.cancel'),
+      onConfirm: async () => {
+        if (!currentEditName.trim()) {
+          Toast.show({ content: t('myItems.nameEmpty') });
+          return;
+        }
+        try {
+          await itemApi.update(item.item_id, { name: currentEditName });
+          setItem({ ...item, item_name: currentEditName });
+          setEditName(currentEditName);
+          Toast.show({ icon: 'success', content: t('myItems.nameUpdated') });
+          onUpdate?.();
+        } catch (error) {
+          Toast.show({ icon: 'fail', content: t('myItems.updateFailed') });
+        }
+      },
+    });
+  };
+
+  const handleTransfer = () => {
+    setUserSearchKeyword('');
+    setSearchedUsers([]);
+    setSelectedUser(null);
+    setTransferPopupVisible(true);
+  };
+
+  const searchUsers = async (keyword: string) => {
+    if (!keyword.trim()) {
+      setSearchedUsers([]);
+      return;
+    }
+
+    try {
+      setSearchingUsers(true);
+      const res: any = await userApi.search(keyword);
+      setSearchedUsers(res.data || []);
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || t('myItems.searchFailed') });
+    } finally {
+      setSearchingUsers(false);
+    }
+  };
+
+  const handleConfirmTransfer = async () => {
+    if (!item || !selectedUser) {
+      Toast.show({ content: t('myItems.selectTransferUser') });
+      return;
+    }
+
+    try {
+      await itemApi.transfer(item.item_id, selectedUser.user_id);
+      setItem({
+        ...item,
+        item_belong_user_id: selectedUser.user_id,
+        owner_nickname: selectedUser.user_nickname,
+        isOwner: false,
+      });
+      setTransferPopupVisible(false);
+      Toast.show({ icon: 'success', content: t('myItems.itemTransferred', { name: selectedUser.user_nickname }) });
+      onUpdate?.();
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || t('myItems.transferFailed') });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!item) return;
+
+    const confirmed = await Dialog.confirm({
+      content: t('myItems.confirmDeleteItem', { name: item.item_name }),
+      confirmText: <span style={{ color: 'var(--app-color-danger)' }}>{t('myItems.delete')}</span>,
+      cancelText: t('common.cancel'),
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await itemApi.delete(item.item_id);
+      Toast.show({ icon: 'success', content: t('myItems.itemDeleted') });
+      onUpdate?.();
+      onClose();
+    } catch (error: any) {
+      Toast.show({ icon: 'fail', content: error.message || t('myItems.deleteFailed') });
+    }
+  };
+
   const formatTime = (timestamp: number | string) => {
     const ts = typeof timestamp === 'string' ? parseInt(timestamp, 10) : timestamp;
     if (!ts || isNaN(ts)) return t('common.unknownTime');
@@ -505,8 +714,19 @@ export default function ItemDetail({
                       {t('itemDetail.shouldReturnTo', { location: `${item.belong_room_name || item.room_name}${item.belong_box_name ? ` / ${item.belong_box_name}` : ''}${item.holder_nickname ? ` (${t('itemDetail.withPerson', { name: item.holder_nickname })})` : ''}` })}
                     </ItemMeta>
                   )}
-                  {item.owner_nickname && (
-                    <ItemMeta>{t('itemDetail.owner', { name: item.owner_nickname })}</ItemMeta>
+                  {(item.owner_nickname || canManageItem) && (
+                    <OwnerRow>
+                      {item.owner_nickname && (
+                        <ItemMeta style={{ marginBottom: 0, minWidth: 0 }}>
+                          {t('itemDetail.owner', { name: item.owner_nickname })}
+                        </ItemMeta>
+                      )}
+                      {canManageItem && (
+                        <OperationButton onClick={showActionSheet}>
+                          {t('myItems.operations')}
+                        </OperationButton>
+                      )}
+                    </OwnerRow>
                   )}
                 </ItemTitle>
               </ItemHeader>
@@ -678,6 +898,71 @@ export default function ItemDetail({
         <ImageViewerImg src={item.item_image} alt={item.item_name} />
       </ImageViewerOverlay>
     )}
+
+      <Popup
+        visible={transferPopupVisible}
+        onMaskClick={() => setTransferPopupVisible(false)}
+        bodyStyle={{ borderRadius: '12px 12px 0 0' }}
+      >
+        <PopupContent>
+          <SectionTitle style={{ marginBottom: 16 }}>
+            {t('myItems.transferItem', { name: item?.item_name })}
+          </SectionTitle>
+          <UserSearchContainer>
+            <SearchBar
+              value={userSearchKeyword}
+              onChange={(value) => {
+                setUserSearchKeyword(value);
+                void searchUsers(value);
+              }}
+              placeholder={t('myItems.searchUserPlaceholder')}
+            />
+          </UserSearchContainer>
+          {searchingUsers ? (
+            <div style={{ textAlign: 'center', padding: 20 }}>
+              <SpinLoading />
+            </div>
+          ) : searchedUsers.length > 0 ? (
+            <UserList>
+              {searchedUsers.map((user) => (
+                <UserItem
+                  key={user.user_id}
+                  $selected={selectedUser?.user_id === user.user_id}
+                  onClick={() => setSelectedUser(user)}
+                >
+                  <UserAvatar $avatar={user.user_avatar}>
+                    {!user.user_avatar && '👤'}
+                  </UserAvatar>
+                  <UserInfo>
+                    <UserNickname>{user.user_nickname}</UserNickname>
+                  </UserInfo>
+                  {selectedUser?.user_id === user.user_id && (
+                    <span style={{ color: 'var(--app-color-primary)' }}>✓</span>
+                  )}
+                </UserItem>
+              ))}
+            </UserList>
+          ) : userSearchKeyword ? (
+            <NoUsers>{t('myItems.noMatchUser')}</NoUsers>
+          ) : (
+            <NoUsers>{t('myItems.enterNicknameSearch')}</NoUsers>
+          )}
+          <PopupButtons>
+            <Button
+              color="primary"
+              size="small"
+              onClick={handleConfirmTransfer}
+              disabled={!selectedUser}
+            >
+              {t('myItems.confirmTransfer')}
+            </Button>
+            <Button size="small" onClick={() => setTransferPopupVisible(false)}>
+              {t('common.cancel')}
+            </Button>
+          </PopupButtons>
+        </PopupContent>
+      </Popup>
+
       <Popup
         visible={showAllHistory}
         onMaskClick={() => setShowAllHistory(false)}

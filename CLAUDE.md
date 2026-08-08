@@ -199,6 +199,7 @@ Items → Reservations → Orders
 - Shows item image (80x80px), name, location, stock status, tags, history, and comments
 - Uses an 80vh fixed-height flex layout: the item summary above "备注" stays fixed, while the remark and every section below it share the remaining independently scrollable area
 - The reservation button toggles cart membership: "预约" adds the item, while the enabled "已预约" state removes it from the cart when clicked
+- When the current user is the item owner, an "操作" action is shown in the owner row below the reservation button, reusing MyItems operations (edit name, transfer, delete).
 - **Image Viewer**: Click item image to view fullscreen. Overlay with dark background (rgba 0,0,0,0.85, z-index 9999), image centered at max 90vw × 90vh. Click anywhere on overlay to close. Only active when item has an image (cursor: pointer on image thumbnail).
 
 ### UI Components
